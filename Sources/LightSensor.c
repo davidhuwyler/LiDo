@@ -12,35 +12,14 @@
 #include "GI2C1.h"
 #include "WAIT1.h"
 
-static void LightSensor_task(void *param) {
-  (void)param;
-  TickType_t xLastWakeTime;
-  LightChannels_t channels;
-
-  for(;;)
-  {
-	  xLastWakeTime = xTaskGetTickCount();
-
-	  LED1_Neg();
-	  LightSensor_getChannelValuesBlocking(&channels);
-
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(1000));
-  } /* for */
-}
 
 void LightSensor_init(void)
 {
-	//Init Task
-	if (xTaskCreate(LightSensor_task, "LightSensor", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
-	{
-	    for(;;){} /* error! probably out of memory */
-	}
-
 	//Reset Sensor
 	LightSensResetPin_ClrVal();
 	WAIT1_Waitms(50);
 	LightSensResetPin_SetVal();
-	WAIT1_Waitms(500);
+	WAIT1_Waitms(1);
 
 
 //	if(GI2C1_ReadAddress(LIGHTSENSOR_I2C_ADDRESS, &i2cRegister, sizeof(i2cRegister), &i2cData, sizeof(i2cData)) != pdPASS)
@@ -63,7 +42,11 @@ void LightSensor_init(void)
 
 	if(res != ERR_OK)
 	{
-		for(;;);//IIC Error
+		for(;;)//IIC Error
+		{
+			LED1_Neg();
+			WAIT1_Waitms(50);
+		}
 	}
 }
 
@@ -87,7 +70,6 @@ uint8_t LightSensor_getChannelValuesBlocking(LightChannels_t* channels)
 	uint8_t res;
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_PWR_MODE , 0x00);			//Disable Lowpower Mode
-
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x80);			//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV , 0x03);	//Gain = b00=1x; b01=3.7x; b10=16x; b11=64x;
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T , 0xF0);		//IntegrationTime: (256 - value) * 2.8ms
@@ -121,7 +103,6 @@ uint8_t LightSensor_getChannelValuesBlocking(LightChannels_t* channels)
 	channels->xChannelValue = ((uint16_t)x_L | ((uint16_t)x_H<<8));
 	channels->yChannelValue = ((uint16_t)n_L | ((uint16_t)y_H<<8));
 	channels->zChannelValue = ((uint16_t)n_L | ((uint16_t)z_H<<8));
-
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x00);		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x00 );    //Disable Conversion

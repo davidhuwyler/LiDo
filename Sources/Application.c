@@ -11,6 +11,7 @@
 #include "WAIT1.h"
 #include "KIN1.h"
 #include "LightSensor.h"
+#include "AccelSensor.h"
 
 static uint32_t prevCycleCounter, cycleCntCounter = 0;
 
@@ -30,9 +31,34 @@ uint32_t AppGetRuntimeCounterValueFromISR(void) {
   return cycleCntCounter;
 }
 
+static void APP_main_task(void *param) {
+  (void)param;
+  TickType_t xLastWakeTime;
+  LightChannels_t channels;
+  AccelAxis_t accelAxis;
+
+  for(;;)
+  {
+	  xLastWakeTime = xTaskGetTickCount();
+
+	  LED1_Neg();
+	  LightSensor_getChannelValuesBlocking(&channels);
+	  AccelSensor_getValues(&accelAxis);
+	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(1000));
+  } /* for */
+}
+
 
 void APP_Run(void) {
 	LightSensor_init();
+	AccelSensor_init();
+
+
+	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	{
+	    for(;;){} /* error! probably out of memory */
+	}
+
 	vTaskStartScheduler();
 	for(;;) {}
 }
