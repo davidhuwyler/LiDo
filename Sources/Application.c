@@ -12,6 +12,9 @@
 #include "KIN1.h"
 #include "LightSensor.h"
 #include "AccelSensor.h"
+#include "Shell.h"
+
+
 
 static uint32_t prevCycleCounter, cycleCntCounter = 0;
 
@@ -40,9 +43,8 @@ static void APP_main_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-
 	  LED1_Neg();
-	  LightSensor_getChannelValuesBlocking(&channels);
+	  //LightSensor_getChannelValuesBlocking(&channels,LightSensor_Bank0_X_Y_B_B);
 	  AccelSensor_getValues(&accelAxis);
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(1000));
   } /* for */
@@ -50,9 +52,10 @@ static void APP_main_task(void *param) {
 
 
 void APP_Run(void) {
+
 	LightSensor_init();
 	AccelSensor_init();
-
+	SHELL_Init();
 
 	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{

@@ -55,6 +55,11 @@
 #include "BitIoLdd4.h"
 #include "LightSenseInterruptPin.h"
 #include "BitIoLdd5.h"
+#include "USB1.h"
+#include "CDC1.h"
+#include "Tx1.h"
+#include "Rx1.h"
+#include "TMOUT1.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"
