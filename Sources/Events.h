@@ -35,7 +35,6 @@
 #include "IO_Map.h"
 #include "Pins1.h"
 #include "FRTOS1.h"
-#include "RTOSCNTRLDD1.h"
 #include "MCUC1.h"
 #include "UTIL1.h"
 #include "LED1.h"
@@ -47,7 +46,6 @@
 #include "XF1.h"
 #include "CS1.h"
 #include "KIN1.h"
-#include "SYS1.h"
 #include "GI2C1.h"
 #include "LightSensResetPin.h"
 #include "BitIoLdd2.h"
@@ -65,6 +63,8 @@
 #include "TMOUT1.h"
 #include "RTC1.h"
 #include "TmDt1.h"
+#include "DebugWaitOnStartPin.h"
+#include "BitIoLdd6.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -14,6 +14,7 @@
 #include "AccelSensor.h"
 #include "Shell.h"
 #include "RTC.h"
+#include "DebugWaitOnStartPin.h"
 
 
 
@@ -53,6 +54,13 @@ static void APP_main_task(void *param) {
 
 
 void APP_Run(void) {
+
+	//EmercencyBreak: If LowPower went wrong...
+	while(DebugWaitOnStartPin_GetVal())
+	{
+		LED1_Neg();
+		WAIT1_Waitms(50);
+	}
 
 	LightSensor_init();
 	AccelSensor_init();
