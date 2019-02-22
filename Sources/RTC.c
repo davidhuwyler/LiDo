@@ -7,6 +7,7 @@
 #include "RTC1.h"
 #include "PE_Const.h"
 #include "CLS1.h"
+#include "TmDt1.h"
 
 static LDD_TUserData* rtcUserDataHandle;
 static LDD_TDeviceData* rtcDeviceDataHandle;
@@ -23,12 +24,35 @@ void RTC_getTime(LDD_RTC_TTime* rtcTime)
 	RTC1_GetTime(rtcDeviceDataHandle,rtcTime);
 }
 
+void RTC_getTimeUnixFormat(uint32_t* rtcTimeUnix)
+{
+	LDD_RTC_TTime timeFromRTC;
+	RTC_getTime(&timeFromRTC);
+
+	TIMEREC time;
+	time.Hour = timeFromRTC.Hour;
+	time.Min = timeFromRTC.Minute;
+	time.Sec = timeFromRTC.Second;
+
+	DATEREC date;
+	date.Day = timeFromRTC.Day;
+	date.Month = timeFromRTC.Month;
+	date.Year = timeFromRTC.Year;
+
+	*rtcTimeUnix = TmDt1_TimeDateToUnixSeconds(&time, &date, 0);
+}
+
 void RTC_init(bool softInit)
 {
 	rtcDeviceDataHandle = RTC1_Init(rtcUserDataHandle,softInit);
 
 	//Init timeToSet with current values values
 	RTC_getTime(&timeToSet);
+
+	if(timeToSet.Year>=2099) //RTC1 component needs the year to be smaller than 2099
+	{
+		timeToSet.Year = 2019;
+	}
 }
 
 static void PrintTimeDate(CLS1_ConstStdIOType *io)
@@ -77,6 +101,7 @@ uint8_t RTC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 	    CLS1_SendHelpStr((unsigned char*)"  setYear", (const unsigned char*)"Sets the Year (ex. 2019)\r\n", io->stdOut);
 	    CLS1_SendHelpStr((unsigned char*)"  write", (const unsigned char*)"Saves the set time into the RTC\r\n", io->stdOut);
 	    CLS1_SendHelpStr((unsigned char*)"  get", (const unsigned char*)"Displays the current time & date\r\n", io->stdOut);
+	    CLS1_SendHelpStr((unsigned char*)"  getUnix", (const unsigned char*)"Displays the seconds since Jan 01 1970\r\n", io->stdOut);
 	    *handled = TRUE;
 	    return ERR_OK;
 	  }
@@ -151,6 +176,14 @@ uint8_t RTC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 	  }
 	  else if (UTIL1_strcmp((char*)cmd, "RTC get")==0) {
 		PrintTimeDate(io);
+		*handled = TRUE;
+		return ERR_OK;
+	  }
+	  else if (UTIL1_strcmp((char*)cmd, "RTC getUnix")==0) {
+		uint32_t unixTime;
+		RTC_getTimeUnixFormat(&unixTime);
+		CLS1_SendNum32u(unixTime,io->stdOut);
+		CLS1_SendStr("\r\n",io->stdOut);
 		*handled = TRUE;
 		return ERR_OK;
 	  }

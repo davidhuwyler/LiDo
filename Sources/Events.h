@@ -64,6 +64,7 @@
 #include "Rx1.h"
 #include "TMOUT1.h"
 #include "RTC1.h"
+#include "TmDt1.h"
 
 #ifdef __cplusplus
 extern "C" {
