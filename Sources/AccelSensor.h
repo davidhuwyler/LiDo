@@ -6,12 +6,10 @@
  */
 
 #include <stdint.h>
+#include "CLS1.h"
 
 #ifndef SOURCES_ACCELSENS_H_
 #define SOURCES_ACCELSENS_H_
-
-
-
 
 typedef struct {
 	uint8_t xValue;  // 1digit = 16mG (8Bit signed)
@@ -22,6 +20,7 @@ typedef struct {
 
 void AccelSensor_init(void);
 uint8_t AccelSensor_getValues(AccelAxis_t* values);
+uint8_t AccelSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
 
 #endif /* SOURCES_ACCELSENS_H_ */

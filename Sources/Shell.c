@@ -8,12 +8,16 @@
 #include "CLS1.h"
 #include "KIN1.h"
 #include "LightSensor.h"
+#include "AccelSensor.h"
+#include "RTC.h"
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
   CLS1_ParseCommand,
   KIN1_ParseCommand,
   LightSensor_ParseCommand,
+  AccelSensor_ParseCommand,
+  RTC_ParseCommand,
   NULL /* sentinel */
 };
 

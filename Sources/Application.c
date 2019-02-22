@@ -13,6 +13,7 @@
 #include "LightSensor.h"
 #include "AccelSensor.h"
 #include "Shell.h"
+#include "RTC.h"
 
 
 
@@ -56,6 +57,7 @@ void APP_Run(void) {
 	LightSensor_init();
 	AccelSensor_init();
 	SHELL_Init();
+	RTC_init(1);
 
 	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{
