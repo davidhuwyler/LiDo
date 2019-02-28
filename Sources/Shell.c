@@ -41,9 +41,12 @@ static void SHELL_task(void *param) {
 
 	  if(xTaskGetTickCount() - shellEnabledTimestamp > pdMS_TO_TICKS(2000))
 	  {
-
+#if 0
 		  LowPower_EnableStopMode();
-		  vTaskSuspend(shellTaskHandle);
+		  vTaskSuspend(shellTaskHandle);¨
+#elif 1
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+#endif
 	  }
 	  else
 	  {

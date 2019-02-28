@@ -16,24 +16,6 @@
 #include "RTC.h"
 #include "DebugWaitOnStartPin.h"
 
-static uint32_t prevCycleCounter, cycleCntCounter = 0;
-
-void AppConfigureTimerForRuntimeStats(void) {
-  cycleCntCounter = 0;
-  KIN1_InitCycleCounter();
-  prevCycleCounter = KIN1_GetCycleCounter();
-}
-
-uint32_t AppGetRuntimeCounterValueFromISR(void) {
-  uint32_t newCntr, diff;
-
-  newCntr = KIN1_GetCycleCounter();
-  diff = newCntr-prevCycleCounter;
-  prevCycleCounter = newCntr;
-  cycleCntCounter += diff>>12; /* scale down the counter */
-  return cycleCntCounter;
-}
-
 static void APP_main_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
@@ -45,7 +27,7 @@ static void APP_main_task(void *param) {
 	  xLastWakeTime = xTaskGetTickCount();
 
 	  //LightSensor_getChannelValuesBlocking(&channels,LightSensor_Bank0_X_Y_B_B);
-	  //LED1_Neg();
+	  LED1_Neg();
 	  AccelSensor_getValues(&accelAxis);
 
 	  if(DebugWaitOnStartPin_GetVal())
@@ -56,7 +38,6 @@ static void APP_main_task(void *param) {
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(1000));
   } /* for */
 }
-
 
 void APP_Run(void) {
 
