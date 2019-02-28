@@ -10,6 +10,13 @@
 #include "LightSensor.h"
 #include "AccelSensor.h"
 #include "RTC.h"
+#include "LowPower.h"
+#include "CDC1.h"
+#include "USB0.h"
+#include "USB1.h"
+
+static TaskHandle_t shellTaskHandle;
+static TickType_t shellEnabledTimestamp;
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
@@ -24,21 +31,46 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 static void SHELL_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
+  shellEnabledTimestamp = xTaskGetTickCount();
 
   for(;;)
   {
+
 	  xLastWakeTime = xTaskGetTickCount();
 	  (void)CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(100));
+
+	  if(xTaskGetTickCount() - shellEnabledTimestamp > pdMS_TO_TICKS(2000))
+	  {
+
+		  LowPower_EnableStopMode();
+		  vTaskSuspend(shellTaskHandle);
+	  }
+	  else
+	  {
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+	  }
   } /* for */
 }
 
 void SHELL_Init(void) {
   CLS1_DefaultShellBuffer[0] = '\0';
-  if (xTaskCreate(SHELL_task, "Shell", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+  if (xTaskCreate(SHELL_task, "Shell", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
   {
 	  for(;;){} /* error! probably out of memory */
   }
+}
+
+void SHELL_EnableShellFor20s(void)
+{
+	LowPower_DisableStopMode();
+	shellEnabledTimestamp = xTaskGetTickCount();
+	xTaskResumeFromISR(shellTaskHandle);
+	//vTaskResume(shellTaskHandle);
+}
+
+void SHELL_Disable(void)
+{
+	shellEnabledTimestamp = xTaskGetTickCount() - pdMS_TO_TICKS(20001);
 }
 
 

@@ -16,8 +16,6 @@
 #include "RTC.h"
 #include "DebugWaitOnStartPin.h"
 
-
-
 static uint32_t prevCycleCounter, cycleCntCounter = 0;
 
 void AppConfigureTimerForRuntimeStats(void) {
@@ -45,9 +43,16 @@ static void APP_main_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  LED1_Neg();
+
 	  //LightSensor_getChannelValuesBlocking(&channels,LightSensor_Bank0_X_Y_B_B);
+	  //LED1_Neg();
 	  AccelSensor_getValues(&accelAxis);
+
+	  if(DebugWaitOnStartPin_GetVal())
+	  {
+		  SHELL_EnableShellFor20s();
+	  }
+
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(1000));
   } /* for */
 }

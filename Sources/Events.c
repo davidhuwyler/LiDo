@@ -37,6 +37,7 @@ extern "C" {
 
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
+#include "LowPower.h"
 
 /*
 ** ===================================================================
@@ -163,7 +164,9 @@ void FRTOS1_vApplicationIdleHook(void)
 void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks)
 {
   (void)expectedIdleTicks; /* not used */
-#if 1
+
+
+#if 0
   /* example for Kinetis (enable SetOperationMode() in CPU component): */
   // Cpu_SetOperationMode(DOM_WAIT, NULL, NULL); /* Processor Expert way to get into WAIT mode */
   /* or to wait for interrupt: */
@@ -176,6 +179,9 @@ void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks)
 #elif 0
   /* example for ColdFire V2: */
    __asm("stop #0x2000"); */
+
+#elif 1
+   LowPower_EnterLowpowerMode();
 #else
   #error "you *must* enter low power mode (wait for interrupt) here!"
 #endif

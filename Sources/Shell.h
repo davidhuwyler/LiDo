@@ -12,5 +12,7 @@
 void SHELL_Parse(void);
 void SHELL_Init(void);
 
+void SHELL_EnableShellFor20s(void);
+void SHELL_Disable(void);
 
 #endif /* SOURCES_SHELL_H_ */
