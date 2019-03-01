@@ -3,6 +3,8 @@
  *
  *  Created on: Feb 20, 2019
  *      Author: dave
+ *
+ *  Driver for the AS7264N LightSensor via I2C
  */
 #include "LightSensor.h"
 #include "LightSensResetPin.h"

@@ -3,6 +3,8 @@
  *
  *  Created on: Feb 20, 2019
  *      Author: dave
+ *
+ *  Driver for the ST LIS2DH Accelerometer via I2C
  */
 
 #include <stdint.h>
