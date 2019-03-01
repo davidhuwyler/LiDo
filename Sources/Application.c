@@ -14,7 +14,7 @@
 #include "AccelSensor.h"
 #include "Shell.h"
 #include "RTC.h"
-#include "SPIF.h"
+#include "FileSystem.h"
 #include "DebugWaitOnStartPin.h"
 
 static void APP_main_task(void *param) {
@@ -53,7 +53,7 @@ void APP_Run(void) {
 	AccelSensor_init();
 	SHELL_Init();
 	RTC_init(1);
-	SPIF_Init();
+	FS_Init();
 
 	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{

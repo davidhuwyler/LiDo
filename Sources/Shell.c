@@ -13,6 +13,7 @@
 #include "LowPower.h"
 #include "SPIF.h"
 #include "UTIL1.h"
+#include "FileSystem.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -25,6 +26,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   AccelSensor_ParseCommand,
   RTC_ParseCommand,
   SPIF_ParseCommand,
+  FS_ParseCommand,
   NULL /* sentinel */
 };
 
