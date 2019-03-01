@@ -43,7 +43,7 @@ static void SHELL_task(void *param) {
 	  {
 #if 0
 		  LowPower_EnableStopMode();
-		  vTaskSuspend(shellTaskHandle);¨
+		  vTaskSuspend(shellTaskHandle);
 #elif 1
 		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
 #endif
@@ -65,6 +65,7 @@ void SHELL_Init(void) {
 
 void SHELL_EnableShellFor20s(void)
 {
+	//Cpu_SetClockConfiguration((LDD_TClockConfiguration)0);
 	LowPower_DisableStopMode();
 	shellEnabledTimestamp = xTaskGetTickCount();
 	xTaskResumeFromISR(shellTaskHandle);

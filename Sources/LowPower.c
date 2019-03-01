@@ -18,8 +18,6 @@ void LowPower_EnterLowpowerMode(void)
 {
 	if(stopModeAllowed)
 	{
-		LED1_Off();
-
 		  SMC_PMPROT = SMC_PMPROT_ALLS_MASK;	//Allow LLS (LowLeakageStop) Datasheet p355
 		  SMC_PMCTRL &= ~SMC_PMCTRL_STOPM_MASK;
 		  SMC_PMCTRL &= ~SMC_PMCTRL_RUNM(0x3);
@@ -36,8 +34,6 @@ void LowPower_EnterLowpowerMode(void)
 	}
 	else
 	{
-		LED1_On();
-
 	    __asm volatile("dsb");
 	    __asm volatile("wfi");
 	    __asm volatile("isb");

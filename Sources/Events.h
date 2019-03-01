@@ -65,6 +65,16 @@
 #include "TmDt1.h"
 #include "DebugWaitOnStartPin.h"
 #include "BitIoLdd6.h"
+#include "SM1.h"
+#include "SMasterLdd1.h"
+#include "PIN_SPIF_PWR.h"
+#include "BitIoLdd7.h"
+#include "PIN_SPIF_RESET.h"
+#include "BitIoLdd8.h"
+#include "PIN_SPIF_CS.h"
+#include "BitIoLdd9.h"
+#include "PIN_SPIF_WP.h"
+#include "BitIoLdd10.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -158,6 +168,26 @@ void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks);
 **         NAME            - DESCRIPTION
 **         expectedIdleTicks - expected idle
 **                           time, in ticks
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void SM1_OnRxCharExt(SM1_TComData Chr);
+/*
+** ===================================================================
+**     Event       :  SM1_OnRxCharExt (module Events)
+**
+**     Component   :  SM1 [SynchroMaster]
+**     Description :
+**         This event is called after a correct character is received.
+**         The parameter of the event contains the last received
+**         character. If an input buffer is used, the character is also
+**         inserted into the buffer.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled.
+**     Parameters  :
+**         NAME            - DESCRIPTION
+**         Chr             - The last received character
 **     Returns     : Nothing
 ** ===================================================================
 */
