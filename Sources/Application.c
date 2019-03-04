@@ -27,7 +27,6 @@ static void APP_main_task(void *param) {
   AccelSensor_init();
   FS_Init();
 
-
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
