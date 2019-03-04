@@ -21,6 +21,14 @@
 static bool FS_isMounted = FALSE;
 static lfs_t FS_lfs;
 
+#define FILESYSTEM_READ_BUFFER_SIZE 256
+#define FILESYSTEM_PROG_BUFFER_SIZE 256
+#define FILESYSTEM_LOOKAHEAD_SIZE 128
+static char readBuffer[FILESYSTEM_READ_BUFFER_SIZE];
+static char progBuffer[FILESYSTEM_PROG_BUFFER_SIZE];
+static char lookaheadBuffer[FILESYSTEM_LOOKAHEAD_SIZE/8];
+static char file_buffer[FILESYSTEM_PROG_BUFFER_SIZE];
+
 static int block_device_read(const struct lfs_config *c, lfs_block_t block,	lfs_off_t off, void *buffer, lfs_size_t size)
 {
 	uint8_t res;
@@ -68,11 +76,17 @@ const struct lfs_config FS_cfg = {
 		.erase =block_device_erase,
 		.sync = block_device_sync,
 		// block device configuration
-		.read_size = 256,
-		.prog_size = 256,
+		.read_size = FILESYSTEM_READ_BUFFER_SIZE,
+		.prog_size = FILESYSTEM_PROG_BUFFER_SIZE,
 		.block_size = 4096,
 		.block_count =16384, /* 16384 * 4K = 64 MByte */
 		.lookahead = 128,
+
+		//Statically allocated buffers
+//		.read_buffer = readBuffer,
+//		.prog_buffer = progBuffer,
+//		.lookahead_buffer = lookaheadBuffer,
+//		.file_buffer = file_buffer
 };
 
 uint8_t FS_Format(CLS1_ConstStdIOType *io)

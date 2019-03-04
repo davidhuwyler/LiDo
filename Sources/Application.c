@@ -23,6 +23,11 @@ static void APP_main_task(void *param) {
   LightChannels_t channels;
   AccelAxis_t accelAxis;
 
+  LightSensor_init();
+  AccelSensor_init();
+  FS_Init();
+
+
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
@@ -49,11 +54,8 @@ void APP_Run(void) {
 		WAIT1_Waitms(50);
 	}
 
-	LightSensor_init();
-	AccelSensor_init();
 	SHELL_Init();
 	RTC_init(1);
-	FS_Init();
 
 	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{

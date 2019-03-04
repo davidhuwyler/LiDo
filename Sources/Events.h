@@ -47,13 +47,9 @@
 #include "CS1.h"
 #include "KIN1.h"
 #include "GI2C1.h"
+#include "CI2C1.h"
 #include "LightSensResetPin.h"
 #include "BitIoLdd2.h"
-#include "I2C1.h"
-#include "SDA1.h"
-#include "BitIoLdd3.h"
-#include "SCL1.h"
-#include "BitIoLdd4.h"
 #include "LightSenseInterruptPin.h"
 #include "BitIoLdd5.h"
 #include "USB1.h"
@@ -73,13 +69,9 @@
 #include "BitIoLdd9.h"
 #include "PIN_SPIF_WP.h"
 #include "BitIoLdd10.h"
-#include "SPI1.h"
-#include "Clock1.h"
-#include "BitIoLdd11.h"
-#include "Input1.h"
-#include "BitIoLdd12.h"
-#include "Output1.h"
-#include "BitIoLdd13.h"
+#include "CRC1.h"
+#include "SM1.h"
+#include "SMasterLdd1.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,6 +165,86 @@ void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks);
 **         NAME            - DESCRIPTION
 **         expectedIdleTicks - expected idle
 **                           time, in ticks
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void SM1_OnRxChar(void);
+/*
+** ===================================================================
+**     Event       :  SM1_OnRxChar (module Events)
+**
+**     Component   :  SM1 [SynchroMaster]
+**     Description :
+**         This event is called after a correct character is received.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void SM1_OnTxChar(void);
+/*
+** ===================================================================
+**     Event       :  SM1_OnTxChar (module Events)
+**
+**     Component   :  SM1 [SynchroMaster]
+**     Description :
+**         This event is called after a character is transmitted.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void SM1_OnError(void);
+/*
+** ===================================================================
+**     Event       :  SM1_OnError (module Events)
+**
+**     Component   :  SM1 [SynchroMaster]
+**     Description :
+**         This event is called when a channel error (not the error
+**         returned by a given method) occurs. The errors can be read
+**         using <GetError> method.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void SM1_OnFullRxBuf(void);
+/*
+** ===================================================================
+**     Event       :  SM1_OnFullRxBuf (module Events)
+**
+**     Component   :  SM1 [SynchroMaster]
+**     Description :
+**         This event is called when the input buffer is full, i.e.
+**         after reception of the last character that was successfully
+**         placed into input buffer.
+**         This event is available only when the <Interrupt
+**         service/event> property is enabled and the <Input buffer
+**         size> property is set to non-zero value.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void SM1_OnFreeTxBuf(void);
+/*
+** ===================================================================
+**     Event       :  SM1_OnFreeTxBuf (module Events)
+**
+**     Component   :  SM1 [SynchroMaster]
+**     Description :
+**         This event is called after the last character in output
+**         buffer is transmitted.
+**         This event is available only when the <Interrupt
+**         service/event> property is enabled and the <Output buffer
+**         size> property is set to non-zero value.
+**     Parameters  : None
 **     Returns     : Nothing
 ** ===================================================================
 */

@@ -14,7 +14,7 @@
 #include "CLS1.h"
 
 
-#define SPIF_USE_SOFTWARE_SPI
+//#define SPIF_USE_SOFTWARE_SPI
 
 uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
 

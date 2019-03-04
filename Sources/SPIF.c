@@ -17,12 +17,8 @@
 #include "SPIF.h"
 #include "Shell.h"
 
-#ifndef SPIF_USE_SOFTWARE_SPI
-#include "SM1.h"
-#else
-#include "SPI1.h"
-#endif
 
+#include "SM1.h"
 #include "UTIL1.h"
 #include "CLS1.h"
 #include "WAIT1.h"
@@ -67,40 +63,17 @@ static LDD_TUserData*  SPIuserDataHandle;
 #define SPIF_CS_ENABLE()   PIN_SPIF_CS_ClrVal()
 #define SPIF_CS_DISABLE()  PIN_SPIF_CS_SetVal()
 
-
-
-#ifndef SPIF_USE_SOFTWARE_SPI
 static uint8_t rxDummy; /* dummy byte if we do not need the result. Needed to read from SPI register. */
-static uint8_t dataByte;
 #define SPI_WRITE(write)            \
-   { 	 \
-		 dataByte = write; \
-		 while(SM1_SendBlock(SPIdeviceHandle,&dataByte,1) != ERR_OK){} \
-		 while(SM1_ReceiveBlock(SPIdeviceHandle,&rxDummy,1) != ERR_OK){} \
+   { \
+     while(SM1_SendChar(write)!=ERR_OK) {} \
+     while(SM1_RecvChar(&rxDummy)!=ERR_OK) {} \
    }
 #define SPI_WRITE_READ(write, readP) \
-   { 	 \
-	     dataByte = write; \
-		 while(SM1_SendBlock(SPIdeviceHandle,&dataByte,1) != ERR_OK){} \
-		 while(SM1_ReceiveBlock(SPIdeviceHandle,readP,1) != ERR_OK){} \
+   { \
+     while(SM1_SendChar(write)!=ERR_OK) {} \
+     while(SM1_RecvChar(readP)!=ERR_OK) {} \
    }
-#else
-static uint8_t rxDummy; /* dummy byte if we do not need the result. Needed to read from SPI register. */
-static uint8_t dataByte;
-#define SPI_WRITE(write)            \
-   { 	 \
-		 while(SPI1_SendChar(write) != ERR_OK){} \
-		 while(SPI1_RecvChar(&rxDummy) != ERR_OK){} \
-   }
-#define SPI_WRITE_READ(write, readP) \
-   { 	 \
-		 while(SPI1_SendChar(write) != ERR_OK){} \
-		 while(SPI1_RecvChar(readP) != ERR_OK){} \
-   }
-#endif
-
-
-
 
 uint8_t SPIF_ReadStatus(uint8_t *status)
 {
@@ -557,32 +530,9 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 uint8_t SPIF_Init(void)
 {
 	  uint8_t buf[SPIF_ID_BUF_SIZE];
-
 	  PIN_SPIF_PWR_SetVal();   //Power the Chip
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!
 	  PIN_SPIF_WP_SetVal();	   //LowActive... --> Enable Write!
-	  SPIF_CS_ENABLE();
-
-#ifndef SPIF_USE_SOFTWARE_SPI
-	  SPIdeviceHandle = SM1_Init(SPIuserDataHandle);
-#endif
-
-
-
-//	  volatile int i = 0;
-//  	  while(SM1_SendChar(SPIF_SPI_CMD_ENABLE_4BYTE_ADD)!=ERR_OK)
-//  	  {
-//  		  i++;
-//  	  }
-//	volatile int i = 0;
-//	while (SM1_SendChar(SPIF_SPI_CMD_ENABLE_4BYTE_ADD) != ERR_OK)
-//	{
-//		i++;
-//	}
-//	while (SM1_RecvChar(&rxDummy) != ERR_OK)
-//	{
-//		i++;
-//	}
 
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_ENABLE_4BYTE_ADD)
