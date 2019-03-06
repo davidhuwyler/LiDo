@@ -16,6 +16,7 @@
 #include "RTC.h"
 #include "FileSystem.h"
 #include "DebugWaitOnStartPin.h"
+#include "SDEP.h"
 
 static void APP_main_task(void *param) {
   (void)param;
@@ -55,6 +56,7 @@ void APP_Run(void) {
 
 	SHELL_Init();
 	RTC_init(1);
+	SDEP_Init();
 
 	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{

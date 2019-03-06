@@ -14,6 +14,7 @@
 #include "SPIF.h"
 #include "UTIL1.h"
 #include "FileSystem.h"
+#include "SDEP.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -27,6 +28,8 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   RTC_ParseCommand,
   SPIF_ParseCommand,
   FS_ParseCommand,
+  SDEP_ParseCommand,
+  SDEP_ParseSilentCommand,
   NULL /* sentinel */
 };
 

@@ -24,7 +24,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-//#include "FRTOS1.h"
+#include "FRTOS1.h"
 
 #ifndef LFS_NO_MALLOC
 #include <stdlib.h>
