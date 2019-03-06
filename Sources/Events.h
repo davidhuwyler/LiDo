@@ -72,6 +72,7 @@
 #include "CRC1.h"
 #include "SM1.h"
 #include "SMasterLdd1.h"
+#include "HF1.h"
 
 #ifdef __cplusplus
 extern "C" {

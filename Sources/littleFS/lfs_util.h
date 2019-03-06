@@ -49,21 +49,21 @@ extern "C"
 // Logging functions
 #ifndef LFS_NO_DEBUG
 #define LFS_DEBUG(fmt, ...) \
-    printf("lfs debug:%d: " fmt "\n", __LINE__, __VA_ARGS__)
+		CLS1_printf("lfs debug:%d: " fmt "\n", __LINE__, __VA_ARGS__)
 #else
 #define LFS_DEBUG(fmt, ...)
 #endif
 
 #ifndef LFS_NO_WARN
 #define LFS_WARN(fmt, ...) \
-    printf("lfs warn:%d: " fmt "\n", __LINE__, __VA_ARGS__)
+		CLS1_printf("lfs warn:%d: " fmt "\n", __LINE__, __VA_ARGS__)
 #else
 #define LFS_WARN(fmt, ...)
 #endif
 
 #ifndef LFS_NO_ERROR
 #define LFS_ERROR(fmt, ...) \
-    printf("lfs error:%d: " fmt "\n", __LINE__, __VA_ARGS__)
+   CLS1_printf("lfs error:%d: " fmt "\n", __LINE__, __VA_ARGS__)
 #else
 #define LFS_ERROR(fmt, ...)
 #endif
@@ -163,8 +163,8 @@ void lfs_crc(uint32_t *crc, const void *buffer, size_t size);
 // Allocate memory, only used if buffers are not provided to littlefs
 static inline void *lfs_malloc(size_t size) {
 #ifndef LFS_NO_MALLOC
-	//return FRTOS1_pvPortMalloc(size);
-    return malloc(size);
+	return pvPortMalloc(size);
+    //return malloc(size);
 #else
     (void)size;
     return NULL;
@@ -174,8 +174,8 @@ static inline void *lfs_malloc(size_t size) {
 // Deallocate memory, only used if buffers are not provided to littlefs
 static inline void lfs_free(void *p) {
 #ifndef LFS_NO_MALLOC
-	//FRTOS1_vPortFree(p);
-    free(p);
+	vPortFree(p);
+    //free(p);
 #else
     (void)p;
 #endif

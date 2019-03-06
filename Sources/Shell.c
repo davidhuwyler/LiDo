@@ -50,19 +50,19 @@ static void SHELL_task(void *param) {
 		  LowPower_EnableStopMode();
 		  vTaskSuspend(shellTaskHandle);
 #elif 1
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(100));
 #endif
 	  }
 	  else
 	  {
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(100));
 	  }
   } /* for */
 }
 
 void SHELL_Init(void) {
   CLS1_DefaultShellBuffer[0] = '\0';
-  if (xTaskCreate(SHELL_task, "Shell", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
+  if (xTaskCreate(SHELL_task, "Shell", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
   {
 	  for(;;){} /* error! probably out of memory */
   }

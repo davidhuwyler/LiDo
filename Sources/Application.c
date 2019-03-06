@@ -58,7 +58,7 @@ void APP_Run(void) {
 	RTC_init(1);
 	SDEP_Init();
 
-	if (xTaskCreate(APP_main_task, "MainTask", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	if (xTaskCreate(APP_main_task, "MainTask", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
