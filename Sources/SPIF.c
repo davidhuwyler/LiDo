@@ -78,6 +78,7 @@ static uint8_t rxDummy; /* dummy byte if we do not need the result. Needed to re
 uint8_t SPIF_ReadStatus(uint8_t *status)
 {
 	  SPIF_CS_ENABLE();
+	  SPI_WRITE(SPIF_SPI_CMD_READ_STATUS);
 	  SPI_WRITE_READ(0, status);
 	  SPIF_CS_DISABLE();
 	  return ERR_OK;

@@ -26,7 +26,7 @@ static void APP_main_task(void *param) {
 
   LightSensor_init();
   AccelSensor_init();
-  FS_Init();
+
 
   for(;;)
   {

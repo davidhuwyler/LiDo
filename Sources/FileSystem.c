@@ -24,34 +24,6 @@ static lfs_t FS_lfs;
 #define FILESYSTEM_READ_BUFFER_SIZE 256
 #define FILESYSTEM_PROG_BUFFER_SIZE 256
 #define FILESYSTEM_LOOKAHEAD_SIZE 128
-//static char readBuffer[FILESYSTEM_READ_BUFFER_SIZE];
-//static char progBuffer[FILESYSTEM_PROG_BUFFER_SIZE];
-//static char lookaheadBuffer[FILESYSTEM_LOOKAHEAD_SIZE/8] ;
-//static char file_buffer[FILESYSTEM_PROG_BUFFER_SIZE];
-
-
-//void *_sbrk ( uint32_t delta )
-//{
-//extern char _end; /* Defined by the linker */
-//static char *heap_end;
-//char *prev_heap_end;
-//
-//  if (heap_end == 0) {
-//    heap_end = &_end;
-//  }
-//
-//  prev_heap_end = heap_end;
-//  //if (prev_heap_end+delta > get_stack_pointer()) {
-//  //       return (void *) -1L;
-//  //}
-//  heap_end += delta;
-//  return (void *) prev_heap_end;
-//}
-
-
-
-
-
 
 static int block_device_read(const struct lfs_config *c, lfs_block_t block,	lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -91,7 +63,6 @@ int block_device_sync(const struct lfs_config *c)
 	return LFS_ERR_OK;
 }
 
-
 // configuration of the file system is provided by this struct
 const struct lfs_config FS_cfg = {
 		// block device operations
@@ -103,14 +74,8 @@ const struct lfs_config FS_cfg = {
 		.read_size = FILESYSTEM_READ_BUFFER_SIZE,
 		.prog_size = FILESYSTEM_PROG_BUFFER_SIZE,
 		.block_size = 4096,
-		.block_count =16384, /* 16384 * 4K = 64 MByte */
+		.block_count = 16384, /* 16384 * 4K = 64 MByte */
 		.lookahead = 128,
-
-		//Statically allocated buffers
-//		.read_buffer = (void *)readBuffer,
-//		.prog_buffer = (void *)progBuffer,
-//		.lookahead_buffer = (void *)lookaheadBuffer,
-//		.file_buffer = (void *)file_buffer
 };
 
 uint8_t FS_Format(CLS1_ConstStdIOType *io)

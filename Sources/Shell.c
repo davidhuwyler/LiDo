@@ -38,6 +38,8 @@ static void SHELL_task(void *param) {
   TickType_t xLastWakeTime;
   shellEnabledTimestamp = xTaskGetTickCount();
 
+  FS_Init();
+
   for(;;)
   {
 
@@ -50,12 +52,12 @@ static void SHELL_task(void *param) {
 		  LowPower_EnableStopMode();
 		  vTaskSuspend(shellTaskHandle);
 #elif 1
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(100));
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
 #endif
 	  }
 	  else
 	  {
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(100));
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
 	  }
   } /* for */
 }
