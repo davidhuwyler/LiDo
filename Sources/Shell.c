@@ -15,6 +15,7 @@
 #include "UTIL1.h"
 #include "FileSystem.h"
 #include "SDEP.h"
+#include "SDEPshellHandler.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -28,23 +29,44 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   RTC_ParseCommand,
   SPIF_ParseCommand,
   FS_ParseCommand,
-  SDEP_ParseCommand,
-  SDEP_ParseSilentCommand,
   NULL /* sentinel */
 };
+
+static void SHELL_SwitchIOifNeeded(void)
+{
+	static TickType_t SDEPioTimer;
+	static bool SDEPioTimerStarted = false;
+	if (!SDEPshellHandler_IOisStd())
+	{
+		if (SDEPioTimerStarted)
+		{
+			if (xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300))
+			{
+				SDEPshellHandler_switchIOtoStdIO();
+				SDEPioTimerStarted = false;
+			}
+		}
+		else
+		{
+			SDEPioTimerStarted = true;
+			SDEPioTimer = xTaskGetTickCount();
+		}
+	}
+}
 
 static void SHELL_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   shellEnabledTimestamp = xTaskGetTickCount();
-
   FS_Init();
 
   for(;;)
   {
-
 	  xLastWakeTime = xTaskGetTickCount();
-	  (void)CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
+
+	  SHELL_SwitchIOifNeeded();
+	  SDEP_Parse();
+	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
 
 	  if(xTaskGetTickCount() - shellEnabledTimestamp > pdMS_TO_TICKS(2000))
 	  {

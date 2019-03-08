@@ -10,11 +10,11 @@
 
 #include <stdint.h>
 #include <stddef.h>
-
 #include "CLS1.h"
 
+#define SDEP_MESSAGE_MAX_NOF_BYTES 131
+
+uint8_t SDEP_Parse(void);
 uint8_t SDEP_Init(void);
-uint8_t SDEP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
-uint8_t SDEP_ParseSilentCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
 #endif /* SOURCES_SDEP_H_ */
