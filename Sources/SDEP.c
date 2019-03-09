@@ -17,6 +17,12 @@
 #define SDEP_TYPEBYTE_ERROR  	0x80
 #define SDEP_CMDID_GETNAME		0x0001
 #define SDEP_CMDID_SETNAME		0x0011
+#define SDEP_CMDID_DEBUGCLI		0x1000
+
+#define SDEP_ERRID_INVALIDCMD		0x0001
+#define SDEP_ERRID_INVALIDPAYLOAD	0x0003
+#define SDEP_ERRID_INVALIDCRC		0x0005
+
 
 typedef struct
 {
@@ -38,37 +44,63 @@ static char liDoIDBuffer[SDEP_LIDO_IDBUFFER_SIZE];
 
 static bool ongoingSDEPmessageProcessing = false;
 
+//uint8_t SDEP_GetCRC(uint8_t typeByte, uint16 command, uint8_t payloadSize,const unsigned char *payload)
+uint8_t SDEP_GetCRC(SDEPmessage_t* message)
+{
+	uint8_t crc,seed = 0;
+	crc = crc8_bytecalc(message->type,&seed);
+	crc = crc8_bytecalc((uint8_t)message->cmdId,&seed);
+	crc = crc8_bytecalc((uint8_t)(message->cmdId>>8),&seed);
+	crc = crc8_bytecalc(message->payloadSize,&seed);
+	crc = crc8_messagecalc((unsigned char *)message->payload,message->payloadSize,&seed);
+	return crc;
+}
+
+uint8_t SDEP_SendMessage(SDEPmessage_t* response)
+{
+	SDEP_SendChar(response->type);
+	SDEP_SendChar((uint8_t)response->cmdId);
+	SDEP_SendChar((uint8_t)(response->cmdId>>8));
+	SDEP_SendChar(response->payloadSize);
+	SDEP_SendData(response->payload,response->payloadSize);
+	SDEP_SendChar(SDEP_GetCRC(response));
+}
+
 uint8_t SDEP_ExecureCommand(SDEPmessage_t* message)
 {
 	static uint8_t outputBuf[SDEP_MESSAGE_MAX_NOF_BYTES];
+	static SDEPmessage_t answer;
+	answer.type = SDEP_TYPEBYTE_RESPONSE;
+	answer.cmdId = message->cmdId;
 
 	switch(message->cmdId)
 	{
 	case SDEP_CMDID_GETNAME:
-		UTIL1_strcpy(outputBuf,20,liDoNameBuffer);
-		SDEP_SendData(outputBuf,20);
+		answer.payloadSize = 20;
+		answer.payload =liDoNameBuffer;
+		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
 	case SDEP_CMDID_SETNAME:
 		UTIL1_strcpy(liDoNameBuffer,SDEP_LIDO_NAMEBUFFER_SIZE,message->payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_DEBUGCLI:
+		SDEPshellHandler_switchIOtoSDEPio();
+		SDEP_SDEPtoShell(message->payload,message->payloadSize);
 		return ERR_OK;
 
 	default:
-		UTIL1_strcpy(outputBuf,20," Unknown Command\r\n");
-		SDEP_SendData(outputBuf,20);
+		answer.type = SDEP_TYPEBYTE_ERROR;
+		answer.cmdId = SDEP_ERRID_INVALIDCMD;
+		answer.payloadSize = 0;
+		answer.payload = 0;
+		SDEP_SendMessage(&answer);
 		return ERR_FAILED;
 	}
-}
-
-uint8_t SDEP_GetCRC(uint8_t typeByte, uint16 command, uint8_t payloadSize,const unsigned char *payload)
-{
-	uint8_t crc,seed = 0;
-	crc = crc8_bytecalc(typeByte,&seed);
-	crc = crc8_bytecalc((uint8_t)command,&seed);
-	crc = crc8_bytecalc((uint8_t)(command>>8),&seed);
-	crc = crc8_bytecalc(payloadSize,&seed);
-	crc = crc8_messagecalc((unsigned char *)payload,payloadSize,&seed);
-	return crc;
 }
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
@@ -81,6 +113,10 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 {
 	static uint8_t inputBuf[SDEP_MESSAGE_MAX_NOF_BYTES+1];
 	static uint8_t inputBufPtr = 0;
+	static SDEPmessage_t error;
+	error.type = SDEP_TYPEBYTE_ERROR;
+	error.payloadSize = 0;
+	error.payload = 0;
 
 	if(ongoingSDEPmessageProcessing)
 	{
@@ -92,10 +128,17 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 		inputBufPtr++;
 	}
 
+	if(inputBufPtr == 0)
+	{
+		return ERR_RXEMPTY;
+	}
+
 	//Check TypeByte
 	if(!(inputBuf[0] == SDEP_TYPEBYTE_COMMAND | inputBuf[0] == SDEP_TYPEBYTE_RESPONSE | inputBuf[0] == SDEP_TYPEBYTE_ERROR | inputBuf[0] == SDEP_TYPEBYTE_ALERT))
 	{
 		inputBufPtr = 0;
+		error.cmdId = SDEP_ERRID_INVALIDCMD;
+		SDEP_SendMessage(&error);
 		return ERR_PARAM_COMMAND;
 	}
 
@@ -108,15 +151,16 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 	//Check CRC
 
 
-	uint8_t crc = 0;
-	for(int i = 0; i < 4+message->payloadSize; i++)
-	{
-		crc = CRC8(crc,inputBuf[i]);
-	}
+//	uint8_t crc = 0;
+//	for(int i = 0; i < 4+message->payloadSize; i++)
+//	{
+//		crc = CRC8(crc,inputBuf[i]);
+//	}
 
 	//uint8_t crc = getCRC(inputBuf,3+message->payloadSize);
-	if(crc != message->crc)
+	//if(crc != message->crc)
 	//if(SDEP_GetCRC(message->type, message->cmdId , message->payloadSize, message->payload) != message->crc)
+	if(SDEP_GetCRC(message) != message->crc)
 	{
 		message->type = 0;
 		message->payloadSize = 0;
@@ -124,13 +168,17 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 		message->crc = 0;
 		message->payload = 0;
 
+		error.cmdId = SDEP_ERRID_INVALIDCRC;
+		SDEP_SendMessage(&error);
+
 		if(inputBufPtr>=message->payloadSize)
 		{
-			inputBuf[0] = 0xFF; //make message invalid...
 			inputBufPtr = 0;
 		}
 		return ERR_PARAM_COMMAND;
 	}
+
+	inputBufPtr = 0;
 	return ERR_OK;
 }
 
@@ -148,6 +196,5 @@ uint8_t SDEP_Parse(void)
 uint8_t SDEP_Init(void)
 {
 	SDEPshellHandler_init();
-
 }
 

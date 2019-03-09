@@ -17,11 +17,25 @@ static CLS1_ConstStdIOType SDEP_ioNonPtr =
 	(CLS1_StdIO_In_FctType) SDEP_ShellReadChar, /* stdin */
 	(CLS1_StdIO_OutErr_FctType) SDEP_ShellSendChar, /* stdout */
 	(CLS1_StdIO_OutErr_FctType) SDEP_ShellSendChar, /* stderr */
-	CLS1_KeyPressed /* if input is not empty */
+	SDEP_ShellKeyPressed /* if input is not empty */
 };
 static CLS1_ConstStdIOTypePtr SDEP_io = &SDEP_ioNonPtr;
 
-static bool ioIsStd = true;
+static bool newSDEPshellMessage = false;
+
+
+uint8_t SDEP_HandleShellCMDs(void)
+{
+	uint8_t ch;
+	while(ShelltoSDEPBuf_NofElements())
+	{
+		ShelltoSDEPBuf_Get(&ch);
+		SDEP_SendChar(ch);
+	}
+
+	return ERR_OK;
+}
+
 
 uint8_t SDEP_SendData(const uint8_t *data, uint8_t size)
 {
@@ -74,19 +88,6 @@ uint8_t SDEP_SDEPtoShell(const uint8_t *str,uint8_t size)
 	return err;
 }
 
-//uint8_t SDEP_ShellToSDEP(const uint8_t *str)
-//{
-//	uint8_t err;
-//	while (*str != '\0')
-//	{
-//		err = ShelltoSDEPBuf_Put(*str++);
-//		if(err != ERR_OK)
-//		{
-//			return err;
-//		}
-//	}
-//	return err;
-//}
 
 uint8_t SDEP_ShellToSDEP(const uint8_t*str,uint8_t* size)
 {
@@ -118,6 +119,11 @@ void SDEP_ShellSendChar(uint8_t ch)
 	ShelltoSDEPBuf_Put(ch);
 }
 
+bool SDEP_ShellKeyPressed(void)
+{
+	return (bool)SDEPtoShellBuf_NofElements();
+}
+
 void SDEPshellHandler_init(void)
 {
 	Std_io = CLS1_GetStdio();
@@ -126,17 +132,18 @@ void SDEPshellHandler_init(void)
 void SDEPshellHandler_switchIOtoSDEPio(void)
 {
 	CLS1_SetStdio(SDEP_io);
-	ioIsStd = false;
+	newSDEPshellMessage = true;
 }
 
 void SDEPshellHandler_switchIOtoStdIO(void)
 {
 	CLS1_SetStdio(Std_io);
-	ioIsStd = true;
 }
 
-bool SDEPshellHandler_IOisStd(void)
+bool SDEPshellHandler_NewSDEPmessageAvail(void)
 {
-	return ioIsStd;
+	bool res = newSDEPshellMessage;
+	newSDEPshellMessage = false;
+	return res;
 }
 

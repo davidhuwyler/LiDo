@@ -36,21 +36,15 @@ static void SHELL_SwitchIOifNeeded(void)
 {
 	static TickType_t SDEPioTimer;
 	static bool SDEPioTimerStarted = false;
-	if (!SDEPshellHandler_IOisStd())
+	if(SDEPshellHandler_NewSDEPmessageAvail())
 	{
-		if (SDEPioTimerStarted)
-		{
-			if (xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300))
-			{
-				SDEPshellHandler_switchIOtoStdIO();
-				SDEPioTimerStarted = false;
-			}
-		}
-		else
-		{
-			SDEPioTimerStarted = true;
-			SDEPioTimer = xTaskGetTickCount();
-		}
+		SDEPioTimerStarted = true;
+		SDEPioTimer = xTaskGetTickCount();
+	}
+	else if(SDEPioTimerStarted && xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300))
+	{
+		SDEPshellHandler_switchIOtoStdIO();
+		SDEPioTimerStarted = false;
 	}
 }
 
@@ -63,10 +57,10 @@ static void SHELL_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
+	  SDEP_HandleShellCMDs();
 
 	  if(xTaskGetTickCount() - shellEnabledTimestamp > pdMS_TO_TICKS(2000))
 	  {

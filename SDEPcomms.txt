@@ -1,0 +1,5 @@
+SDEP Shell help:
+10 00 10 05 68 65 6C 70 0D CB
+
+SDEP SetName:
+10 11 00 06 4c 69 44 6f 30 31 C7
