@@ -16,6 +16,7 @@
 #include "FileSystem.h"
 #include "SDEP.h"
 #include "SDEPshellHandler.h"
+#include "AppDataFile.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -53,6 +54,7 @@ static void SHELL_task(void *param) {
   TickType_t xLastWakeTime;
   shellEnabledTimestamp = xTaskGetTickCount();
   FS_Init();
+  AppDataFile_Init();
 
   for(;;)
   {

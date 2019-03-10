@@ -1,5 +1,8 @@
 SDEP Shell help:
 10 00 10 05 68 65 6C 70 0D CB
 
-SDEP SetName:
-10 11 00 06 4c 69 44 6f 30 31 C7
+SDEP SetName ("LiDo01"):
+10 11 00 06 4c 69 44 6f 30 31 C7   --> Antwort 20 11 00 00 07
+
+SDEP GetName
+10 01 00 00 0C 			    

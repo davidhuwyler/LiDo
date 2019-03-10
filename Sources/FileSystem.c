@@ -426,6 +426,11 @@ uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io)
 	return ERR_OK;
 }
 
+lfs_t* FS_GetFileSystem(void)
+{
+	return &FS_lfs;
+}
+
 uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 {
 	lfs_file_t file;
