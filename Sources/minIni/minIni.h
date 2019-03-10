@@ -20,7 +20,7 @@
 #define MININI_H
 
 
-//#define PORTABLE_STRNICMP
+#define PORTABLE_STRNICMP
 #define INI_REAL double
 //#define INI_READONLY
 //#define NDEBUG
@@ -69,6 +69,7 @@ int  ini_browse(INI_CALLBACK Callback, const void *UserData, const mTCHAR *Filen
 #endif /* INI_NOBROWSE */
 
 #if defined PORTABLE_STRNICMP
+#define TCHAR     char
 int strnicmp(const TCHAR *s1, const TCHAR *s2, size_t n);
 #endif /* PORTABLE_STRNICMP */
 
