@@ -31,5 +31,5 @@
 #define ini_atof(string)              (INI_REAL)strtod((string),NULL)
 #endif
 
-#include "minGlue-FatFs.h"
+#include "minGlue-LittleFS.h"
 

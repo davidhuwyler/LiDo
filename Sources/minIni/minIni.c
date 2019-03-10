@@ -50,7 +50,7 @@
   #define _tcsicmp  stricmp
   #define _tcslen   strlen
   #define _tcsncmp  strncmp
-  #define _tcsnicmp strnicmp
+  #define _tcsnicmp strncasecmp//strnicmp
   #define _tcsrchr  strrchr
   #define _tcstol   strtol
   #define _tcstod   strtod
@@ -799,7 +799,7 @@ static void long2str(long value, TCHAR *str)
 
   /* generate digits in reverse order */
   do {
-    n = (int)(value %% 10);              /* get next lowest digit */
+    n = (int)(value % 10);              /* get next lowest digit */
     str[i++] = (TCHAR)(ABS(n) + '0');   /* handle case of negative digit */
   } while (value /= 10);                /* delete the lowest digit */
   if (sign < 0)

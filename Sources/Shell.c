@@ -4,6 +4,7 @@
  *  Created on: Feb 21, 2019
  *      Author: dave
  */
+
 #include "Shell.h"
 #include "CLS1.h"
 #include "KIN1.h"
@@ -14,9 +15,10 @@
 #include "SPIF.h"
 #include "UTIL1.h"
 #include "FileSystem.h"
+#include "AppDataFile.h"
+
 #include "SDEP.h"
 #include "SDEPshellHandler.h"
-#include "AppDataFile.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -30,6 +32,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   RTC_ParseCommand,
   SPIF_ParseCommand,
   FS_ParseCommand,
+  AppData_ParseCommand,
   NULL /* sentinel */
 };
 

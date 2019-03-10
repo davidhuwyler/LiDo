@@ -19,25 +19,14 @@
 #ifndef MININI_H
 #define MININI_H
 
-%if defined(portableStrnicmp) & %portableStrnicmp='yes'
-#define PORTABLE_STRNICMP
-%endif
-%if defined(useReal) & %useReal='yes'
-#define INI_REAL double
-%endif
-%if defined(isReadOnly) & %isReadOnly='yes'
-#define INI_READONLY
-%endif
-%if defined(isNoDebug) & %isNoDebug='yes'
-#define NDEBUG
-%endif
-%if defined(useGlobalBuffer) & %useGlobalBuffer='yes'
-#define INI_USE_GLOBAL_BUFFER   1 /* 0: use stack for buffer; 1: use global memory for buffer */
-%else
-#define INI_USE_GLOBAL_BUFFER   0 /* 0: use stack for buffer; 1: use global memory for buffer */
-%endif
 
-#include "minGlue-FatFs.h"
+//#define PORTABLE_STRNICMP
+#define INI_REAL double
+//#define INI_READONLY
+//#define NDEBUG
+#define INI_USE_GLOBAL_BUFFER   1 /* 0: use stack for buffer; 1: use global memory for buffer */
+
+#include "minGlue-LittleFS.h"
 #include <stddef.h> /* for size_t */
 
 #if (defined _UNICODE || defined __UNICODE__ || defined UNICODE) && !defined MININI_ANSI
