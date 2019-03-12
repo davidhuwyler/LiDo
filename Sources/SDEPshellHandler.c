@@ -6,6 +6,7 @@
  */
 
 #include "SDEPshellHandler.h"
+#include "SDEP.h"
 #include "CLS1.h"
 #include "CDC1.h"
 #include "SDEPtoShellBuf.h"
@@ -26,14 +27,35 @@ static bool newSDEPshellMessage = false;
 
 uint8_t SDEP_HandleShellCMDs(void)
 {
-	uint8_t ch;
-	while(ShelltoSDEPBuf_NofElements())
-	{
-		ShelltoSDEPBuf_Get(&ch);
-		SDEP_SendChar(ch);
-	}
+	static SDEPmessage_t message;
+	static uint8_t outputBuf[SDEP_MESSAGE_MAX_PAYLOAD_BYTES];
 
-	return ERR_OK;
+	if(ShelltoSDEPBuf_NofElements())
+	{
+		message.payload = outputBuf;
+		uint8_t ch;
+		if(ShelltoSDEPBuf_NofElements()>SDEP_MESSAGE_MAX_PAYLOAD_BYTES)
+		{
+			message.payloadSize = SDEP_MESSAGE_MAX_PAYLOAD_BYTES | SDEP_PAYLOADBYTE_MORE_DATA_BIT;
+			for(int i = 0 ; i < SDEP_MESSAGE_MAX_PAYLOAD_BYTES ; i++)
+			{
+				ShelltoSDEPBuf_Get(message.payload+i);
+			}
+		}
+		else
+		{
+			message.payloadSize = ShelltoSDEPBuf_NofElements();
+			for(int i = 0 ; i < message.payloadSize ; i++)
+			{
+				ShelltoSDEPBuf_Get(message.payload+i);
+			}
+
+		}
+		message.cmdId = SDEP_CMDID_DEBUGCLI;
+		message.type = SDEP_TYPEBYTE_RESPONSE;
+		return SDEP_SendMessage(&message);
+	}
+	return ERR_RXEMPTY;
 }
 
 

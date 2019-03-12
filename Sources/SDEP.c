@@ -9,38 +9,13 @@
 #include "SDEP.h"
 #include "CRC8.h"
 #include "SDEPshellHandler.h"
+#include "AppDataFile.h"
 
 
-#define SDEP_TYPEBYTE_COMMAND  	0x10
-#define SDEP_TYPEBYTE_RESPONSE  0x20
-#define SDEP_TYPEBYTE_ALERT  	0x40
-#define SDEP_TYPEBYTE_ERROR  	0x80
-#define SDEP_CMDID_GETNAME		0x0001
-#define SDEP_CMDID_SETNAME		0x0011
-#define SDEP_CMDID_DEBUGCLI		0x1000
 
-#define SDEP_ERRID_INVALIDCMD		0x0001
-#define SDEP_ERRID_INVALIDPAYLOAD	0x0003
-#define SDEP_ERRID_INVALIDCRC		0x0005
-
-
-typedef struct
-{
-	uint8_t  type;
-	uint16_t cmdId;
-	uint8_t  payloadSize;
-	uint8_t* payload;
-	uint8_t  crc;
-} SDEPmessage_t;
 
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
-
-#define SDEP_LIDO_NAMEBUFFER_SIZE 30
-#define SDEP_LIDO_IDBUFFER_SIZE 30
-
-static char liDoNameBuffer[SDEP_LIDO_NAMEBUFFER_SIZE];
-static char liDoIDBuffer[SDEP_LIDO_IDBUFFER_SIZE];
 
 static bool ongoingSDEPmessageProcessing = false;
 
@@ -64,25 +39,98 @@ uint8_t SDEP_SendMessage(SDEPmessage_t* response)
 	SDEP_SendChar(response->payloadSize);
 	SDEP_SendData(response->payload,response->payloadSize);
 	SDEP_SendChar(SDEP_GetCRC(response));
+	return ERR_OK;
 }
 
-uint8_t SDEP_ExecureCommand(SDEPmessage_t* message)
+uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 {
-	static uint8_t outputBuf[SDEP_MESSAGE_MAX_NOF_BYTES];
+	static uint8_t outputBuf[SDEP_MESSAGE_MAX_PAYLOAD_BYTES];
 	static SDEPmessage_t answer;
 	answer.type = SDEP_TYPEBYTE_RESPONSE;
-	answer.cmdId = message->cmdId;
+	answer.cmdId = command->cmdId;
+	answer.payload = outputBuf;
 
-	switch(message->cmdId)
+	int32_t sint32Param;
+	uint8_t uint8param;
+	*(command->payload + command->payloadSize)='\0'; //Add string termination (Overwrites CRC Byte)
+
+	switch(command->cmdId)
 	{
-	case SDEP_CMDID_GETNAME:
-		answer.payloadSize = 20;
-		answer.payload =liDoNameBuffer;
+	case SDEP_CMDID_GET_ID:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[1][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		answer.payloadSize = UTIL1_strlen(answer.payload);
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
-	case SDEP_CMDID_SETNAME:
-		UTIL1_strcpy(liDoNameBuffer,SDEP_LIDO_NAMEBUFFER_SIZE,message->payload);
+	case SDEP_CMDID_GET_NAME:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[0][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		answer.payloadSize = UTIL1_strlen(answer.payload);
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_VERSION:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[2][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		answer.payloadSize = UTIL1_strlen(answer.payload);
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_SAMPLE_INT:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
+		{
+			break;
+		}
+		answer.payload[0] = (uint8_t)  sint32Param;
+		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_EN_SAMPLE:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
+		{
+			break;
+		}
+		answer.payload[0] = (uint8_t)  sint32Param;
+		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_SET_ID:
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[1][0],command->payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_SET_NAME:
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[0][0],command->payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_SET_SAMPLE_INT:
+		uint8param = command->payload[0];
+		if(uint8param<1 ||uint8param>100)
+		{
+			break;
+		}
+		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0],answer.payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_SET_EN_SAMPLE:
+		uint8param = command->payload[0];
+		if(uint8param<0 ||uint8param>1)
+		{
+			break;
+		}
+		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],answer.payload);
 		answer.payloadSize = 0;
 		answer.payload =0;
 		SDEP_SendMessage(&answer);
@@ -90,7 +138,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* message)
 
 	case SDEP_CMDID_DEBUGCLI:
 		SDEPshellHandler_switchIOtoSDEPio();
-		SDEP_SDEPtoShell(message->payload,message->payloadSize);
+		SDEP_SDEPtoShell(command->payload,command->payloadSize);
 		return ERR_OK;
 
 	default:
@@ -101,6 +149,13 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* message)
 		SDEP_SendMessage(&answer);
 		return ERR_FAILED;
 	}
+
+	answer.type = SDEP_TYPEBYTE_ERROR;
+	answer.cmdId = SDEP_ERRID_INVALIDCMD;
+	answer.payloadSize = 0;
+	answer.payload = 0;
+	SDEP_SendMessage(&answer);
+	return ERR_FAILED;
 }
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {

@@ -44,28 +44,6 @@ int ini_fileClose(lfs_file_t *file)
 	return (lfs_file_close(FS_lfs, file) == 0);
 }
 
-int ini_fileRead( void *buffer, lfs_size_t size, lfs_file_t *file)
-{
-	lfs_t* FS_lfs = FS_GetFileSystem();
-	int32_t res = lfs_file_read(FS_lfs, file, buffer, size);
-	if(res >= 0)
-	{
-		return res;
-	}
-	return false;
-}
-
-int ini_fileWrite(void *buffer, lfs_file_t *file)
-{
-	lfs_t* FS_lfs = FS_GetFileSystem();
-	int32_t res = lfs_file_write(FS_lfs, file, buffer ,UTIL1_strlen(buffer));
-	if(res >= 0)
-	{
-		return res;
-	}
-	return false;
-}
-
 int ini_fileRemove(const char *filename)
 {
 	lfs_t* FS_lfs = FS_GetFileSystem();

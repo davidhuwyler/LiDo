@@ -11,20 +11,11 @@
 #define APPDATA_FILENAME "./appData.ini"
 #define APPDATA_SECTION "AppData"
 
-#define APPDATA_NOF_KEYS 5
-const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2] =
-{
-		{"LIDO_NAME","Lido01"},			//Name
-		{"LIDO_ID","00001"},			//ID
-		{"LIDO_VERSION","V0.1"},		//SoftwareVersion
-		{"SAMPLE_INTERVALL","1"},		//Sampleintervall [s]
-		{"SAMPLE_ENABLE","1"}			//Sample enable defines if the LiDo is sampling (1 = sampling)
-};
+
 
 #define DEFAULT_BOOL 0
 #define DEFAULT_INT 1000
 #define DEFAULT_STRING "-"
-#define APPDATA_FILE_NOF_LINES 4
 
 uint8_t AppDataFile_Init(void)
 {
@@ -51,24 +42,6 @@ uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
 
 uint8_t AppDataFile_CreateFile(const CLS1_StdIOType *io)
 {
-//	lfs_t* FS_lfs = FS_GetFileSystem();
-//	lfs_file_t file;
-//
-//	CLS1_SendStr((const unsigned char*) "Create appData file...\r\n",	io->stdOut);
-//	if (lfs_file_open(FS_lfs, &file, APPDATA_FILENAME, LFS_O_WRONLY | LFS_O_CREAT)< 0)
-//	{
-//		CLS1_SendStr((const unsigned char*) "*** Failed creating appData file!\r\n",io->stdErr);
-//		return ERR_FAILED;
-//	}
-//
-//	if (lfs_file_write(FS_lfs, &file, APPDATA_SECTION,UTIL1_strlen(APPDATA_SECTION)) < 0)
-//	{
-//		CLS1_SendStr((const unsigned char*) "*** Failed writing file!\r\n",	io->stdErr);
-//		(void) lfs_file_close(FS_lfs, &file);
-//		return ERR_FAILED;
-//	}
-//	lfs_file_close(FS_lfs, &file);
-
 	for(int i = 0 ; i < APPDATA_NOF_KEYS ; i++)
 	{
 		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[i][0],APPDATA_KEYS_AND_DEV_VALUES[i][1]);
