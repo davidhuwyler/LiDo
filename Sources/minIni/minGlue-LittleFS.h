@@ -39,8 +39,8 @@ int ini_fileSeek(lfs_file_t *file ,unsigned long* pos);
 #define ini_openread(filename,file)   (ini_fileReadOpen((file), (filename)))
 #define ini_openwrite(filename,file)  (ini_fileWriteOpen((file), (filename)))
 #define ini_close(file)               (ini_fileClose(file))
-#define ini_read(buffer,size,file)    (ini_fileRead((buffer), (size),(file)))
-#define ini_write(buffer,file)        (ini_fileWrite((buffer), (file)))
+#define ini_read(buffer,size,file)    FS_gets((buffer), (size),(file))
+#define ini_write(buffer,file)        FS_puts((buffer), (file))
 #define ini_remove(filename)          (ini_fileRemove(filename))
 
 #define INI_FILEPOS                   unsigned long//DWORD

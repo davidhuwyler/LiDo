@@ -78,6 +78,132 @@ const struct lfs_config FS_cfg = {
 		.lookahead = 128,
 };
 
+
+/*-----------------------------------------------------------------------*/
+/* Get a string from the file
+ * (ported from FatFS function: f_gets())
+/*-----------------------------------------------------------------------*/
+
+char* FS_gets (
+  char* buff,  /* Pointer to the string buffer to read */
+  int len,      /* Size of string buffer (characters) */
+  lfs_file_t* fp       /* Pointer to the file object */
+)
+{
+  int n = 0;
+  char c, *p = buff;
+  byte s[2];
+  uint32_t rc;
+  while (n < len - 1) { /* Read characters until buffer gets filled */
+    rc = lfs_file_read(&FS_lfs,fp,s,1);
+    if (rc != 1) break;
+    c = s[0];
+
+    if (c == '\r') continue; /* Strip '\r' */
+    *p++ = c;
+    n++;
+    if (c == '\n') break;   /* Break on EOL */
+  }
+  *p = 0;
+  return n ? buff : 0;      /* When no data read (eof or error), return with error. */
+}
+
+/*-----------------------------------------------------------------------*/
+/* Put a character to the file
+ * (ported from FatFS)
+/*-----------------------------------------------------------------------*/
+
+typedef struct {
+  lfs_file_t* fp ;
+  int idx, nchr;
+  byte buf[64];
+} putbuff;
+
+
+static
+void putc_bfd (
+  putbuff* pb,
+  char c
+)
+{
+  uint32_t bw;
+  int32_t i;
+
+  if (c == '\n') {  /* LF -> CRLF conversion */
+    putc_bfd(pb, '\r');
+  }
+
+  i = pb->idx;  /* Buffer write index (-1:error) */
+  if (i < 0) return;
+
+  pb->buf[i++] = (byte)c;
+
+  if (i >= (int)(sizeof pb->buf) - 3) { /* Write buffered characters to the file */
+	bw = lfs_file_write(&FS_lfs,pb->fp, pb->buf,(uint32_t)i);
+    i = (bw == (uint32_t)i) ? 0 : -1;
+  }
+  pb->idx = i;
+  pb->nchr++;
+}
+
+
+
+int FS_putc (
+  char c,  /* A character to be output */
+  lfs_file_t* fp   /* Pointer to the file object */
+)
+{
+  putbuff pb;
+  uint32_t nw;
+
+
+  pb.fp = fp;     /* Initialize output buffer */
+  pb.nchr = pb.idx = 0;
+
+  putc_bfd(&pb, c); /* Put a character */
+
+
+  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
+
+  if (   pb.idx >= 0  /* Flush buffered characters to the file */
+    && nw>=0
+    && (uint32_t)pb.idx == nw) return pb.nchr;
+  return -1;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Put a string to the file
+ * (ported from FatFS function: f_puts())                                            */
+/*-----------------------------------------------------------------------*/
+
+
+int FS_puts (
+  const char* str, /* Pointer to the string to be output */
+  lfs_file_t* fp       /* Pointer to the file object */
+)
+{
+  putbuff pb;
+  uint32_t nw;
+
+
+  pb.fp = fp;       /* Initialize output buffer */
+  pb.nchr = pb.idx = 0;
+
+  while (*str)      /* Put the string */
+    putc_bfd(&pb, *str++);
+
+  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
+
+  if (   pb.idx >= 0    /* Flush buffered characters to the file */
+    && nw>=0
+    && (uint32_t)pb.idx == nw) return pb.nchr;
+  return -1;
+}
+
+
 uint8_t FS_Format(CLS1_ConstStdIOType *io)
 {
 	int res;

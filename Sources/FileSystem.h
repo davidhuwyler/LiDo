@@ -21,4 +21,9 @@ uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io);
 uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io);
 
 
+//Functions ported from FatFS
+char* FS_gets ( char* buff,int len, lfs_file_t* fp);
+int FS_putc (char c, lfs_file_t* fp);
+int FS_puts (const char* str, lfs_file_t* fp);
+
 #endif /* SOURCES_FILESYSTEM_H_ */
