@@ -42,11 +42,22 @@ uint8_t AppDataFile_Init(void)
 
 uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf ,size_t bufSize)
 {
-	if(ini_gets(APPDATA_SECTION, key, DEFAULT_STRING, valueBuf, bufSize, APPDATA_FILENAME) == 0)
+	SemaphoreHandle_t fileSema;
+	FS_GetFileAccessSemaphore(&fileSema);
+	if(xSemaphoreTake(fileSema,pdMS_TO_TICKS(500)))
 	{
-		return ERR_FAILED;
+		if(ini_gets(APPDATA_SECTION, key, DEFAULT_STRING, valueBuf, bufSize, APPDATA_FILENAME) == 0)
+		{
+			xSemaphoreGive(fileSema);
+			return ERR_FAILED;
+		}
+		xSemaphoreGive(fileSema);
+		return ERR_OK;
 	}
-	return ERR_OK;
+	else
+	{
+		return ERR_BUSY;
+	}
 }
 uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall)
 {
@@ -69,14 +80,23 @@ bool AppDataFile_GetSamplingEnabled(void)
 
 uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
 {
-	if(ini_puts(APPDATA_SECTION, key, value, APPDATA_FILENAME) == 0)
+	SemaphoreHandle_t fileSema;
+	FS_GetFileAccessSemaphore(&fileSema);
+	if(xSemaphoreTake(fileSema,pdMS_TO_TICKS(500)))
 	{
-		return ERR_FAILED;
+		if(ini_puts(APPDATA_SECTION, key, value, APPDATA_FILENAME) == 0)
+		{
+			xSemaphoreGive(fileSema);
+			return ERR_FAILED;
+		}
+		xSemaphoreGive(fileSema);
+		AppDataFile_UpdateRAMvariables();
+		return ERR_OK;
 	}
-
-	AppDataFile_UpdateRAMvariables();
-
-	return ERR_OK;
+	else
+	{
+		return ERR_BUSY;
+	}
 }
 
 uint8_t AppDataFile_CreateFile(const CLS1_StdIOType *io)

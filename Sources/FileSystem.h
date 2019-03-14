@@ -12,16 +12,18 @@
 #include <stdbool.h>
 #include "CLS1.h"
 #include "littleFS/lfs.h"
+#include "Application.h"
 
 lfs_t* FS_GetFileSystem(void);
 uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
 uint8_t FS_Init(void);
+void FS_GetFileAccessSemaphore(SemaphoreHandle_t* sema);
 
 uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofBytes, CLS1_ConstStdIOType *io);
 uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io);
 uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io);
 uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io);
-
+uint8_t FS_writeLiDoSample(liDoSample_t *sample);
 
 //Functions ported from FatFS
 char* FS_gets ( char* buff,int len, lfs_file_t* fp);

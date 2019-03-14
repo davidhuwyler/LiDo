@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define LIDO_SAMPLE_SIZE 22
 typedef struct
 {
 	int32_t  unixTimeStamp;
@@ -25,9 +26,9 @@ typedef struct
 	int8_t   accelY;
 	int8_t   accelZ;
 	uint8_t	 temp;
-	bool	 userButtonMarker;
 	uint8_t	 crc;
 } liDoSample_t;
+
 
 void APP_Run(void);
 uint8_t APP_getCurrentSample(liDoSample_t* curSample);

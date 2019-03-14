@@ -22,19 +22,58 @@
 #include "CRC8.h"
 #include "RTC1.h"
 
-static liDoSample_t sample;
 static SemaphoreHandle_t sampleSemaphore;
+
+
+uint8_t APP_getCurrentSample(liDoSample_t* sample)
+{
+	  LightChannels_t light;
+	  AccelAxis_t accelAndTemp;
+	  int32_t unixTimestamp;
+	  if(xSemaphoreTake(sampleSemaphore,pdMS_TO_TICKS(500)))
+	  {
+		  LED1_Neg();
+		  RTC_getTimeUnixFormat(&unixTimestamp);
+		  sample->unixTimeStamp = unixTimestamp;
+		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank1_X_Y_Z_IR);
+		  sample->lightChannelX = light.xChannelValue;
+		  sample->lightChannelY = light.yChannelValue;
+		  sample->lightChannelZ = light.zChannelValue;
+		  sample->lightChannelIR = light.nChannelValue;
+		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank0_X_Y_B_B);
+		  sample->lightChannelB440 = light.nChannelValue;
+		  sample->lightChannelB490 = light.zChannelValue;
+		  AccelSensor_getValues(&accelAndTemp);
+		  sample->accelX = accelAndTemp.xValue;
+		  sample->accelY = accelAndTemp.yValue;
+		  sample->accelZ = accelAndTemp.zValue;
+		  if(ExtInt_UI_BTN_GetVal() == false)
+		  {
+			  sample->temp = accelAndTemp.temp | 0x80;
+		  }
+		  else
+		  {
+			  sample->temp = accelAndTemp.temp;
+		  }
+		  crc8_liDoSample(sample);
+		  xSemaphoreGive(sampleSemaphore);
+		  return ERR_OK;
+	  }
+	  else
+	  {
+		  return ERR_FAILED;
+	  }
+}
+
 
 static void APP_main_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
-  LightChannels_t light;
-  AccelAxis_t accelAndTemp;
-  int32_t unixTimestamp;
+  liDoSample_t sample;
   uint8_t samplingIntervall;
 
   sampleSemaphore = xSemaphoreCreateBinary();
-
+  xSemaphoreGive(sampleSemaphore);
   LightSensor_init();
   AccelSensor_init();
   for(;;)
@@ -42,32 +81,8 @@ static void APP_main_task(void *param) {
 	  xLastWakeTime = xTaskGetTickCount();
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
-		  xSemaphoreTake(sampleSemaphore,pdMS_TO_TICKS(20));
-		  LED1_Neg();
-		  RTC_getTimeUnixFormat(&unixTimestamp);
-		  sample.unixTimeStamp = unixTimestamp;
-		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank1_X_Y_Z_IR);
-		  sample.lightChannelX = light.xChannelValue;
-		  sample.lightChannelY = light.yChannelValue;
-		  sample.lightChannelZ = light.zChannelValue;
-		  sample.lightChannelIR = light.nChannelValue;
-		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank0_X_Y_B_B);
-		  sample.lightChannelB440 = light.nChannelValue;
-		  sample.lightChannelB490 = light.zChannelValue;
-		  AccelSensor_getValues(&accelAndTemp);
-		  sample.accelX = accelAndTemp.xValue;
-		  sample.accelY = accelAndTemp.yValue;
-		  sample.accelZ = accelAndTemp.zValue;
-		  if(ExtInt_UI_BTN_GetVal() == false)
-		  {
-			  sample.temp = accelAndTemp.temp | 0x80;
-		  }
-		  else
-		  {
-			  sample.temp = accelAndTemp.temp;
-		  }
-		  crc8_liDoSample(&sample);
-		  xSemaphoreGive(sampleSemaphore);
+		  APP_getCurrentSample(&sample);
+		  FS_writeLiDoSample(&sample);
 	  }
 
 	  if(DebugWaitOnStartPin_GetVal())
@@ -80,14 +95,7 @@ static void APP_main_task(void *param) {
   } /* for */
 }
 
-uint8_t APP_getCurrentSample(liDoSample_t* curSample)
-{
-	if ( xSemaphoreTake(sampleSemaphore, pdMS_TO_TICKS(500)) == pdTRUE)
-	{
-		*curSample = sample;
-		xSemaphoreGive(sampleSemaphore);
-	}
-}
+
 
 void APP_Run(void) {
 

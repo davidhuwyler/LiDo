@@ -56,7 +56,6 @@ typedef struct
 #define SDEP_ERRID_INVALIDPAYLOAD	0x0003 //Done
 #define SDEP_ERRID_INVALIDCRC		0x0005 //Done
 
-
 uint8_t SDEP_Parse(void);
 uint8_t SDEP_Init(void);
 uint8_t SDEP_SendMessage(SDEPmessage_t* response);

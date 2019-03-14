@@ -17,7 +17,7 @@
 static CLS1_ConstStdIOTypePtr Std_io;
 static CLS1_ConstStdIOType SDEP_ShellioNonPtr =
 {
-	(CLS1_StdIO_In_FctType) SDEPio_ShellReadChar, /* stdin */
+	(CLS1_StdIO_In_FctType) 	SDEPio_ShellReadChar, /* stdin */
 	(CLS1_StdIO_OutErr_FctType) SDEPio_ShellSendChar, /* stdout */
 	(CLS1_StdIO_OutErr_FctType) SDEPio_ShellSendChar, /* stderr */
 	SDEPio_ShellKeyPressed /* if input is not empty */
@@ -26,7 +26,7 @@ static CLS1_ConstStdIOTypePtr SDEP_Shellio = &SDEP_ShellioNonPtr;
 
 static CLS1_ConstStdIOType SDEP_FileioNonPtr =
 {
-	(CLS1_StdIO_In_FctType) SDEPio_FileReadChar, /* stdin */
+	(CLS1_StdIO_In_FctType) 	SDEPio_FileReadChar, /* stdin */
 	(CLS1_StdIO_OutErr_FctType) SDEPio_FileSendChar, /* stdout */
 	(CLS1_StdIO_OutErr_FctType) SDEPio_FileSendChar, /* stderr */
 	SDEPio_FileKeyPressed /* if input is not empty */
@@ -271,6 +271,3 @@ bool SDEPio_NewSDEPmessageAvail(void)
 	newSDEPshellMessage = false;
 	return res;
 }
-
-
-

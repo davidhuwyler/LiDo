@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include "FileSystem.h"
-#include "littleFS/lfs.h"
+//#include "littleFS/lfs.h"
 #include "CLS1.h"
 
 #define APPDATA_NOF_KEYS 5
