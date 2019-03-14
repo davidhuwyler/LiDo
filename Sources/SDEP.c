@@ -4,41 +4,26 @@
  *  Created on: Mar 4, 2019
  *      Author: dave
  */
-
-
 #include "SDEP.h"
 #include "CRC8.h"
-#include "SDEPshellHandler.h"
+#include "SDEPioHandler.h"
 #include "AppDataFile.h"
-
-
-
+#include "RTC.h"
+#include "FileSystem.h"
 
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
 
 static bool ongoingSDEPmessageProcessing = false;
 
-//uint8_t SDEP_GetCRC(uint8_t typeByte, uint16 command, uint8_t payloadSize,const unsigned char *payload)
-uint8_t SDEP_GetCRC(SDEPmessage_t* message)
-{
-	uint8_t crc,seed = 0;
-	crc = crc8_bytecalc(message->type,&seed);
-	crc = crc8_bytecalc((uint8_t)message->cmdId,&seed);
-	crc = crc8_bytecalc((uint8_t)(message->cmdId>>8),&seed);
-	crc = crc8_bytecalc(message->payloadSize,&seed);
-	crc = crc8_messagecalc((unsigned char *)message->payload,message->payloadSize,&seed);
-	return crc;
-}
-
 uint8_t SDEP_SendMessage(SDEPmessage_t* response)
 {
-	SDEP_SendChar(response->type);
-	SDEP_SendChar((uint8_t)response->cmdId);
-	SDEP_SendChar((uint8_t)(response->cmdId>>8));
-	SDEP_SendChar(response->payloadSize);
-	SDEP_SendData(response->payload,response->payloadSize);
-	SDEP_SendChar(SDEP_GetCRC(response));
+	SDEPio_SendChar(response->type);
+	SDEPio_SendChar((uint8_t)response->cmdId);
+	SDEPio_SendChar((uint8_t)(response->cmdId>>8));
+	SDEPio_SendChar(response->payloadSize);
+	SDEPio_SendData(response->payload,response->payloadSize);
+	SDEPio_SendChar(crc8_SDEPcrc(response));
 	return ERR_OK;
 }
 
@@ -52,6 +37,9 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 
 	int32_t sint32Param;
 	uint8_t uint8param;
+	liDoSample_t sample;
+	CLS1_ConstStdIOTypePtr io;
+
 	*(command->payload + command->payloadSize)='\0'; //Add string termination (Overwrites CRC Byte)
 
 	switch(command->cmdId)
@@ -74,6 +62,52 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+	case SDEP_CMDID_GET_SAMPLE:
+		APP_getCurrentSample(&sample);
+		answer.payload[0] = (uint8_t)sample.unixTimeStamp;
+		answer.payload[1] = (uint8_t)(sample.unixTimeStamp>>8);
+		answer.payload[2] = (uint8_t)(sample.unixTimeStamp>>16);
+		answer.payload[3] = (uint8_t)(sample.unixTimeStamp>>24);
+		answer.payload[4] = (uint8_t)sample.lightChannelX;
+		answer.payload[5] = (uint8_t)(sample.lightChannelX>>8);
+		answer.payload[6] = (uint8_t)sample.lightChannelY;
+		answer.payload[7] = (uint8_t)(sample.lightChannelY>>8);
+		answer.payload[8] = (uint8_t)sample.lightChannelZ;
+		answer.payload[9] = (uint8_t)(sample.lightChannelZ>>8);
+		answer.payload[10] = (uint8_t)sample.lightChannelIR;
+		answer.payload[11] = (uint8_t)(sample.lightChannelIR>>8);
+		answer.payload[12] = (uint8_t)sample.lightChannelB440;
+		answer.payload[13] = (uint8_t)(sample.lightChannelB440>>8);
+		answer.payload[14] = (uint8_t)sample.lightChannelB490;
+		answer.payload[15] = (uint8_t)(sample.lightChannelB490>>8);
+		answer.payload[16] = (uint8_t)sample.accelX;
+		answer.payload[17] = (uint8_t)sample.accelY;
+		answer.payload[18] = (uint8_t)sample.accelZ;
+		answer.payload[19] = (uint8_t)sample.temp;
+		answer.payload[20] = (uint8_t)sample.crc;
+		answer.payloadSize = 21;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_FILELIST:
+	{
+		SDEPio_getSDEPfileIO(&io);
+		FS_FileList(NULL,io);
+		SDEPio_HandleFileCMDs(SDEP_CMDID_GET_FILELIST);
+		return ERR_OK;
+	}
+
+	case SDEP_CMDID_GET_FILE:
+	{
+		SDEPio_getSDEPfileIO(&io);
+		SDEPio_SetReadFileCMD(command->payload);
+		if(FS_ReadFile(command->payload,true,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) == ERR_FAILED)
+		{
+			break;
+		}
+		return ERR_OK;
+	}
+
 	case SDEP_CMDID_GET_SAMPLE_INT:
 		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
 		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
@@ -82,6 +116,16 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		}
 		answer.payload[0] = (uint8_t)  sint32Param;
 		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_RTC:
+		RTC_getTimeUnixFormat(&sint32Param);
+		answer.payload[0] = (uint8_t) sint32Param;
+		answer.payload[1] = (uint8_t) (sint32Param>>8);
+		answer.payload[2] = (uint8_t) (sint32Param>>16);
+		answer.payload[3] = (uint8_t) (sint32Param>>24);
+		answer.payloadSize = 4;
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
@@ -123,6 +167,17 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+	case SDEP_CMDID_SET_RTC:
+		sint32Param  = command->payload[0];
+		sint32Param |= command->payload[1]<<8 ;
+		sint32Param |= command->payload[2]<<16 ;
+		sint32Param |= command->payload[3]<<24 ;
+		RTC_setTimeUnixFormat(sint32Param);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
 	case SDEP_CMDID_SET_EN_SAMPLE:
 		uint8param = command->payload[0];
 		if(uint8param<0 ||uint8param>1)
@@ -136,9 +191,19 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+	case SDEP_CMDID_DELETE_FILE:
+		if(FS_RemoveFile(command->payload,NULL) != ERR_OK)
+		{
+			break;
+		}
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
 	case SDEP_CMDID_DEBUGCLI:
-		SDEPshellHandler_switchIOtoSDEPio();
-		SDEP_SDEPtoShell(command->payload,command->payloadSize);
+		SDEPio_switchIOtoSDEPio();
+		SDEPio_SDEPtoShell(command->payload,command->payloadSize);
 		return ERR_OK;
 
 	default:
@@ -178,7 +243,7 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 		return ERR_BUSY;
 	}
 
-	while(SDEP_ReadChar(&inputBuf[inputBufPtr]) == ERR_OK && inputBufPtr<=SDEP_MESSAGE_MAX_NOF_BYTES)
+	while(SDEPio_ReadChar(&inputBuf[inputBufPtr]) == ERR_OK && inputBufPtr<=SDEP_MESSAGE_MAX_NOF_BYTES)
 	{
 		inputBufPtr++;
 	}
@@ -215,7 +280,7 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 	//uint8_t crc = getCRC(inputBuf,3+message->payloadSize);
 	//if(crc != message->crc)
 	//if(SDEP_GetCRC(message->type, message->cmdId , message->payloadSize, message->payload) != message->crc)
-	if(SDEP_GetCRC(message) != message->crc)
+	if(crc8_SDEPcrc(message) != message->crc)
 	{
 		message->type = 0;
 		message->payloadSize = 0;
@@ -250,6 +315,6 @@ uint8_t SDEP_Parse(void)
 
 uint8_t SDEP_Init(void)
 {
-	SDEPshellHandler_init();
+	SDEPio_init();
 }
 

@@ -16,9 +16,10 @@
 #include "UTIL1.h"
 #include "FileSystem.h"
 #include "AppDataFile.h"
-
+#include "TmDt1.h"
+#include "WAIT1.h"
 #include "SDEP.h"
-#include "SDEPshellHandler.h"
+#include "SDEPioHandler.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -30,6 +31,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   LightSensor_ParseCommand,
   AccelSensor_ParseCommand,
   RTC_ParseCommand,
+  TmDt1_ParseCommand,
   SPIF_ParseCommand,
   FS_ParseCommand,
   AppData_ParseCommand,
@@ -40,14 +42,14 @@ static void SHELL_SwitchIOifNeeded(void)
 {
 	static TickType_t SDEPioTimer;
 	static bool SDEPioTimerStarted = false;
-	if(SDEPshellHandler_NewSDEPmessageAvail())
+	if(SDEPio_NewSDEPmessageAvail())
 	{
 		SDEPioTimerStarted = true;
 		SDEPioTimer = xTaskGetTickCount();
 	}
 	else if(SDEPioTimerStarted && xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300))
 	{
-		SDEPshellHandler_switchIOtoStdIO();
+		SDEPio_switchIOtoStdIO();
 		SDEPioTimerStarted = false;
 	}
 }
@@ -65,7 +67,8 @@ static void SHELL_task(void *param) {
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
-	  SDEP_HandleShellCMDs();
+	  SDEPio_HandleShellCMDs();
+	  SDEPio_HandleFileCMDs(0);
 
 	  if(xTaskGetTickCount() - shellEnabledTimestamp > pdMS_TO_TICKS(2000))
 	  {
@@ -73,12 +76,12 @@ static void SHELL_task(void *param) {
 		  LowPower_EnableStopMode();
 		  vTaskSuspend(shellTaskHandle);
 #elif 1
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(5));
 #endif
 	  }
 	  else
 	  {
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(5));
 	  }
   } /* for */
 }

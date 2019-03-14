@@ -48,9 +48,9 @@ void LightSensor_init(void)
 {
 	//Reset Sensor
 	LightSensResetPin_ClrVal();
-	WAIT1_Waitms(50);
+	//WAIT1_Waitms(50);
 	LightSensResetPin_SetVal();
-	WAIT1_Waitms(1);
+	//WAIT1_Waitms(1);
 
 
 //	if(GI2C1_ReadAddress(LIGHTSENSOR_I2C_ADDRESS, &i2cRegister, sizeof(i2cRegister), &i2cData, sizeof(i2cData)) != pdPASS)

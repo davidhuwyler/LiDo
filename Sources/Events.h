@@ -60,6 +60,8 @@
 #include "TmDt1.h"
 #include "DebugWaitOnStartPin.h"
 #include "BitIoLdd6.h"
+#include "ExtInt_UI_BTN.h"
+#include "ExtIntLdd3.h"
 #include "PIN_SPIF_PWR.h"
 #include "BitIoLdd7.h"
 #include "PIN_SPIF_RESET.h"
@@ -75,6 +77,7 @@
 #include "ASerialLdd1.h"
 #include "SDEPtoShellBuf.h"
 #include "ShelltoSDEPBuf.h"
+#include "FileToSDEPBuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -247,6 +250,20 @@ void SM1_OnFreeTxBuf(void);
 **         This event is available only when the <Interrupt
 **         service/event> property is enabled and the <Output buffer
 **         size> property is set to non-zero value.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void ExtInt_UI_BTN_OnInterrupt(void);
+/*
+** ===================================================================
+**     Event       :  ExtInt_UI_BTN_OnInterrupt (module Events)
+**
+**     Component   :  ExtInt_UI_BTN [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
 **     Parameters  : None
 **     Returns     : Nothing
 ** ===================================================================

@@ -12,6 +12,7 @@ void RTC_init(bool softInit);
 uint8_t RTC_setTime(LDD_RTC_TTime* rtcTime);
 void RTC_getTime(LDD_RTC_TTime* rtcTime);
 void RTC_getTimeUnixFormat(uint32_t* rtcTimeUnix);
+void RTC_setTimeUnixFormat(uint32_t rtcTimeUnix);
 uint8_t RTC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
 

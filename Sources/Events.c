@@ -284,6 +284,23 @@ void SM1_OnFreeTxBuf(void)
   /* Write your code here ... */
 }
 
+/*
+** ===================================================================
+**     Event       :  ExtInt_UI_BTN_OnInterrupt (module Events)
+**
+**     Component   :  ExtInt_UI_BTN [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void ExtInt_UI_BTN_OnInterrupt(void)
+{
+  /* Write your code here ... */
+}
+
 /* END Events */
 
 #ifdef __cplusplus

@@ -57,6 +57,8 @@
 #include "TmDt1.h"
 #include "DebugWaitOnStartPin.h"
 #include "BitIoLdd6.h"
+#include "ExtInt_UI_BTN.h"
+#include "ExtIntLdd3.h"
 #include "PIN_SPIF_PWR.h"
 #include "BitIoLdd7.h"
 #include "PIN_SPIF_RESET.h"
@@ -72,6 +74,7 @@
 #include "ASerialLdd1.h"
 #include "SDEPtoShellBuf.h"
 #include "ShelltoSDEPBuf.h"
+#include "FileToSDEPBuf.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"

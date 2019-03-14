@@ -12,8 +12,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-void APP_Run(void);
-
 typedef struct
 {
 	int32_t  unixTimeStamp;
@@ -28,8 +26,10 @@ typedef struct
 	int8_t   accelZ;
 	uint8_t	 temp;
 	bool	 userButtonMarker;
+	uint8_t	 crc;
 } liDoSample_t;
 
-
+void APP_Run(void);
+uint8_t APP_getCurrentSample(liDoSample_t* curSample);
 
 #endif /* SOURCES_APPLICATION_H_ */

@@ -7,19 +7,37 @@
 
 #include "AppDataFile.h"
 #include "minIni/minIni.h"
+#include "UTIL1.h"
 
 #define APPDATA_FILENAME "./appData.ini"
 #define APPDATA_SECTION "AppData"
-
-
 
 #define DEFAULT_BOOL 0
 #define DEFAULT_INT 1000
 #define DEFAULT_STRING "-"
 
+static bool localSamplingEnabled = false;;
+static uint8_t localSampleIntervall;
+
+static void AppDataFile_UpdateRAMvariables()
+{
+	uint8_t buf[25];
+	const unsigned char *p;
+
+	//Update local localSampleIntervall
+	p = buf;
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], (uint8_t*)p ,25);
+	UTIL1_ScanDecimal8uNumber(&p, &localSampleIntervall);
+
+	//Update local localSamplingEnabled
+	p = buf;
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], (uint8_t*)p ,25);
+	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&localSamplingEnabled);
+}
+
 uint8_t AppDataFile_Init(void)
 {
-
+	AppDataFile_UpdateRAMvariables();
 }
 
 uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf ,size_t bufSize)
@@ -30,6 +48,24 @@ uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf ,size_t
 	}
 	return ERR_OK;
 }
+uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall)
+{
+	if(localSampleIntervall<1 || localSampleIntervall>100)
+	{
+		*sampleIntervall = 1;
+		return ERR_FAILED;
+	}
+	else
+	{
+		*sampleIntervall = localSampleIntervall;
+		return ERR_OK;
+	}
+}
+
+bool AppDataFile_GetSamplingEnabled(void)
+{
+	return localSamplingEnabled;
+}
 
 uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
 {
@@ -37,6 +73,9 @@ uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
 	{
 		return ERR_FAILED;
 	}
+
+	AppDataFile_UpdateRAMvariables();
+
 	return ERR_OK;
 }
 

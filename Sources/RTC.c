@@ -26,20 +26,18 @@ void RTC_getTime(LDD_RTC_TTime* rtcTime)
 
 void RTC_getTimeUnixFormat(uint32_t* rtcTimeUnix)
 {
-	LDD_RTC_TTime timeFromRTC;
-	RTC_getTime(&timeFromRTC);
-
 	TIMEREC time;
-	time.Hour = timeFromRTC.Hour;
-	time.Min = timeFromRTC.Minute;
-	time.Sec = timeFromRTC.Second;
-
 	DATEREC date;
-	date.Day = timeFromRTC.Day;
-	date.Month = timeFromRTC.Month;
-	date.Year = timeFromRTC.Year;
-
+	TmDt1_GetInternalRTCTimeDate(&time,&date);
 	*rtcTimeUnix = TmDt1_TimeDateToUnixSeconds(&time, &date, 0);
+}
+
+void RTC_setTimeUnixFormat(uint32_t rtcTimeUnix)
+{
+	TIMEREC time;
+	DATEREC date;
+	TmDt1_UnixSecondsToTimeDate(rtcTimeUnix,0,&time,&date);
+	TmDt1_SetInternalRTCTimeDate(&time,&date);
 }
 
 void RTC_init(bool softInit)

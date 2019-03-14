@@ -380,6 +380,59 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 	return ERR_OK;
 }
 
+uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
+{
+	int res;
+	lfs_dir_t dir;
+	struct lfs_info info;
+
+	if (io == NULL)
+	{
+		return ERR_FAILED; /* listing a directory without an I/O channel does not make any sense */
+	}
+	if (!FS_isMounted)
+	{
+		CLS1_SendStr("File system is not mounted, mount it first.\r\n",
+				io->stdErr);
+		return ERR_FAILED;
+	}
+	if (path == NULL)
+	{
+		path = "/"; /* default path */
+	}
+	res = lfs_dir_open(&FS_lfs, &dir, path);
+	if (res != LFS_ERR_OK)
+	{
+		CLS1_SendStr("FAILED lfs_dir_open()!\r\n", io->stdErr);
+		return ERR_FAILED;
+	}
+	for (;;)
+	{
+		res = lfs_dir_read(&FS_lfs, &dir, &info);
+		if (res < 0)
+		{
+			CLS1_SendStr("FAILED lfs_dir_read()!\r\n", io->stdErr);
+			return ERR_FAILED;
+		}
+		if (res == 0)
+		{ /* no more files */
+			break;
+		}
+
+		if(info.type == LFS_TYPE_REG)
+		{
+			CLS1_SendStr(info.name, io->stdOut);
+			CLS1_SendStr("\r\n", io->stdOut);
+		}
+	} /* for */
+	res = lfs_dir_close(&FS_lfs, &dir);
+	if (res != LFS_ERR_OK) {CLS1_SendStr("FAILED lfs_dir_close()!\r\n", io->stdErr);
+		return ERR_FAILED;
+	}
+	return ERR_OK;
+}
+
+
 uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io)
 {
 	lfs_file_t fsrc, fdst;
@@ -467,6 +520,67 @@ uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 		return ERR_FAILED;
 	}
 	return ERR_OK;
+}
+
+uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofBytes, CLS1_ConstStdIOType *io)
+{
+	static lfs_file_t file;
+	static int32_t filePos;
+	size_t fileSize;
+
+	uint8_t buf[200];
+
+	if( nofBytes > 200)
+	{
+		nofBytes = 200;
+	}
+
+	if (lfs_file_open(&FS_lfs, &file, filePath, LFS_O_RDONLY) < 0)
+	{
+		return ERR_FAILED;
+	}
+
+	if(readFromBeginning)
+	{
+		lfs_file_rewind(&FS_lfs,&file);
+		filePos = 0;
+	}
+	else
+	{
+		lfs_file_seek(&FS_lfs,&file, filePos,LFS_SEEK_SET);
+	}
+
+	fileSize = lfs_file_size(&FS_lfs, &file);
+	filePos = lfs_file_tell(&FS_lfs, &file);
+	fileSize = fileSize - filePos;
+
+	if (fileSize < 0)
+	{
+		return ERR_FAILED;
+	}
+
+	if(fileSize > nofBytes)
+	{
+		if (lfs_file_read(&FS_lfs, &file, buf, nofBytes) < 0)
+		{
+			return ERR_FAILED;
+		}
+		lfs_file_close(&FS_lfs, &file);
+		CLS1_SendData(buf,nofBytes,io->stdErr);
+		filePos = filePos + nofBytes;
+		return ERR_OK;
+	}
+	else
+	{
+		if (lfs_file_read(&FS_lfs, &file, buf, fileSize) < 0)
+		{
+			return ERR_FAILED;
+		}
+		lfs_file_close(&FS_lfs, &file);
+		CLS1_SendData(buf,fileSize,io->stdErr);
+		filePos = filePos + fileSize;
+		return ERR_PARAM_SIZE; //EOF
+	}
 }
 
 static uint8_t readFromFile(void *hndl, uint32_t addr, uint8_t *buf,size_t bufSize)
