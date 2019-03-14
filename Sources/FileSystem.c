@@ -22,9 +22,9 @@ static bool FS_isMounted = FALSE;
 static lfs_t FS_lfs;
 static SemaphoreHandle_t fileSystemAccessSema;
 
-#define FILESYSTEM_READ_BUFFER_SIZE 256
-#define FILESYSTEM_PROG_BUFFER_SIZE 256
-#define FILESYSTEM_LOOKAHEAD_SIZE 128
+#define FILESYSTEM_READ_BUFFER_SIZE 256//256
+#define FILESYSTEM_PROG_BUFFER_SIZE 256//256
+#define FILESYSTEM_LOOKAHEAD_SIZE 128 //128
 
 static int block_device_read(const struct lfs_config *c, lfs_block_t block,	lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -672,16 +672,11 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 	}
 }
 
-/*
- * Write a LiDo Sample to the file with the name of the current date
- */
-uint8_t FS_writeLiDoSample(liDoSample_t *sample)
+
+uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 {
-	lfs_file_t file;
 	DATEREC date;
 	uint8_t fileNameBuf[20];
-	uint8_t lidoSampleBuf[LIDO_SAMPLE_SIZE];
-
 	TmDt1_GetDate(&date);
 	fileNameBuf[0] = '\0';
 	UTIL1_strcatNum16uFormatted(fileNameBuf, 15, date.Day, '0', 2);
@@ -693,12 +688,50 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample)
 
 	if(xSemaphoreTake(fileSystemAccessSema,pdMS_TO_TICKS(500)))
 	{
-		if (lfs_file_open(&FS_lfs, &file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)
+		if (lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)
 		{
 			xSemaphoreGive(fileSystemAccessSema);
 			return ERR_FAILED;
 		}
+		xSemaphoreGive(fileSystemAccessSema);
+		return ERR_OK;
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+}
 
+uint8_t FS_closeLiDoSampleFile(lfs_file_t* file)
+{
+	if(xSemaphoreTake(fileSystemAccessSema,pdMS_TO_TICKS(500)))
+	{
+		if(lfs_file_close(&FS_lfs, file) ==0)
+		{
+			xSemaphoreGive(fileSystemAccessSema);
+			return ERR_OK;
+		}
+		else
+		{
+			xSemaphoreGive(fileSystemAccessSema);
+			return ERR_FAILED;
+		}
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+}
+
+/*
+ * Write a LiDo Sample to the file with the name of the current date
+ */
+uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file)
+{
+	uint8_t lidoSampleBuf[LIDO_SAMPLE_SIZE];
+
+	if(xSemaphoreTake(fileSystemAccessSema,pdMS_TO_TICKS(500)))
+	{
 		lidoSampleBuf[0] = '@';		//SampleMarker
 		lidoSampleBuf[1] = (uint8_t)sample->unixTimeStamp;
 		lidoSampleBuf[2] = (uint8_t)(sample->unixTimeStamp>>8);
@@ -722,15 +755,12 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample)
 		lidoSampleBuf[20] = (uint8_t)sample->temp;
 		lidoSampleBuf[21] = (uint8_t)sample->crc;
 
-
-		if (lfs_file_write(&FS_lfs, &file, lidoSampleBuf,LIDO_SAMPLE_SIZE) < 0)
+		if (lfs_file_write(&FS_lfs, file, lidoSampleBuf,LIDO_SAMPLE_SIZE) < 0)
 		{
-			lfs_file_close(&FS_lfs, &file);
+			lfs_file_close(&FS_lfs, file);
 			xSemaphoreGive(fileSystemAccessSema);
 			return ERR_FAILED;
 		}
-		lfs_file_close(&FS_lfs, &file);
-
 		xSemaphoreGive(fileSystemAccessSema);
 		return ERR_OK;
 	}

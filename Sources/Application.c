@@ -21,9 +21,9 @@
 #include "ExtInt_UI_BTN.h"
 #include "CRC8.h"
 #include "RTC1.h"
+#include "TmDt1.h"
 
 static SemaphoreHandle_t sampleSemaphore;
-
 
 uint8_t APP_getCurrentSample(liDoSample_t* sample)
 {
@@ -65,24 +65,69 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 	  }
 }
 
+bool APP_newDay(void)
+{
+	 static DATEREC oldDate;
+	 DATEREC newDate;
+
+	 TmDt1_GetDate(&newDate);
+	 if(newDate.Day != oldDate.Day)
+	 {
+		 oldDate = newDate;
+		 return true;
+	 }
+	 return false;
+
+}
+
 
 static void APP_main_task(void *param) {
+  static bool fileIsOpen = false;
   (void)param;
   TickType_t xLastWakeTime;
   liDoSample_t sample;
   uint8_t samplingIntervall;
+  lfs_file_t sampleFile;
+
+
 
   sampleSemaphore = xSemaphoreCreateBinary();
   xSemaphoreGive(sampleSemaphore);
   LightSensor_init();
   AccelSensor_init();
+
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  if(AppDataFile_GetSamplingEnabled())
+
+
+	  //New Day: Make new File!
+	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
+	  {
+		  FS_closeLiDoSampleFile(&sampleFile);
+		  FS_openLiDoSampleFile(&sampleFile);
+	  }
+
+	  //OpenFile if needed
+	  if(AppDataFile_GetSamplingEnabled() && !fileIsOpen)
+	  {
+		  if(FS_openLiDoSampleFile(&sampleFile) == ERR_OK)
+		  {
+			  fileIsOpen = true;
+		  }
+	  }
+
+	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
 	  {
 		  APP_getCurrentSample(&sample);
-		  FS_writeLiDoSample(&sample);
+		  FS_writeLiDoSample(&sample,&sampleFile);
+	  }
+	  else if (fileIsOpen)
+	  {
+		  if(FS_closeLiDoSampleFile(&sampleFile) == ERR_OK)
+		  {
+			  fileIsOpen = false;
+		  }
 	  }
 
 	  if(DebugWaitOnStartPin_GetVal())

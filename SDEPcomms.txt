@@ -46,12 +46,14 @@ SDEP GET FileList
 SDEP GET File (appData.ini)
 10 05 00 0B 61 70 70 44 61 74 61 2e 69 6e 69 82
 
+SDEP Get File (01_01_2000.txt)
+10 05 00 0E 30 31 5f 30 31 5f 32 30 30 30 2e 74 78 74 13
+
 SDEP GET File (bench.txt)
 10 05 00 09 62 65 6e 63 68 2e 74 78 74 BE
 
 SDEP Remove File (bench.txt)
 10 02 01 09 62 65 6e 63 68 2e 74 78 74 35
-
 
 SDEP GetEnableSampling
 10 06 00 00 1A	
