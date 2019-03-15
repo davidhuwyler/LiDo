@@ -1153,6 +1153,7 @@ uint8_t FS_Init(void)
 	{
 		return ERR_FAILED;
 	}
+	//return ERR_OK;
 	return FS_Mount(NULL);
 }
 

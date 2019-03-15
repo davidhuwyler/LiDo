@@ -15,6 +15,7 @@
 #include "Shell.h"
 #include "RTC.h"
 #include "FileSystem.h"
+#include "UI.h"
 #include "DebugWaitOnStartPin.h"
 #include "SDEP.h"
 #include "AppDataFile.h"
@@ -24,6 +25,51 @@
 #include "TmDt1.h"
 
 static SemaphoreHandle_t sampleSemaphore;
+static bool setOneMarkerInLog = false;
+static bool toggleEnablingSampling = false;
+static bool requestForSoftwareReset = false;
+
+void APP_setMarkerInLog(void)
+{
+	setOneMarkerInLog = true;
+}
+
+void APP_toggleEnableSampling(void)
+{
+	toggleEnablingSampling = true;
+}
+
+void APP_requestForSoftwareReset(void)
+{
+	requestForSoftwareReset = true;
+}
+
+static void APP_toggleEnableSamplingIfRequested(void)
+{
+	if(toggleEnablingSampling)
+	{
+		toggleEnablingSampling = false;
+		if(AppDataFile_GetSamplingEnabled())
+		{
+			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
+		}
+		else
+		{
+			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
+		}
+	}
+}
+
+static void APP_softwareResetIfRequested(lfs_file_t* file)
+{
+	if(requestForSoftwareReset)
+	{
+		requestForSoftwareReset = false;
+		FS_closeLiDoSampleFile(file);
+		//TODO deinit Stuff...
+		KIN1_SoftwareReset();
+	}
+}
 
 uint8_t APP_getCurrentSample(liDoSample_t* sample)
 {
@@ -47,8 +93,9 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 		  sample->accelX = accelAndTemp.xValue;
 		  sample->accelY = accelAndTemp.yValue;
 		  sample->accelZ = accelAndTemp.zValue;
-		  if(ExtInt_UI_BTN_GetVal() == false)
+		  if(setOneMarkerInLog)
 		  {
+			  setOneMarkerInLog =false;
 			  sample->temp = accelAndTemp.temp | 0x80;
 		  }
 		  else
@@ -65,7 +112,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 	  }
 }
 
-bool APP_newDay(void)
+static bool APP_newDay(void)
 {
 	 static DATEREC oldDate;
 	 DATEREC newDate;
@@ -89,8 +136,6 @@ static void APP_main_task(void *param) {
   uint8_t samplingIntervall;
   lfs_file_t sampleFile;
 
-
-
   sampleSemaphore = xSemaphoreCreateBinary();
   xSemaphoreGive(sampleSemaphore);
   LightSensor_init();
@@ -100,7 +145,8 @@ static void APP_main_task(void *param) {
   {
 	  xLastWakeTime = xTaskGetTickCount();
 
-
+	  APP_softwareResetIfRequested(&sampleFile);
+	  APP_toggleEnableSamplingIfRequested();
 	  //New Day: Make new File!
 	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
@@ -140,8 +186,6 @@ static void APP_main_task(void *param) {
   } /* for */
 }
 
-
-
 void APP_Run(void) {
 
 	//EmercencyBreak: If LowPower went wrong...
@@ -154,8 +198,9 @@ void APP_Run(void) {
 	SHELL_Init();
 	RTC_init(1);
 	SDEP_Init();
+	UI_Init();
 
-	if (xTaskCreate(APP_main_task, "MainTask", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	if (xTaskCreate(APP_main_task, "MainTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}

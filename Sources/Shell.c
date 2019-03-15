@@ -88,7 +88,7 @@ static void SHELL_task(void *param) {
 
 void SHELL_Init(void) {
   CLS1_DefaultShellBuffer[0] = '\0';
-  if (xTaskCreate(SHELL_task, "Shell", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
+  if (xTaskCreate(SHELL_task, "Shell", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
   {
 	  for(;;){} /* error! probably out of memory */
   }

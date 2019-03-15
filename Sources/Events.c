@@ -38,6 +38,7 @@ extern "C" {
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
 #include "LowPower.h"
+#include "UI.h"
 
 /*
 ** ===================================================================
@@ -299,6 +300,18 @@ void SM1_OnFreeTxBuf(void)
 void ExtInt_UI_BTN_OnInterrupt(void)
 {
   /* Write your code here ... */
+	UI_ButtonCounter();
+//	PORTC_ISFR=0xFFFFFFFF;
+
+//	  if(PORTC_ISFR & PORT_ISFR_ISF(GPIO_PIN(5)))
+//	  {
+//	     printf("SW3 Pressed\n");
+//	  }
+//	  if(PORTC_ISFR & PORT_ISFR_ISF(GPIO_PIN(13)))
+//	  {
+//	     printf("SW4 Pressed\n");
+//	  }
+//	  PORTC_ISFR=0xFFFFFFFF;  //Clear Port C ISR flags
 }
 
 /* END Events */
