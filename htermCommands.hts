@@ -1,0 +1,92 @@
+<HtermSequenceFile>
+    <ItemList>
+        <SequenceItem name='SetName (&quot;LiDo01&quot;)'>
+            <description></description>
+            <sequence value="h[10] h[11] h[00] h[06] h[4C] h[69] h[44] h[6F] h[30] h[31] h[C7]" />
+        </SequenceItem>
+        <SequenceItem name='SetName (&quot;LiDo95&quot;)'>
+            <description></description>
+            <sequence value="h[10] h[11] h[00] h[06] h[4C] h[69] h[44] h[6F] h[39] h[35] h[66]" />
+        </SequenceItem>
+        <SequenceItem name='SetID (&quot;ABCDE&quot;)'>
+            <description></description>
+            <sequence value="h[10] h[10] h[00] h[05] h[41] h[42] h[43] h[44] h[45] h[CA]" />
+        </SequenceItem>
+        <SequenceItem name="SetSampleInt (5s)">
+            <description></description>
+            <sequence value="h[10] h[12] h[00] h[01] h[05] h[77]" />
+        </SequenceItem>
+        <SequenceItem name="SetSampleInt (1s)">
+            <description></description>
+            <sequence value="h[10] h[12] h[00] h[01] h[01] h[6B]" />
+        </SequenceItem>
+        <SequenceItem name="SetEnableSampling (true)">
+            <description></description>
+            <sequence value="h[10] h[14] h[00] h[01] h[01] h[1F]" />
+        </SequenceItem>
+        <SequenceItem name="SetEnableSampling (false)">
+            <description></description>
+            <sequence value="h[10] h[14] h[00] h[01] h[00] h[18]" />
+        </SequenceItem>
+        <SequenceItem name="SetRTC (1.1.2000 0:0:0)">
+            <description></description>
+            <sequence value="h[10] h[13] h[00] h[04] h[80] h[43] h[6D] h[38] h[B3]" />
+        </SequenceItem>
+        <SequenceItem name="GetName">
+            <description></description>
+            <sequence value="h[10] h[01] h[00] h[00] h[0C]" />
+        </SequenceItem>
+        <SequenceItem name="GetID">
+            <description></description>
+            <sequence value="h[10] h[00] h[00] h[00] h[67]" />
+        </SequenceItem>
+        <SequenceItem name="GetVersion">
+            <description></description>
+            <sequence value="h[10] h[02] h[00] h[00] h[B1]" />
+        </SequenceItem>
+        <SequenceItem name="GetSample">
+            <description></description>
+            <sequence value="h[10] h[03] h[00] h[00] h[DA]" />
+        </SequenceItem>
+        <SequenceItem name="GetFileList">
+            <description></description>
+            <sequence value="h[10] h[04] h[00] h[00] h[CC]" />
+        </SequenceItem>
+        <SequenceItem name="GetFIle (appData.ini)">
+            <description></description>
+            <sequence value="h[10] h[05] h[00] h[0B] h[61] h[70] h[70] h[44] h[61] h[74] h[61] h[2E] h[69] h[6E] h[69] h[82]" />
+        </SequenceItem>
+        <SequenceItem name="GetFile (01_01_2000.txt)">
+            <description></description>
+            <sequence value="h[10] h[05] h[00] h[0E] h[30] h[31] h[5F] h[30] h[31] h[5F] h[32] h[30] h[30] h[30] h[2E] h[74] h[78] h[74] h[13]" />
+        </SequenceItem>
+        <SequenceItem name="GetFile (bench.txt)">
+            <description></description>
+            <sequence value="h[10] h[05] h[00] h[09] h[62] h[65] h[6E] h[63] h[68] h[2E] h[74] h[78] h[74] h[BE]" />
+        </SequenceItem>
+        <SequenceItem name="GetEnableSampling">
+            <description></description>
+            <sequence value="h[10] h[06] h[00] h[00] h[1A]" />
+        </SequenceItem>
+        <SequenceItem name="GetSampleIntervall">
+            <description></description>
+            <sequence value="h[10] h[07] h[00] h[00] h[71]" />
+        </SequenceItem>
+        <SequenceItem name="GetRTC">
+            <description></description>
+            <sequence value="h[10] h[08] h[00] h[00] h[36]" />
+        </SequenceItem>
+        <SequenceItem name="Remove File (bench.txt)">
+            <description></description>
+            <sequence value="h[10] h[02] h[01] h[09] h[62] h[65] h[6E] h[63] h[68] h[2E] h[74] h[78] h[74] h[35]" />
+        </SequenceItem>
+        <SequenceItem name="Shell help">
+            <description></description>
+            <sequence value="h[10] h[00] h[10] h[05] h[68] h[65] h[6C] h[70] h[0D] h[CB]" />
+        </SequenceItem>
+        <SequenceItem name="Shell AppData print">
+            <description></description>
+            <sequence value="h[10] h[00] h[10] h[0E] h[41] h[70] h[70] h[44] h[61] h[74] h[61] h[20] h[70] h[72] h[69] h[6E] h[74] h[0D] h[16]" />
+        </SequenceItem>
+    </ItemList>
+</HtermSequenceFile>

@@ -452,6 +452,7 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 			if (res < 0)
 			{
 				CLS1_SendStr("FAILED lfs_dir_read()!\r\n", io->stdErr);
+				xSemaphoreGive(fileSystemAccessSema);
 				return ERR_FAILED;
 			}
 			if (res == 0)
@@ -471,7 +472,7 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 			xSemaphoreGive(fileSystemAccessSema);
 			return ERR_FAILED;
 		}
-
+		xSemaphoreGive(fileSystemAccessSema);
 		return ERR_OK;
 	}
 	else
