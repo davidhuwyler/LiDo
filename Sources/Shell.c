@@ -21,6 +21,8 @@
 #include "SDEP.h"
 #include "SDEPioHandler.h"
 #include "UI.h"
+#include "USB1.h"
+#include "CDC1.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -66,6 +68,8 @@ static void SHELL_Disable(void)
 	if(cnt==2)
 	{
 		UI_StopShellIndicator();
+		CDC1_Deinit();
+		USB1_Deinit();
 		LowPower_EnableStopMode();
 		vTaskSuspend(shellTaskHandle);
 	}
@@ -90,7 +94,6 @@ static void SHELL_task(void *param) {
 	  {
 		  SHELL_Disable();
 	  }
-
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);

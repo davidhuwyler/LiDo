@@ -45,7 +45,7 @@ void APP_requestForSoftwareReset(void)
 	requestForSoftwareReset = true;
 }
 
-static void APP_toggleEnableSamplingIfRequested(lfs_file_t* file,bool fileIsOpen)
+static void APP_toggleEnableSamplingIfRequested()
 {
 	if(toggleEnablingSampling)
 	{
@@ -128,7 +128,6 @@ static bool APP_newDay(void)
 		 return true;
 	 }
 	 return false;
-
 }
 
 
@@ -149,7 +148,7 @@ static void APP_main_task(void *param) {
 	  xLastWakeTime = xTaskGetTickCount();
 	  WatchDog_Kick(WatchDog_KickedByApplication_c);
 	  APP_softwareResetIfRequested(&sampleFile);
-	  APP_toggleEnableSamplingIfRequested(&sampleFile,fileIsOpen);
+	  APP_toggleEnableSamplingIfRequested();
 	  //New Day: Make new File!
 
 	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())

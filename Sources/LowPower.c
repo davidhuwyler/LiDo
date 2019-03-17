@@ -15,9 +15,6 @@
 #include "Events.h"
 #include "UI.h"
 
-#include "USB1.h"
-#include "CDC1.h"
-
 static bool stopModeAllowed = false;
 
 void LowPower_EnterLowpowerMode(void)
@@ -49,8 +46,6 @@ void LowPower_EnterLowpowerMode(void)
 void LowPower_EnableStopMode(void)
 {
 #ifdef CONFIG_ENABLE_STOPMODE
-	USB1_Deinit();
-	CDC1_Deinit();
 	stopModeAllowed = true;
 #else
 	stopModeAllowed = false;
