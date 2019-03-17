@@ -20,9 +20,11 @@
 #include "WAIT1.h"
 #include "SDEP.h"
 #include "SDEPioHandler.h"
+#include "UI.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
+static bool shellDisablingRequest = false;
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
@@ -54,6 +56,25 @@ static void SHELL_SwitchIOifNeeded(void)
 	}
 }
 
+//Function needs to be called 3times to
+//Disable the shell. This makes sure, the
+//Answer message got out before disabling
+//the Shell
+static void SHELL_Disable(void)
+{
+	static uint8_t cnt = 0;
+	if(cnt==2)
+	{
+		UI_StopShellIndicator();
+		LowPower_EnableStopMode();
+		vTaskSuspend(shellTaskHandle);
+	}
+	else
+	{
+		cnt++;
+	}
+}
+
 static void SHELL_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
@@ -64,25 +85,19 @@ static void SHELL_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
+
+	  if(shellDisablingRequest)
+	  {
+		  SHELL_Disable();
+	  }
+
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
 	  SDEPio_HandleShellCMDs();
 	  SDEPio_HandleFileCMDs(0);
 
-	  if(xTaskGetTickCount() - shellEnabledTimestamp > pdMS_TO_TICKS(2000))
-	  {
-#if 0
-		  LowPower_EnableStopMode();
-		  vTaskSuspend(shellTaskHandle);
-#elif 1
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(5));
-#endif
-	  }
-	  else
-	  {
-		  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(5));
-	  }
+	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
   } /* for */
 }
 
@@ -94,18 +109,14 @@ void SHELL_Init(void) {
   }
 }
 
-void SHELL_EnableShellFor20s(void)
+void SHELL_requestDisabling(void)
 {
-	//Cpu_SetClockConfiguration((LDD_TClockConfiguration)0);
-	LowPower_DisableStopMode();
-	shellEnabledTimestamp = xTaskGetTickCount();
-	xTaskResumeFromISR(shellTaskHandle);
-	//vTaskResume(shellTaskHandle);
+	shellDisablingRequest = true;
 }
 
-void SHELL_Disable(void)
+void SHELL_enable(void)
 {
-	shellEnabledTimestamp = xTaskGetTickCount() - pdMS_TO_TICKS(20001);
+	FRTOS1_xTaskResumeFromISR(shellTaskHandle);
 }
 
 

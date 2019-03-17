@@ -88,5 +88,9 @@
             <description></description>
             <sequence value="h[10] h[00] h[10] h[0E] h[41] h[70] h[70] h[44] h[61] h[74] h[61] h[20] h[70] h[72] h[69] h[6E] h[74] h[0D] h[16]" />
         </SequenceItem>
+        <SequenceItem name="CloseConnection">
+            <description></description>
+            <sequence value="h[10] h[00] h[20] h[00] h[C9]" />
+        </SequenceItem>
     </ItemList>
 </HtermSequenceFile>

@@ -10,6 +10,7 @@
 #include "AppDataFile.h"
 #include "RTC.h"
 #include "FileSystem.h"
+#include "Shell.h"
 
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
@@ -204,6 +205,13 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 	case SDEP_CMDID_DEBUGCLI:
 		SDEPio_switchIOtoSDEPio();
 		SDEPio_SDEPtoShell(command->payload,command->payloadSize);
+		return ERR_OK;
+
+	case SDEP_CMDID_CLOSE_CONN:
+		SHELL_requestDisabling();
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
 	default:

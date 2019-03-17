@@ -25,7 +25,9 @@ const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2] =
 
 uint8_t AppDataFile_Init(void);
 uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall);
+uint8_t AppDataFile_SetSampleIntervall(uint8_t sampleIntervall);
 bool AppDataFile_GetSamplingEnabled(void);
+void AppDataFile_SetSamplingEnables(bool samplingEnabled);
 uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf ,size_t bufSize);
 uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value);
 uint8_t AppData_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io);

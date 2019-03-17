@@ -64,3 +64,6 @@ SDEP GetSampleIntervall
 SDEP GetRTC
 10 08 00 00 36	  
 
+SDEP CloseConnection
+10 00 20 00 C9
+

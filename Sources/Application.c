@@ -23,6 +23,7 @@
 #include "CRC8.h"
 #include "RTC1.h"
 #include "TmDt1.h"
+#include "WatchDog.h"
 
 static SemaphoreHandle_t sampleSemaphore;
 static bool setOneMarkerInLog = false;
@@ -44,18 +45,21 @@ void APP_requestForSoftwareReset(void)
 	requestForSoftwareReset = true;
 }
 
-static void APP_toggleEnableSamplingIfRequested(void)
+static void APP_toggleEnableSamplingIfRequested(lfs_file_t* file,bool fileIsOpen)
 {
 	if(toggleEnablingSampling)
 	{
-		toggleEnablingSampling = false;
+        toggleEnablingSampling = false;
+
 		if(AppDataFile_GetSamplingEnabled())
 		{
 			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
+			//AppDataFile_SetSamplingEnables(false);
 		}
 		else
 		{
-			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
+            AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
+			//AppDataFile_SetSamplingEnables(true);
 		}
 	}
 }
@@ -76,9 +80,9 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 	  LightChannels_t light;
 	  AccelAxis_t accelAndTemp;
 	  int32_t unixTimestamp;
+
 	  if(xSemaphoreTake(sampleSemaphore,pdMS_TO_TICKS(500)))
 	  {
-		  LED1_Neg();
 		  RTC_getTimeUnixFormat(&unixTimestamp);
 		  sample->unixTimeStamp = unixTimestamp;
 		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank1_X_Y_Z_IR);
@@ -135,7 +139,6 @@ static void APP_main_task(void *param) {
   liDoSample_t sample;
   uint8_t samplingIntervall;
   lfs_file_t sampleFile;
-
   sampleSemaphore = xSemaphoreCreateBinary();
   xSemaphoreGive(sampleSemaphore);
   LightSensor_init();
@@ -144,10 +147,11 @@ static void APP_main_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-
+	  WatchDog_Kick(WatchDog_KickedByApplication_c);
 	  APP_softwareResetIfRequested(&sampleFile);
-	  APP_toggleEnableSamplingIfRequested();
+	  APP_toggleEnableSamplingIfRequested(&sampleFile,fileIsOpen);
 	  //New Day: Make new File!
+
 	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
 		  FS_closeLiDoSampleFile(&sampleFile);
@@ -165,6 +169,7 @@ static void APP_main_task(void *param) {
 
 	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
 	  {
+		  LED1_Neg();
 		  APP_getCurrentSample(&sample);
 		  FS_writeLiDoSample(&sample,&sampleFile);
 	  }
@@ -175,12 +180,6 @@ static void APP_main_task(void *param) {
 			  fileIsOpen = false;
 		  }
 	  }
-
-	  if(DebugWaitOnStartPin_GetVal())
-	  {
-		  SHELL_EnableShellFor20s();
-	  }
-
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
@@ -199,6 +198,7 @@ void APP_Run(void) {
 	RTC_init(1);
 	SDEP_Init();
 	UI_Init();
+	WatchDog_Init();
 
 	if (xTaskCreate(APP_main_task, "MainTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{

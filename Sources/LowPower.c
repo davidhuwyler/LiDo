@@ -11,6 +11,12 @@
 #include "LED1.h"
 #include "WAIT1.h"
 #include "CLS1.h"
+#include "Application.h"
+#include "Events.h"
+#include "UI.h"
+
+#include "USB1.h"
+#include "CDC1.h"
 
 static bool stopModeAllowed = false;
 
@@ -38,18 +44,17 @@ void LowPower_EnterLowpowerMode(void)
 	    __asm volatile("wfi");
 	    __asm volatile("isb");
 	}
-
-	//Clear WakeUp Flag
-	 if (LLWU_F3 & LLWU_F3_MWUF0_MASK)
-	 {
-		 LLWU_F3 |= LLWU_F3_MWUF0_MASK;
-	 }
-
 }
 
 void LowPower_EnableStopMode(void)
 {
-	//stopModeAllowed = true;
+#ifdef CONFIG_ENABLE_STOPMODE
+	USB1_Deinit();
+	CDC1_Deinit();
+	stopModeAllowed = true;
+#else
+	stopModeAllowed = false;
+#endif
 }
 
 void LowPower_DisableStopMode(void)
@@ -64,11 +69,19 @@ void LLWU_ISR(void)
 	//LLWU_PDD_WriteFlag3Reg(LLWU_DEVICE,LLWU_F3_MWUF0_MASK);
 	//LLWU_F3
 
+	 //Clear interrupt Flag: Wakeup Source was LowPowerTimer
 	 if (LLWU_F3 & LLWU_F3_MWUF0_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
 		 LLWU_F3 |= LLWU_F3_MWUF0_MASK;
 	 }
 
+	 //Clear interrupt Flag: Wakeup Source was UserButton
+	 if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393
+	 {
+		 //UI_ButtonCounter();
+		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
+		 NVICISPR1 |= (1<<29);  		//Trigger PortC Ext.Interrupt
+	 }
 
 	volatile unsigned int dummyread;
 	dummyread = SMC_PMCTRL;

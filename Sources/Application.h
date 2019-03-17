@@ -12,6 +12,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+
+#define CONFIG_ENABLE_STOPMODE
+
+
 #define LIDO_SAMPLE_SIZE 22
 typedef struct
 {

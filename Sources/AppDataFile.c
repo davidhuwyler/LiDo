@@ -59,6 +59,7 @@ uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf ,size_t
 		return ERR_BUSY;
 	}
 }
+
 uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall)
 {
 	if(localSampleIntervall<1 || localSampleIntervall>100)
@@ -73,9 +74,19 @@ uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall)
 	}
 }
 
+uint8_t AppDataFile_SetSampleIntervall(uint8_t sampleIntervall)
+{
+	localSampleIntervall = sampleIntervall;
+}
+
 bool AppDataFile_GetSamplingEnabled(void)
 {
 	return localSamplingEnabled;
+}
+
+void AppDataFile_SetSamplingEnables(bool samplingEnabled)
+{
+	localSamplingEnabled = samplingEnabled;
 }
 
 uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)

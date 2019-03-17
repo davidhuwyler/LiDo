@@ -15,9 +15,14 @@
 #include "ExtInt_UI_BTN.h"
 #include "Application.h"
 #include "AppDataFile.h"
+#include "LED1.h"
+#include "Shell.h"
 
 static xTimerHandle uiButtonMultiPressTimer;
 static xTimerHandle uiButtonDebounceTimer;
+
+static xTimerHandle uiLEDtoggleTimer;
+static xTimerHandle uiLEDmodeIndicatorTimer;
 
 static bool buttonDebouncingStarted = FALSE;
 static uint8_t buttonCnt = 0;
@@ -36,18 +41,21 @@ static void UI_Button_2pressDetected(void)
 static void UI_Button_3pressDetected(void)
 {
 
-
 }
 
 static void UI_Button_4pressDetected(void)
 {
-
-
+	LED1_On();
+	xTimerChangePeriod(uiLEDmodeIndicatorTimer,pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS),0);
+	xTimerStartFromISR(uiLEDmodeIndicatorTimer, 0);
+	SHELL_requestDisabling();
 }
 
 static void UI_Button_5pressDetected(void)
 {
-	//Softrese: Enable shell for 20s
+	LED1_On();
+	xTimerChangePeriod(uiLEDmodeIndicatorTimer,pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS*2),0);
+	xTimerStartFromISR(uiLEDmodeIndicatorTimer, 0);
 	APP_requestForSoftwareReset();
 }
 
@@ -59,12 +67,12 @@ void UI_ButtonCounter(void)
 	{
 		 buttonDebouncingStarted = true;
 		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS)
-		 { /* start timer to turn off LCD after 5 seconds */
+		 {
 		    for(;;); /* failure?!? */
 		 }
 
 		 if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS)
-		 { /* start timer to turn off LCD after 5 seconds */
+		 {
 		    for(;;); /* failure?!? */
 		 }
 	}
@@ -101,9 +109,29 @@ static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 {
 	if(ExtInt_UI_BTN_GetVal() == false) // --> Button is still Pressed
 	{
-		buttonCnt++;
+		LED1_Neg();
+	    buttonCnt++;
 	}
 	buttonDebouncingStarted = false;
+}
+
+static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
+{
+	LED1_Neg();
+}
+
+static void vTimerCallback_LED_ModeIndicator(xTimerHandle pxTimer)
+{
+	LED1_Off();
+}
+
+void UI_StopShellIndicator(void)
+{
+	 if (xTimerDelete(uiLEDtoggleTimer, 0)!=pdPASS)
+	 {
+	    for(;;); /* failure?!? */
+	 }
+	 LED1_Off();
 }
 
 
@@ -122,6 +150,25 @@ void UI_Init(void)
 										 pdFALSE, /* auto reload */
 										 (void*)1, /* timer ID */
 										 vTimerCallback_ButtonDebounceTimer); /* callback */
+
+	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
+
+	uiLEDtoggleTimer = xTimerCreate( "tmrUiLEDtoggle", /* name */
+										 pdMS_TO_TICKS(UI_LED_SHELL_INDICATOR_TOGGLE_DELAY_MS), /* period/time */
+										 pdTRUE, /* auto reload */
+										 (void*)2, /* timer ID */
+										 vTimerCallback_LED_ShellInicator); /* callback */
+
+	 if (xTimerStart(uiLEDtoggleTimer, 0)!=pdPASS)
+	 {
+	    for(;;); /* failure?!? */
+	 }
+
+	 uiLEDmodeIndicatorTimer = xTimerCreate( "tmrUiLEDmodeInd", /* name */
+										 pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS), /* period/time */
+										 pdFALSE, /* auto reload */
+										 (void*)3, /* timer ID */
+										 vTimerCallback_LED_ModeIndicator); /* callback */
 
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
