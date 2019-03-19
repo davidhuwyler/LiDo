@@ -17,7 +17,7 @@
 #define DEFAULT_STRING "-"
 
 static bool localSamplingEnabled = false;;
-static uint8_t localSampleIntervall;
+static uint8_t localSampleIntervall = 1;
 
 static void AppDataFile_UpdateRAMvariables()
 {

@@ -26,6 +26,7 @@
 #include "WatchDog.h"
 
 static SemaphoreHandle_t sampleSemaphore;
+static bool fileIsOpen = false;
 static bool setOneMarkerInLog = false;
 static bool toggleEnablingSampling = false;
 static bool requestForSoftwareReset = false;
@@ -69,7 +70,10 @@ static void APP_softwareResetIfRequested(lfs_file_t* file)
 	if(requestForSoftwareReset)
 	{
 		requestForSoftwareReset = false;
-		FS_closeLiDoSampleFile(file);
+		if(fileIsOpen)
+		{
+			FS_closeLiDoSampleFile(file);
+		}
 		//TODO deinit Stuff...
 		KIN1_SoftwareReset();
 	}
@@ -132,7 +136,6 @@ static bool APP_newDay(void)
 
 
 static void APP_main_task(void *param) {
-  static bool fileIsOpen = false;
   (void)param;
   TickType_t xLastWakeTime;
   liDoSample_t sample;
