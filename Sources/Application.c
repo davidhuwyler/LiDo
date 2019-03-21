@@ -33,7 +33,10 @@ static bool requestForSoftwareReset = FALSE;
 
 void APP_setMarkerInLog(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	setOneMarkerInLog = TRUE;
+	CS1_ExitCritical();
 }
 
 void APP_toggleEnableSampling(void)
@@ -46,7 +49,10 @@ void APP_toggleEnableSampling(void)
 
 void APP_requestForSoftwareReset(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	requestForSoftwareReset = TRUE;
+	CS1_ExitCritical();
 }
 
 static void APP_toggleEnableSamplingIfRequested(void)
@@ -76,15 +82,22 @@ static void APP_toggleEnableSamplingIfRequested(void)
 
 static void APP_softwareResetIfRequested(lfs_file_t* file)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	if(requestForSoftwareReset)
 	{
 		requestForSoftwareReset = FALSE;
+		CS1_ExitCritical();
 		if(fileIsOpen)
 		{
 			FS_closeLiDoSampleFile(file);
 		}
 		//TODO deinit Stuff...
 		KIN1_SoftwareReset();
+	}
+	else
+	{
+		CS1_ExitCritical();
 	}
 }
 
@@ -110,13 +123,18 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 		  sample->accelX = accelAndTemp.xValue;
 		  sample->accelY = accelAndTemp.yValue;
 		  sample->accelZ = accelAndTemp.zValue;
+
+		  CS1_CriticalVariable();
+		  CS1_EnterCritical();
 		  if(setOneMarkerInLog)
 		  {
 			  setOneMarkerInLog =FALSE;
+			  CS1_ExitCritical();
 			  sample->temp = accelAndTemp.temp | 0x80;
 		  }
 		  else
 		  {
+			  CS1_ExitCritical();
 			  sample->temp = accelAndTemp.temp;
 		  }
 		  crc8_liDoSample(sample);
@@ -161,8 +179,8 @@ static void APP_main_task(void *param) {
 	  WatchDog_Kick(WatchDog_KickedByApplication_c);
 	  APP_softwareResetIfRequested(&sampleFile);
 	  APP_toggleEnableSamplingIfRequested();
-	  //New Day: Make new File!
 
+	  //New Day: Make new File!
 	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
 		  FS_closeLiDoSampleFile(&sampleFile);

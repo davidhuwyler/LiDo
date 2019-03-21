@@ -258,7 +258,10 @@ void SDEPio_init(void)
 void SDEPio_switchIOtoSDEPio(void)
 {
 	CLS1_SetStdio(SDEP_Shellio);
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	newSDEPshellMessage = TRUE;
+	CS1_ExitCritical();
 }
 
 void SDEPio_switchIOtoStdIO(void)
@@ -268,7 +271,10 @@ void SDEPio_switchIOtoStdIO(void)
 
 bool SDEPio_NewSDEPmessageAvail(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	bool res = newSDEPshellMessage;
 	newSDEPshellMessage = FALSE;
+	CS1_ExitCritical();
 	return res;
 }

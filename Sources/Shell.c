@@ -91,9 +91,16 @@ static void SHELL_task(void *param) {
   {
 	  xLastWakeTime = xTaskGetTickCount();
 
+	  CS1_CriticalVariable();
+	  CS1_EnterCritical();
 	  if(shellDisablingRequest)
 	  {
+		  CS1_ExitCritical();
 		  SHELL_Disable();
+	  }
+	  else
+	  {
+		  CS1_ExitCritical();
 	  }
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
@@ -115,13 +122,16 @@ void SHELL_Init(void) {
 
 void SHELL_requestDisabling(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	shellDisablingRequest = TRUE;
+	CS1_ExitCritical();
 }
 
-void SHELL_enable(void)
-{
-	FRTOS1_xTaskResumeFromISR(shellTaskHandle);
-}
+//void SHELL_enable(void)
+//{
+//	FRTOS1_xTaskResumeFromISR(shellTaskHandle);
+//}
 
 
 

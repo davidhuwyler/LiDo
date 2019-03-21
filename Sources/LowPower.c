@@ -19,8 +19,11 @@ static bool stopModeAllowed = FALSE;
 
 void LowPower_EnterLowpowerMode(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	if(stopModeAllowed)
 	{
+		  CS1_ExitCritical();
 		  SMC_PMPROT = SMC_PMPROT_ALLS_MASK;	//Allow LLS (LowLeakageStop) Datasheet p355
 		  SMC_PMCTRL &= ~SMC_PMCTRL_STOPM_MASK;
 		  SMC_PMCTRL &= ~SMC_PMCTRL_RUNM(0x3);
@@ -37,6 +40,7 @@ void LowPower_EnterLowpowerMode(void)
 	}
 	else
 	{
+		CS1_ExitCritical();
 	    __asm volatile("dsb");
 	    __asm volatile("wfi");
 	    __asm volatile("isb");
@@ -45,16 +49,22 @@ void LowPower_EnterLowpowerMode(void)
 
 void LowPower_EnableStopMode(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 #ifdef CONFIG_ENABLE_STOPMODE
 	stopModeAllowed = TRUE;
 #else
 	stopModeAllowed = FALSE;
 #endif
+	CS1_ExitCritical();
 }
 
 void LowPower_DisableStopMode(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	stopModeAllowed = FALSE;
+	CS1_ExitCritical();
 }
 
 
