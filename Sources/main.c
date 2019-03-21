@@ -77,8 +77,6 @@
 #include "SDEPtoShellBuf.h"
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
-#include "WDog1.h"
-#include "WatchDogLdd1.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"

@@ -175,7 +175,6 @@ static void APP_main_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  WatchDog_Kick(WatchDog_KickedByApplication_c);
 	  APP_softwareResetIfRequested(&sampleFile);
 	  APP_toggleEnableSamplingIfRequested();
 
@@ -209,6 +208,7 @@ static void APP_main_task(void *param) {
 		  }
 	  }
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
+	  WatchDog_Kick(WatchDog_KickedByApplication_c,xTaskGetTickCount() - xLastWakeTime);
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
 }

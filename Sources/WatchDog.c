@@ -3,18 +3,28 @@
  *
  *  Created on: Mar 16, 2019
  *      Author: dave
+ *
+ *      Good watchdog reference: http://www.ganssle.com/watchdogs.htm
  */
 #include "Platform.h"
 #include "WatchDog.h"
-#include "WDog1.h"
 #include "KIN1.h"
 #include "FRTOS1.h"
 #include "CS1.h"
+#include "AppDataFile.h"
 
-static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources] = {2000};
 
-static uint16 watchDogTimeLeftUntilDogBitesPerSource[WatchDog_NOF_KickSources];
+// Configure Watchdog Kicksources:
+static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources][3] =
+{
+		{		//WatchDog_KickedByApplication_c
+				1100,							//KickIntervall [ms] x SampleIntervall [s] (Ex: Sampleintervall = 2s Kickintervall = 1100ms: Dog needs to be fed every 2200ms
+				0,								//LowerBoundary ComputationTime im Ms for the Main Task
+				600,							//HighBoundary ComputationTime im Ms for the Main Task
+		}
+};
 
+static uint16 watchDogKickSourceParams[WatchDog_NOF_KickSources][2]; //{ IntervallUntilDogBytes, LastRegisteredComputationTime }
 
 //TODO Implement "Magic Code" from http://www.ganssle.com/watchdogs.htm
 
@@ -31,31 +41,38 @@ static void WatchDog_Task(void *param) {
 		{
 			CS1_CriticalVariable();
 			CS1_EnterCritical();
-			if(watchDogTimeLeftUntilDogBitesPerSource[i] == 0)
+			if(watchDogKickSourceParams[i][0] == 0)		//FeedDog intervall ran out?
 			{
 				feedTheDog = FALSE; // --> WatchDog Source ran out... Reset!
 				CS1_ExitCritical();
 				break;
 			}
-			else if(watchDogTimeLeftUntilDogBitesPerSource[i]>=WATCHDOG_TASK_DELAY)
+			else if(watchDogKickSourceParams[i][1] < watchDogKickIntervallPerSource[i][1] || //ComputationTime of the Source in boundary?
+					watchDogKickSourceParams[i][1] > watchDogKickIntervallPerSource[i][2] )
 			{
-				watchDogTimeLeftUntilDogBitesPerSource[i] -= WATCHDOG_TASK_DELAY;
+				feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
+				CS1_ExitCritical();
+				break;
+			}
+			else if(watchDogKickSourceParams[i][0]>=WATCHDOG_TASK_DELAY)
+			{
+				watchDogKickSourceParams[i][0] -= WATCHDOG_TASK_DELAY;
 			}
 			else
 			{
-				watchDogTimeLeftUntilDogBitesPerSource[i] = 0;
+				watchDogKickSourceParams[i][0] = 0;
 			}
 			CS1_ExitCritical();
 		}
 
-		if(feedTheDog)
+
+		if(!feedTheDog)//Reset!
 		{
-			WDog1_Clear();
-		}
-		else
-		{
-			//KIN1_SoftwareReset();
-			for(;;);
+			//TODO Power Off SPIF und Sensoren
+
+
+			//Watchdog dosnt support variable Feed times, therefore SW Reset is used:
+			KIN1_SoftwareReset();
 		}
 
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(WATCHDOG_TASK_DELAY));
@@ -67,7 +84,8 @@ void WatchDog_Init(void)
 	//initial Dog feed...
 	for(int i = 0; i< WatchDog_NOF_KickSources ; i++)
 	{
-		watchDogTimeLeftUntilDogBitesPerSource[i] = watchDogKickIntervallPerSource[i];
+		watchDogKickSourceParams[i][0] = watchDogKickIntervallPerSource[i][0];
+		watchDogKickSourceParams[i][1] = watchDogKickIntervallPerSource[i][1];
 	}
 
 	if (xTaskCreate(WatchDog_Task, "WatchDog", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
@@ -76,11 +94,14 @@ void WatchDog_Init(void)
 	}
 }
 
-void WatchDog_Kick(WatchDog_KickSource_e kickSource)
+void WatchDog_Kick(WatchDog_KickSource_e kickSource, uint16_t computationDuration_ms)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
-	watchDogTimeLeftUntilDogBitesPerSource[kickSource] = watchDogKickIntervallPerSource[kickSource];
+	uint8_t sampleIntervall_s;
+	AppDataFile_GetSampleIntervall(&sampleIntervall_s);
+	watchDogKickSourceParams[kickSource][0] = watchDogKickIntervallPerSource[kickSource][0] * sampleIntervall_s;
+	watchDogKickSourceParams[kickSource][1] = computationDuration_ms;
 	CS1_ExitCritical();
 }
 

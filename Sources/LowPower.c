@@ -3,6 +3,7 @@
  *
  *  Created on: Feb 22, 2019
  *      Author: dave
+ *
  */
 #include "LowPower.h"
 #include "Cpu.h"
@@ -70,9 +71,7 @@ void LowPower_DisableStopMode(void)
 
 void LLWU_ISR(void)
 {
-	//LLWU_F3 |= LLWU_F3_MWUF0_MASK; //Reset Interrupt Flag Datasheet p393
-	//LLWU_PDD_WriteFlag3Reg(LLWU_DEVICE,LLWU_F3_MWUF0_MASK);
-	//LLWU_F3
+	 //NXP Application notes to LowPower: AN4470 & AN4503
 
 	 //Clear interrupt Flag: Wakeup Source was LowPowerTimer
 	 if (LLWU_F3 & LLWU_F3_MWUF0_MASK)//Reset Interrupt Flag Datasheet p393
@@ -84,7 +83,7 @@ void LLWU_ISR(void)
 	 else if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
 		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
-		 //Trigger ExtInt behavour, bacause the actual Interrupt is Disables in StopMode:
+		 //Trigger ExtInt behavour, because the actual Interrupt is Disables in StopMode:
 		 ExtInt_UI_BTN_OnInterrupt();
 	 }
 
@@ -93,7 +92,7 @@ void LLWU_ISR(void)
 	 {
 		 //UI_ButtonCounter();
 		 LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
-		 //Trigger ExtInt behavour, bacause the actual Interrupt is Disables in StopMode:
+		 //Trigger ExtInt behavior, because the actual Interrupt is Disables in StopMode:
 		 ExtInt_LI_DONE_OnInterrupt();
 	 }
 

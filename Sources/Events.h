@@ -80,8 +80,6 @@
 #include "SDEPtoShellBuf.h"
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
-#include "WDog1.h"
-#include "WatchDogLdd1.h"
 
 #ifdef __cplusplus
 extern "C" {

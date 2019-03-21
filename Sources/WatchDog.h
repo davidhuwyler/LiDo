@@ -22,6 +22,6 @@ typedef enum
 
 void WatchDog_Init(void);
 
-void WatchDog_Kick(WatchDog_KickSource_e kickSource);
+void WatchDog_Kick(WatchDog_KickSource_e kickSource, uint16_t computationDuration_ms);
 
 #endif /* SOURCES_WATCHDOG_H_ */
