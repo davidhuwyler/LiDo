@@ -57,6 +57,8 @@
 #include "TmDt1.h"
 #include "DebugWaitOnStartPin.h"
 #include "BitIoLdd6.h"
+#include "ExtInt_LI_DONE.h"
+#include "ExtIntLdd2.h"
 #include "ExtInt_UI_BTN.h"
 #include "ExtIntLdd3.h"
 #include "PIN_SPIF_PWR.h"

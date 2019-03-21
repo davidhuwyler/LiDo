@@ -26,10 +26,10 @@
 #include "WatchDog.h"
 
 static SemaphoreHandle_t sampleSemaphore;
-static bool fileIsOpen = FALSE;
-static bool setOneMarkerInLog = FALSE;
+static volatile bool fileIsOpen = FALSE;
+static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
-static bool requestForSoftwareReset = FALSE;
+static volatile bool requestForSoftwareReset = FALSE;
 
 void APP_setMarkerInLog(void)
 {
@@ -103,7 +103,7 @@ static void APP_softwareResetIfRequested(lfs_file_t* file)
 
 uint8_t APP_getCurrentSample(liDoSample_t* sample)
 {
-	  LightChannels_t light;
+	  LightChannels_t lightB0,lightB1;
 	  AccelAxis_t accelAndTemp;
 	  int32_t unixTimestamp;
 
@@ -111,14 +111,13 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 	  {
 		  RTC_getTimeUnixFormat(&unixTimestamp);
 		  sample->unixTimeStamp = unixTimestamp;
-		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank1_X_Y_Z_IR);
-		  sample->lightChannelX = light.xChannelValue;
-		  sample->lightChannelY = light.yChannelValue;
-		  sample->lightChannelZ = light.zChannelValue;
-		  sample->lightChannelIR = light.nChannelValue;
-		  LightSensor_getChannelValuesBlocking(&light,LightSensor_Bank0_X_Y_B_B);
-		  sample->lightChannelB440 = light.nChannelValue;
-		  sample->lightChannelB490 = light.zChannelValue;
+		  LightSensor_getChannelValues(&lightB0,&lightB1);
+		  sample->lightChannelX = lightB1.xChannelValue;
+		  sample->lightChannelY = lightB1.yChannelValue;
+		  sample->lightChannelZ = lightB1.zChannelValue;
+		  sample->lightChannelIR = lightB1.nChannelValue;
+		  sample->lightChannelB440 = lightB0.nChannelValue;
+		  sample->lightChannelB490 = lightB0.zChannelValue;
 		  AccelSensor_getValues(&accelAndTemp);
 		  sample->accelX = accelAndTemp.xValue;
 		  sample->accelY = accelAndTemp.yValue;

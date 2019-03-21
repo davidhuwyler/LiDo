@@ -413,7 +413,7 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 				CLS1_SendStr("wrong end address\r\n", io->stdErr);
 				return ERR_FAILED;
 			}
-			res = McuShell_PrintMemory(NULL, val, end, 3, 16, ReadBytes, io);
+			res = CLS1_PrintMemory(NULL, val, end, 3, 16, ReadBytes, io);
 			if (res != ERR_OK)
 			{
 				CLS1_SendStr("memory read failed\r\n", io->stdErr);

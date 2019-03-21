@@ -827,7 +827,7 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 			xSemaphoreGive(fileSystemAccessSema);
 			return ERR_FAILED;
 		}
-		res = McuShell_PrintMemory(&file, 0, fileSize - 1, 4, 16, readFromFile, io);
+		res = CLS1_PrintMemory(&file, 0, fileSize - 1, 4, 16, readFromFile, io);
 		if (res != ERR_OK)
 		{
 			CLS1_SendStr("ERROR while calling PrintMemory()\r\n", io->stdErr);

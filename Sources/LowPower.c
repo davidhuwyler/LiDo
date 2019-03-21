@@ -81,12 +81,20 @@ void LLWU_ISR(void)
 	 }
 
 	 //Clear interrupt Flag: Wakeup Source was UserButton
-	 if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393
+	 else if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393
+	 {
+		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
+		 //Trigger ExtInt behavour, bacause the actual Interrupt is Disables in StopMode:
+		 ExtInt_UI_BTN_OnInterrupt();
+	 }
+
+	 //Clear interrupt Flag: Wakeup Source was LightSensor Interrupt
+	 else if (LLWU_F2 & LLWU_F2_WUF12_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
 		 //UI_ButtonCounter();
-		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
-		 //NVICISPR1 |= (1<<29);  		//Trigger PortC Ext.Interrupt
-		 ExtInt_UI_BTN_OnInterrupt();
+		 LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
+		 //Trigger ExtInt behavour, bacause the actual Interrupt is Disables in StopMode:
+		 ExtInt_LI_DONE_OnInterrupt();
 	 }
 
 	volatile unsigned int dummyread;

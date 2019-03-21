@@ -300,19 +300,25 @@ void SM1_OnFreeTxBuf(void)
 */
 void ExtInt_UI_BTN_OnInterrupt(void)
 {
-  /* Write your code here ... */
 	UI_ButtonCounter();
-//	PORTC_ISFR=0xFFFFFFFF;
+}
 
-//	  if(PORTC_ISFR & PORT_ISFR_ISF(GPIO_PIN(5)))
-//	  {
-//	     printf("SW3 Pressed\n");
-//	  }
-//	  if(PORTC_ISFR & PORT_ISFR_ISF(GPIO_PIN(13)))
-//	  {
-//	     printf("SW4 Pressed\n");
-//	  }
-//	  PORTC_ISFR=0xFFFFFFFF;  //Clear Port C ISR flags
+/*
+** ===================================================================
+**     Event       :  ExtInt_LI_DONE_OnInterrupt (module Events)
+**
+**     Component   :  ExtInt_LI_DONE [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void ExtInt_LI_DONE_OnInterrupt(void)
+{
+	LightSensor_MeasurementDone();
+  /* Write your code here ... */
 }
 
 /* END Events */

@@ -60,6 +60,8 @@
 #include "TmDt1.h"
 #include "DebugWaitOnStartPin.h"
 #include "BitIoLdd6.h"
+#include "ExtInt_LI_DONE.h"
+#include "ExtIntLdd2.h"
 #include "ExtInt_UI_BTN.h"
 #include "ExtIntLdd3.h"
 #include "PIN_SPIF_PWR.h"
@@ -263,6 +265,20 @@ void ExtInt_UI_BTN_OnInterrupt(void);
 **     Event       :  ExtInt_UI_BTN_OnInterrupt (module Events)
 **
 **     Component   :  ExtInt_UI_BTN [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void ExtInt_LI_DONE_OnInterrupt(void);
+/*
+** ===================================================================
+**     Event       :  ExtInt_LI_DONE_OnInterrupt (module Events)
+**
+**     Component   :  ExtInt_LI_DONE [ExtInt]
 **     Description :
 **         This event is called when an active signal edge/level has
 **         occurred.

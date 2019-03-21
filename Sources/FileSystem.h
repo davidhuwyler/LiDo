@@ -14,6 +14,7 @@
 #include "CLS1.h"
 #include "littleFS/lfs.h"
 #include "Application.h"
+#include "FRTOS1.h"
 
 lfs_t* FS_GetFileSystem(void);
 uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
