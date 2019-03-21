@@ -15,7 +15,7 @@
 #include "Events.h"
 #include "UI.h"
 
-static bool stopModeAllowed = false;
+static bool stopModeAllowed = FALSE;
 
 void LowPower_EnterLowpowerMode(void)
 {
@@ -46,15 +46,15 @@ void LowPower_EnterLowpowerMode(void)
 void LowPower_EnableStopMode(void)
 {
 #ifdef CONFIG_ENABLE_STOPMODE
-	stopModeAllowed = true;
+	stopModeAllowed = TRUE;
 #else
-	stopModeAllowed = false;
+	stopModeAllowed = FALSE;
 #endif
 }
 
 void LowPower_DisableStopMode(void)
 {
-	stopModeAllowed = false;
+	stopModeAllowed = FALSE;
 }
 
 
@@ -67,7 +67,7 @@ void LLWU_ISR(void)
 	 //Clear interrupt Flag: Wakeup Source was LowPowerTimer
 	 if (LLWU_F3 & LLWU_F3_MWUF0_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
-		 LLWU_F3 |= LLWU_F3_MWUF0_MASK;
+		 LLWU_F3 |= LLWU_F3_MWUF0_MASK; //Clear WakeUpInt Flag
 	 }
 
 	 //Clear interrupt Flag: Wakeup Source was UserButton
@@ -75,9 +75,14 @@ void LLWU_ISR(void)
 	 {
 		 //UI_ButtonCounter();
 		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
-		 NVICISPR1 |= (1<<29);  		//Trigger PortC Ext.Interrupt
+		 //NVICISPR1 |= (1<<29);  		//Trigger PortC Ext.Interrupt
+		 ExtInt_UI_BTN_OnInterrupt();
 	 }
 
 	volatile unsigned int dummyread;
 	dummyread = SMC_PMCTRL;
+
+	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+	     exception return operation might vector to incorrect interrupt */
+	__DSB();
 }

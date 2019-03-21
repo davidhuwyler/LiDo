@@ -18,6 +18,7 @@
 #include "LED1.h"
 #include "Shell.h"
 
+
 static xTimerHandle uiButtonMultiPressTimer;
 static xTimerHandle uiButtonDebounceTimer;
 
@@ -65,7 +66,7 @@ void UI_ButtonCounter(void)
 	static TickType_t lastButtonPressTimeStamp;
 	if(!buttonDebouncingStarted)
 	{
-		 buttonDebouncingStarted = true;
+		 buttonDebouncingStarted = TRUE;
 		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS)
 		 {
 		    for(;;); /* failure?!? */
@@ -107,12 +108,12 @@ static void vTimerCallback_ButtonMultiPressTimer(xTimerHandle pxTimer)
 
 static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 {
-	if(ExtInt_UI_BTN_GetVal() == false) // --> Button is still Pressed
+	if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
 	{
 		LED1_Neg();
 	    buttonCnt++;
 	}
-	buttonDebouncingStarted = false;
+	buttonDebouncingStarted = FALSE;
 }
 
 static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)

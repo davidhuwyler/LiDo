@@ -8,8 +8,9 @@
 #ifndef SOURCES_FILESYSTEM_H_
 #define SOURCES_FILESYSTEM_H_
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "Platform.h"
+//#include <stdint.h>
+//#include <stdbool.h>
 #include "CLS1.h"
 #include "littleFS/lfs.h"
 #include "Application.h"

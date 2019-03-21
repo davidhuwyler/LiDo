@@ -5,6 +5,7 @@
  *      Author: dave
  */
 
+#include "Platform.h"
 #include "SDEPioHandler.h"
 #include "SDEP.h"
 #include "CDC1.h"
@@ -33,9 +34,9 @@ static CLS1_ConstStdIOType SDEP_FileioNonPtr =
 };
 static CLS1_ConstStdIOTypePtr SDEP_Fileio = &SDEP_FileioNonPtr;
 
-static bool newSDEPshellMessage = false;
+static bool newSDEPshellMessage = FALSE;
 static uint8_t filePathBuf[40];
-static bool fileToRead = false;
+static bool fileToRead = FALSE;
 
 uint8_t SDEPio_HandleShellCMDs(void)
 {
@@ -73,7 +74,7 @@ uint8_t SDEPio_HandleShellCMDs(void)
 uint8_t SDEPio_SetReadFileCMD(uint8_t* filename)
 {
 	UTIL1_strcpy(filePathBuf,40,filename);
-	fileToRead = true;
+	fileToRead = TRUE;
 }
 
 uint8_t SDEPio_HandleFileCMDs(uint16_t cmdId)
@@ -95,9 +96,9 @@ uint8_t SDEPio_HandleFileCMDs(uint16_t cmdId)
 	{
 		CLS1_ConstStdIOTypePtr io;
 		SDEPio_getSDEPfileIO(&io);
-		if(FS_ReadFile(filePathBuf,false,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) != ERR_OK)
+		if(FS_ReadFile(filePathBuf,FALSE,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) != ERR_OK)
 		{
-			fileToRead = false;
+			fileToRead = FALSE;
 		}
 		cmdId = SDEP_CMDID_GET_FILE;
 		message.cmdId = SDEP_CMDID_GET_FILE;
@@ -257,7 +258,7 @@ void SDEPio_init(void)
 void SDEPio_switchIOtoSDEPio(void)
 {
 	CLS1_SetStdio(SDEP_Shellio);
-	newSDEPshellMessage = true;
+	newSDEPshellMessage = TRUE;
 }
 
 void SDEPio_switchIOtoStdIO(void)
@@ -268,6 +269,6 @@ void SDEPio_switchIOtoStdIO(void)
 bool SDEPio_NewSDEPmessageAvail(void)
 {
 	bool res = newSDEPshellMessage;
-	newSDEPshellMessage = false;
+	newSDEPshellMessage = FALSE;
 	return res;
 }

@@ -7,8 +7,9 @@
 #ifndef LFS_H
 #define LFS_H
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "Platform.h"
+//#include <stdint.h>
+//#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"

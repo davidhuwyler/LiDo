@@ -8,9 +8,9 @@
 #ifndef SOURCES_WATCHDOG_H_
 #define SOURCES_WATCHDOG_H_
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+//#include <stdint.h>
+//#include <stddef.h>
+//#include <stdbool.h>
 
 #define WATCHDOG_TASK_DELAY 1000
 

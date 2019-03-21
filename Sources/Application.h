@@ -8,9 +8,9 @@
 #ifndef SOURCES_APPLICATION_H_
 #define SOURCES_APPLICATION_H_
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+//#include <stdint.h>
+//#include <stddef.h>
+//#include <stdbool.h>
 
 
 #define CONFIG_ENABLE_STOPMODE

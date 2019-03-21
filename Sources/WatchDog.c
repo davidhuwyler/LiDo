@@ -4,11 +4,12 @@
  *  Created on: Mar 16, 2019
  *      Author: dave
  */
-
+#include "Platform.h"
 #include "WatchDog.h"
 #include "WDog1.h"
 #include "KIN1.h"
 #include "FRTOS1.h"
+#include "CS1.h"
 
 static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources] = {2000};
 
@@ -20,7 +21,7 @@ static uint16 watchDogTimeLeftUntilDogBitesPerSource[WatchDog_NOF_KickSources];
 static void WatchDog_Task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
-  static bool feedTheDog = true;
+  static bool feedTheDog = TRUE;
 
   for(;;)
   {
@@ -28,13 +29,15 @@ static void WatchDog_Task(void *param) {
 
 		for(int i = 0; i< WatchDog_NOF_KickSources ; i++)
 		{
+			CS1_CriticalVariable();
+			CS1_EnterCritical();
 			if(watchDogTimeLeftUntilDogBitesPerSource[i] == 0)
 			{
-				feedTheDog = false; // --> WatchDog Source ran out... Reset!
+				feedTheDog = FALSE; // --> WatchDog Source ran out... Reset!
+				CS1_ExitCritical();
 				break;
 			}
-
-			if(watchDogTimeLeftUntilDogBitesPerSource[i]>=WATCHDOG_TASK_DELAY)
+			else if(watchDogTimeLeftUntilDogBitesPerSource[i]>=WATCHDOG_TASK_DELAY)
 			{
 				watchDogTimeLeftUntilDogBitesPerSource[i] -= WATCHDOG_TASK_DELAY;
 			}
@@ -42,6 +45,7 @@ static void WatchDog_Task(void *param) {
 			{
 				watchDogTimeLeftUntilDogBitesPerSource[i] = 0;
 			}
+			CS1_ExitCritical();
 		}
 
 		if(feedTheDog)
@@ -50,7 +54,7 @@ static void WatchDog_Task(void *param) {
 		}
 		else
 		{
-			KIN1_SoftwareReset();
+			//KIN1_SoftwareReset();
 			for(;;);
 		}
 
@@ -74,6 +78,9 @@ void WatchDog_Init(void)
 
 void WatchDog_Kick(WatchDog_KickSource_e kickSource)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	watchDogTimeLeftUntilDogBitesPerSource[kickSource] = watchDogKickIntervallPerSource[kickSource];
+	CS1_ExitCritical();
 }
 

@@ -8,7 +8,7 @@
 #ifndef SOURCES_LOWPOWER_H_
 #define SOURCES_LOWPOWER_H_
 
-#include <stdbool.h>
+//#include <stdbool.h>
 
 void LowPower_EnterLowpowerMode(void);
 void LowPower_EnableStopMode(void);

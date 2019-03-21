@@ -15,7 +15,7 @@
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
 
-static bool ongoingSDEPmessageProcessing = false;
+static bool ongoingSDEPmessageProcessing = FALSE;
 
 uint8_t SDEP_SendMessage(SDEPmessage_t* response)
 {
@@ -102,7 +102,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 	{
 		SDEPio_getSDEPfileIO(&io);
 		SDEPio_SetReadFileCMD(command->payload);
-		if(FS_ReadFile(command->payload,true,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) == ERR_FAILED)
+		if(FS_ReadFile(command->payload,TRUE,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) == ERR_FAILED)
 		{
 			break;
 		}
@@ -315,9 +315,9 @@ uint8_t SDEP_Parse(void)
 	SDEPmessage_t message;
 	if(SDEP_ReadSDEPMessage(&message) == ERR_OK)
 	{
-		ongoingSDEPmessageProcessing = true;
+		ongoingSDEPmessageProcessing = TRUE;
 		SDEP_ExecureCommand(&message);
-		ongoingSDEPmessageProcessing = false;
+		ongoingSDEPmessageProcessing = FALSE;
 	}
 }
 

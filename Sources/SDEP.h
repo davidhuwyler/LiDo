@@ -52,7 +52,7 @@ typedef struct
 
 #define SDEP_CMDID_DEBUGCLI			0x1000 //Done
 
-#define SDEP_CMDID_CLOSE_CONN		0x2000
+#define SDEP_CMDID_CLOSE_CONN		0x2000 //Done
 
 #define SDEP_ERRID_INVALIDCMD		0x0001 //Done
 #define SDEP_ERRID_INVALIDPAYLOAD	0x0003 //Done

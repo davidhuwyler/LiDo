@@ -54,14 +54,14 @@ int ini_fileTell(lfs_file_t *file ,unsigned long* pos)
 {
 	lfs_t* FS_lfs = FS_GetFileSystem();
 	*pos = lfs_file_tell(FS_lfs, file);
-	return true;
+	return TRUE;
 }
 
 int ini_fileSeek(lfs_file_t *file ,unsigned long* pos)
 {
 	lfs_t* FS_lfs = FS_GetFileSystem();
 	lfs_file_seek(FS_lfs, file, *pos, LFS_SEEK_SET);
-	return true;
+	return TRUE;
 }
 
 

@@ -20,8 +20,9 @@
 #else
 
 // System includes
-#include <stdint.h>
-#include <stdbool.h>
+#include "Platform.h"
+//#include <stdint.h>
+//#include <stdbool.h>
 #include <string.h>
 
 #include "FRTOS1.h"

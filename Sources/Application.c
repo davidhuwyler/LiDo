@@ -26,32 +26,37 @@
 #include "WatchDog.h"
 
 static SemaphoreHandle_t sampleSemaphore;
-static bool fileIsOpen = false;
-static bool setOneMarkerInLog = false;
-static bool toggleEnablingSampling = false;
-static bool requestForSoftwareReset = false;
+static bool fileIsOpen = FALSE;
+static bool setOneMarkerInLog = FALSE;
+static volatile bool toggleEnablingSampling = FALSE;
+static bool requestForSoftwareReset = FALSE;
 
 void APP_setMarkerInLog(void)
 {
-	setOneMarkerInLog = true;
+	setOneMarkerInLog = TRUE;
 }
 
 void APP_toggleEnableSampling(void)
 {
-	toggleEnablingSampling = true;
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	toggleEnablingSampling = TRUE;
+	CS1_ExitCritical();
 }
 
 void APP_requestForSoftwareReset(void)
 {
-	requestForSoftwareReset = true;
+	requestForSoftwareReset = TRUE;
 }
 
-static void APP_toggleEnableSamplingIfRequested()
+static void APP_toggleEnableSamplingIfRequested(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	if(toggleEnablingSampling)
 	{
-        toggleEnablingSampling = false;
-
+        toggleEnablingSampling = FALSE;
+    	CS1_ExitCritical();
 		if(AppDataFile_GetSamplingEnabled())
 		{
 			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
@@ -63,13 +68,17 @@ static void APP_toggleEnableSamplingIfRequested()
 			//AppDataFile_SetSamplingEnables(true);
 		}
 	}
+	else
+	{
+		CS1_ExitCritical();
+	}
 }
 
 static void APP_softwareResetIfRequested(lfs_file_t* file)
 {
 	if(requestForSoftwareReset)
 	{
-		requestForSoftwareReset = false;
+		requestForSoftwareReset = FALSE;
 		if(fileIsOpen)
 		{
 			FS_closeLiDoSampleFile(file);
@@ -103,7 +112,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 		  sample->accelZ = accelAndTemp.zValue;
 		  if(setOneMarkerInLog)
 		  {
-			  setOneMarkerInLog =false;
+			  setOneMarkerInLog =FALSE;
 			  sample->temp = accelAndTemp.temp | 0x80;
 		  }
 		  else
@@ -129,9 +138,9 @@ static bool APP_newDay(void)
 	 if(newDate.Day != oldDate.Day)
 	 {
 		 oldDate = newDate;
-		 return true;
+		 return TRUE;
 	 }
-	 return false;
+	 return FALSE;
 }
 
 
@@ -165,7 +174,7 @@ static void APP_main_task(void *param) {
 	  {
 		  if(FS_openLiDoSampleFile(&sampleFile) == ERR_OK)
 		  {
-			  fileIsOpen = true;
+			  fileIsOpen = TRUE;
 		  }
 	  }
 
@@ -179,7 +188,7 @@ static void APP_main_task(void *param) {
 	  {
 		  if(FS_closeLiDoSampleFile(&sampleFile) == ERR_OK)
 		  {
-			  fileIsOpen = false;
+			  fileIsOpen = FALSE;
 		  }
 	  }
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);

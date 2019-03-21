@@ -4,6 +4,7 @@
  *  Created on: Feb 21, 2019
  *      Author: dave
  */
+#include "Platform.h"
 
 #include "Shell.h"
 #include "CLS1.h"
@@ -26,7 +27,7 @@
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
-static bool shellDisablingRequest = false;
+static bool shellDisablingRequest = FALSE;
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
@@ -45,16 +46,16 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 static void SHELL_SwitchIOifNeeded(void)
 {
 	static TickType_t SDEPioTimer;
-	static bool SDEPioTimerStarted = false;
+	static bool SDEPioTimerStarted = FALSE;
 	if(SDEPio_NewSDEPmessageAvail())
 	{
-		SDEPioTimerStarted = true;
+		SDEPioTimerStarted = TRUE;
 		SDEPioTimer = xTaskGetTickCount();
 	}
 	else if(SDEPioTimerStarted && xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300))
 	{
 		SDEPio_switchIOtoStdIO();
-		SDEPioTimerStarted = false;
+		SDEPioTimerStarted = FALSE;
 	}
 }
 
@@ -114,7 +115,7 @@ void SHELL_Init(void) {
 
 void SHELL_requestDisabling(void)
 {
-	shellDisablingRequest = true;
+	shellDisablingRequest = TRUE;
 }
 
 void SHELL_enable(void)
