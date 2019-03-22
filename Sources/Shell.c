@@ -84,13 +84,10 @@ static void SHELL_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   shellEnabledTimestamp = xTaskGetTickCount();
-  FS_Init();
-  AppDataFile_Init();
-
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-
+	  //SPIF_ReleaseFromDeepPowerDown();
 	  CS1_CriticalVariable();
 	  CS1_EnterCritical();
 	  if(shellDisablingRequest)
@@ -108,6 +105,7 @@ static void SHELL_task(void *param) {
 	  SDEPio_HandleShellCMDs();
 	  SDEPio_HandleFileCMDs(0);
 
+	  //SPIF_GoIntoDeepPowerDown();
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
   } /* for */
 }

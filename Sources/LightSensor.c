@@ -135,7 +135,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	while(!interruptMeasurementDoneFromSensor)
 	{
 		CS1_ExitCritical();
-		vTaskDelay(pdMS_TO_TICKS(2));
+		vTaskDelay(pdMS_TO_TICKS(10));
 		CS1_EnterCritical();
 	}
 	interruptMeasurementDoneFromSensor = FALSE;
@@ -173,7 +173,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	while(!interruptMeasurementDoneFromSensor)
 	{
 		CS1_ExitCritical();
-		vTaskDelay(pdMS_TO_TICKS(2));
+		vTaskDelay(pdMS_TO_TICKS(10));
 		CS1_EnterCritical();
 	}
 	interruptMeasurementDoneFromSensor = FALSE;

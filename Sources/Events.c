@@ -39,6 +39,7 @@ extern "C" {
 /* User includes (#include below this line is not maintained by Processor Expert) */
 #include "LowPower.h"
 #include "UI.h"
+#include "LightSensor.h"
 #include "LED1.h"
 
 /*

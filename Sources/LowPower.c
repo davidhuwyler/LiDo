@@ -72,7 +72,6 @@ void LowPower_DisableStopMode(void)
 void LLWU_ISR(void)
 {
 	 //NXP Application notes to LowPower: AN4470 & AN4503
-
 	 //Clear interrupt Flag: Wakeup Source was LowPowerTimer
 	 if (LLWU_F3 & LLWU_F3_MWUF0_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
@@ -96,7 +95,7 @@ void LLWU_ISR(void)
 		 ExtInt_LI_DONE_OnInterrupt();
 	 }
 
-	volatile unsigned int dummyread;
+	volatile unsigned int dummyread; //To make Sure, the Wakeup flag is cleared
 	dummyread = SMC_PMCTRL;
 
 	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping

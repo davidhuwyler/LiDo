@@ -48,9 +48,6 @@
 #define SPIF_SPI_CMD_ENABLE_DEEP_SLEEP 0xB9
 #define SPIF_SPI_CMD_DISABLE_DEEP_SLEEP 0xAB
 
-#define SPIF_SPI_CMD_ENABLE_DEEP_SLEEP 0xB9
-#define SPIF_SPI_CMD_DISABLE_DEEP_SLEEP 0xAB
-
 #define SPIF_SPI_CMD_READ_ID 0x9F
 #define SPIF_SPI_DEV_ID0_MANUFACTURER 0xC2
 #define SPIF_SPI_DEV_ID1_MEM_TYPE 0x20
@@ -75,6 +72,8 @@ static uint8_t rxDummy; /* dummy byte if we do not need the result. Needed to re
      while(SM1_RecvChar(readP)!=ERR_OK) {} \
    }
 
+volatile static bool spifIsAwake = TRUE;
+
 uint8_t SPIF_ReadStatus(uint8_t *status)
 {
 	  SPIF_CS_ENABLE();
@@ -95,13 +94,92 @@ void SPIF_WaitIfBusy(void)
 {
 	  while(SPIF_isBusy())
 	  {
-	    WAIT1_Waitms(1);
+	    WAIT1_Waitus(30);
+	  }
+}
+
+//After Entering DeepPowerDown it takes 10us to take effect
+//Experimental...
+uint8_t SPIF_GoIntoDeepPowerDown()
+{
+	  CS1_CriticalVariable();
+	  CS1_EnterCritical();
+	  if(spifIsAwake)
+	  {
+		  spifIsAwake = FALSE;
+		  CS1_ExitCritical();
+		  SPIF_WaitIfBusy();
+		  SPIF_CS_ENABLE();
+		  SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
+		  SPIF_CS_DISABLE();
+		  return ERR_OK;
+	  }
+	  else
+	  {
+		  CS1_ExitCritical();
+		  return ERR_FAILED;
+	  }
+}
+
+//Experimental...
+uint8_t SPIF_ReleaseFromDeepPowerDown_noWait()
+{
+	  CS1_CriticalVariable();
+	  CS1_EnterCritical();
+	  if(!spifIsAwake)
+	  {
+		  SPIF_CS_ENABLE();
+
+		  //Only write to SPI no read:
+		  while(SM1_SendChar(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP)!=ERR_OK) {}
+
+		  SPIF_CS_DISABLE();
+		  spifIsAwake = TRUE;
+		  CS1_ExitCritical();
+		  //It takes 30 us to wake from DeepPowerDown no access to the SPIF is allowed!
+		  return ERR_OK;
+	  }
+	  else
+	  {
+		  CS1_ExitCritical();
+		  return ERR_FAILED;
+	  }
+
+}
+
+//Experimental...
+uint8_t SPIF_ReleaseFromDeepPowerDown()
+{
+	  CS1_CriticalVariable();
+	  CS1_EnterCritical();
+	  if(!spifIsAwake)
+	  {
+		  SPIF_CS_ENABLE();
+
+		  //Only write to SPI no read:
+		  while(SM1_SendChar(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP)!=ERR_OK) {}
+
+		  SPIF_CS_DISABLE();
+		  spifIsAwake = TRUE;
+		  WAIT1_Waitus(30);	//It takes 30 us to wake from DeepPowerDown
+		  CS1_ExitCritical();
+		  return ERR_OK;
+	  }
+	  else
+	  {
+		  CS1_ExitCritical();
+		  return ERR_FAILED;
 	  }
 }
 
 uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 {
 	  size_t i;
+	  if(!spifIsAwake)
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_READ_DATA);
@@ -118,6 +196,11 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 
 uint8_t SPIF_EraseAll(void)
 {
+	  if(!spifIsAwake)
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -133,6 +216,11 @@ uint8_t SPIF_EraseAll(void)
 
 uint8_t SPIF_EraseSector4K(uint32_t address)
 {
+	  if(!spifIsAwake)
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -151,6 +239,11 @@ uint8_t SPIF_EraseSector4K(uint32_t address)
 
 uint8_t SPIF_EraseBlock32K(uint32_t address)
 {
+	  if(!spifIsAwake)
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -169,6 +262,11 @@ uint8_t SPIF_EraseBlock32K(uint32_t address)
 
 uint8_t SPIF_EraseBlock64K(uint32_t address)
 {
+	  if(!spifIsAwake)
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -194,6 +292,11 @@ uint8_t SPIF_EraseBlock64K(uint32_t address)
  */
 uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 {
+	  if(!spifIsAwake)
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);

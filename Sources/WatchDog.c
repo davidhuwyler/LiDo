@@ -26,7 +26,6 @@ static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources][3] 
 
 static uint16 watchDogKickSourceParams[WatchDog_NOF_KickSources][2]; //{ IntervallUntilDogBytes, LastRegisteredComputationTime }
 
-//TODO Implement "Magic Code" from http://www.ganssle.com/watchdogs.htm
 
 static void WatchDog_Task(void *param) {
   (void)param;

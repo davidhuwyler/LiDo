@@ -24,6 +24,7 @@
 #include "RTC1.h"
 #include "TmDt1.h"
 #include "WatchDog.h"
+#include "SPIF.h"
 
 static SemaphoreHandle_t sampleSemaphore;
 static volatile bool fileIsOpen = FALSE;
@@ -169,12 +170,10 @@ static void APP_main_task(void *param) {
   lfs_file_t sampleFile;
   sampleSemaphore = xSemaphoreCreateBinary();
   xSemaphoreGive(sampleSemaphore);
-  LightSensor_init();
-  AccelSensor_init();
-
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
+	  //SPIF_ReleaseFromDeepPowerDown();
 	  APP_softwareResetIfRequested(&sampleFile);
 	  APP_toggleEnableSamplingIfRequested();
 
@@ -209,8 +208,27 @@ static void APP_main_task(void *param) {
 	  }
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 	  WatchDog_Kick(WatchDog_KickedByApplication_c,xTaskGetTickCount() - xLastWakeTime);
+	  //SPIF_GoIntoDeepPowerDown();
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
+}
+
+static void APP_init_task(void *param) {
+  (void)param;
+	RTC_init(1);
+	SDEP_Init();
+	UI_Init();
+	LightSensor_init();
+	AccelSensor_init();
+	FS_Init();
+	AppDataFile_Init();
+	SHELL_Init();
+	WatchDog_Init();
+	if (xTaskCreate(APP_main_task, "Init", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	{
+	    for(;;){} /* error! probably out of memory */
+	}
+	vTaskSuspend(xTaskGetCurrentTaskHandle());
 }
 
 void APP_Run(void) {
@@ -222,13 +240,7 @@ void APP_Run(void) {
 		WAIT1_Waitms(50);
 	}
 
-	SHELL_Init();
-	RTC_init(1);
-	SDEP_Init();
-	UI_Init();
-	WatchDog_Init();
-
-	if (xTaskCreate(APP_main_task, "MainTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	if (xTaskCreate(APP_init_task, "Init", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}

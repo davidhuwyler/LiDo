@@ -37,6 +37,12 @@ uint8_t SPIF_EraseBlock32K(uint32_t address);
 
 uint8_t SPIF_EraseBlock64K(uint32_t address);
 
+uint8_t SPIF_GoIntoDeepPowerDown();
+
+uint8_t SPIF_ReleaseFromDeepPowerDown();
+
+uint8_t SPIF_ReleaseFromDeepPowerDown_noWait();
+
 /*!
  * Program a page with data
  * \param address, should be aligned on page (256 bytes) if programming 256 bytes
