@@ -40,6 +40,7 @@
 #include "WAIT1.h"
 #include "CLS1.h"
 #include "RTT1.h"
+#include "SDEPpendingAlertsBuffer.h"
 #include "XF1.h"
 #include "CS1.h"
 #include "KIN1.h"

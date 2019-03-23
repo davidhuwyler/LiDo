@@ -11,6 +11,7 @@
 #include "RTC.h"
 #include "FileSystem.h"
 #include "Shell.h"
+#include "SDEPpendingAlertsBuffer.h"
 
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
@@ -320,6 +321,28 @@ uint8_t SDEP_Parse(void)
 		ongoingSDEPmessageProcessing = FALSE;
 	}
 }
+
+
+uint8_t SDEP_InitiateNewAlert(uint16 CmdId)
+{
+	return SDEPpendingAlertsBuffer_Put(CmdId);
+}
+
+uint8_t SDEP_SendPendingAlert(void)
+{
+	if(SDEPpendingAlertsBuffer_NofElements() != 0)
+	{
+		uint16 alertCmdId;
+		SDEPpendingAlertsBuffer_Get(&alertCmdId);
+		static SDEPmessage_t alert;
+		alert.type = SDEP_TYPEBYTE_ALERT;
+		alert.cmdId = alertCmdId;
+		alert.payloadSize = 0;
+		SDEP_SendMessage(&alert);
+	}
+	return ERR_OK;
+}
+
 
 uint8_t SDEP_Init(void)
 {

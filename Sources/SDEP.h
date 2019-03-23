@@ -58,8 +58,17 @@ typedef struct
 #define SDEP_ERRID_INVALIDPAYLOAD	0x0003 //Done
 #define SDEP_ERRID_INVALIDCRC		0x0005 //Done
 
+#define SDEP_ALERT_LOW_BATTERY		0x0001
+#define SDEP_ALERT_STORAGE_ERROR	0x0003
+#define SDEP_ALERT_LIGHTSENS_ERROR	0x0005
+#define SDEP_ALERT_ACCELSENS_ERROR	0x0007
+#define SDEP_ALERT_SAMPLING_ERROR	0x0009
+
 uint8_t SDEP_Parse(void);
 uint8_t SDEP_Init(void);
 uint8_t SDEP_SendMessage(SDEPmessage_t* response);
+
+uint8_t SDEP_InitiateNewAlert(uint16 CmdId);
+uint8_t SDEP_SendPendingAlert(void);
 
 #endif /* SOURCES_SDEP_H_ */

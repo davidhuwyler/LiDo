@@ -104,7 +104,7 @@ static void SHELL_task(void *param) {
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
 	  SDEPio_HandleShellCMDs();
 	  SDEPio_HandleFileCMDs(0);
-
+	  SDEP_SendPendingAlert();
 	  //SPIF_GoIntoDeepPowerDown();
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
   } /* for */

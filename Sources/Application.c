@@ -107,19 +107,26 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 	  LightChannels_t lightB0,lightB1;
 	  AccelAxis_t accelAndTemp;
 	  int32_t unixTimestamp;
+	  uint8_t err = ERR_OK;
 
 	  if(xSemaphoreTake(sampleSemaphore,pdMS_TO_TICKS(500)))
 	  {
 		  RTC_getTimeUnixFormat(&unixTimestamp);
 		  sample->unixTimeStamp = unixTimestamp;
-		  LightSensor_getChannelValues(&lightB0,&lightB1);
+		  if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_LIGHTSENS_ERROR);
+		  }
 		  sample->lightChannelX = lightB1.xChannelValue;
 		  sample->lightChannelY = lightB1.yChannelValue;
 		  sample->lightChannelZ = lightB1.zChannelValue;
 		  sample->lightChannelIR = lightB1.nChannelValue;
 		  sample->lightChannelB440 = lightB0.nChannelValue;
 		  sample->lightChannelB490 = lightB0.zChannelValue;
-		  AccelSensor_getValues(&accelAndTemp);
+		  if(AccelSensor_getValues(&accelAndTemp) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_ACCELSENS_ERROR);
+		  }
 		  sample->accelX = accelAndTemp.xValue;
 		  sample->accelY = accelAndTemp.yValue;
 		  sample->accelZ = accelAndTemp.zValue;
@@ -180,8 +187,14 @@ static void APP_main_task(void *param) {
 	  //New Day: Make new File!
 	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
-		  FS_closeLiDoSampleFile(&sampleFile);
-		  FS_openLiDoSampleFile(&sampleFile);
+		  if(FS_closeLiDoSampleFile(&sampleFile) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+		  }
+		  if(FS_openLiDoSampleFile(&sampleFile) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+		  }
 	  }
 
 	  //OpenFile if needed
@@ -191,19 +204,34 @@ static void APP_main_task(void *param) {
 		  {
 			  fileIsOpen = TRUE;
 		  }
+		  else
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+		  }
 	  }
 
 	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
 	  {
 		  LED1_Neg();
-		  APP_getCurrentSample(&sample);
-		  FS_writeLiDoSample(&sample,&sampleFile);
+		  if(APP_getCurrentSample(&sample) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+		  }
+		  if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+		  }
+
 	  }
 	  else if (fileIsOpen)
 	  {
 		  if(FS_closeLiDoSampleFile(&sampleFile) == ERR_OK)
 		  {
 			  fileIsOpen = FALSE;
+		  }
+		  else
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
 		  }
 	  }
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
