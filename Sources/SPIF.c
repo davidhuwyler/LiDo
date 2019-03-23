@@ -128,14 +128,14 @@ uint8_t SPIF_ReleaseFromDeepPowerDown_noWait()
 	  CS1_EnterCritical();
 	  if(!spifIsAwake)
 	  {
-		  SPIF_CS_ENABLE();
 
-		  //Only write to SPI no read:
-		  while(SM1_SendChar(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP)!=ERR_OK) {}
-
-		  SPIF_CS_DISABLE();
 		  spifIsAwake = TRUE;
+		  SPIF_CS_ENABLE();
 		  CS1_ExitCritical();
+
+		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
+		  SPIF_CS_DISABLE();
+
 		  //It takes 30 us to wake from DeepPowerDown no access to the SPIF is allowed!
 		  return ERR_OK;
 	  }
@@ -154,15 +154,15 @@ uint8_t SPIF_ReleaseFromDeepPowerDown()
 	  CS1_EnterCritical();
 	  if(!spifIsAwake)
 	  {
-		  SPIF_CS_ENABLE();
-
-		  //Only write to SPI no read:
-		  while(SM1_SendChar(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP)!=ERR_OK) {}
-
-		  SPIF_CS_DISABLE();
 		  spifIsAwake = TRUE;
-		  WAIT1_Waitus(30);	//It takes 30 us to wake from DeepPowerDown
+		  SPIF_CS_ENABLE();
 		  CS1_ExitCritical();
+
+		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
+		  SPIF_CS_DISABLE();
+
+		  WAIT1_Waitus(30);	//It takes 30 us to wake from DeepPowerDown
+
 		  return ERR_OK;
 	  }
 	  else
