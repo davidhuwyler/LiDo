@@ -279,17 +279,6 @@ uint8_t SDEP_ReadSDEPMessage(SDEPmessage_t* message)
 	message->payload = inputBuf+4;
 
 	//Check CRC
-
-
-//	uint8_t crc = 0;
-//	for(int i = 0; i < 4+message->payloadSize; i++)
-//	{
-//		crc = CRC8(crc,inputBuf[i]);
-//	}
-
-	//uint8_t crc = getCRC(inputBuf,3+message->payloadSize);
-	//if(crc != message->crc)
-	//if(SDEP_GetCRC(message->type, message->cmdId , message->payloadSize, message->payload) != message->crc)
 	if(crc8_SDEPcrc(message) != message->crc)
 	{
 		message->type = 0;

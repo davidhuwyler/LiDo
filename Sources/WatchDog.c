@@ -12,6 +12,7 @@
 #include "FRTOS1.h"
 #include "CS1.h"
 #include "AppDataFile.h"
+#include "SDEP.h"
 
 
 // Configure Watchdog Kicksources:
@@ -31,12 +32,13 @@ static void WatchDog_Task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   static bool feedTheDog = TRUE;
+  int i;
 
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
 
-		for(int i = 0; i< WatchDog_NOF_KickSources ; i++)
+		for(i = 0; i< WatchDog_NOF_KickSources ; i++)
 		{
 			CS1_CriticalVariable();
 			CS1_EnterCritical();
@@ -69,6 +71,16 @@ static void WatchDog_Task(void *param) {
 		{
 			//TODO Power Off SPIF und Sensoren
 
+			//Log Watchdog Reset:
+			switch(i)
+			{
+				case 0 : //Kicksource: WatchDog_KickedByApplication_c
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset Source: MainTask");
+					break;
+				default:
+					SDEP_InitiateNewAlert(SDEP_ALERT_WATCHDOG_RESET);
+					break;
+			}
 
 			//Watchdog dosnt support variable Feed times, therefore SW Reset is used:
 			KIN1_SoftwareReset();

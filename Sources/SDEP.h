@@ -63,6 +63,7 @@ typedef struct
 #define SDEP_ALERT_LIGHTSENS_ERROR	0x0005
 #define SDEP_ALERT_ACCELSENS_ERROR	0x0007
 #define SDEP_ALERT_SAMPLING_ERROR	0x0009
+#define SDEP_ALERT_WATCHDOG_RESET	0x000B
 
 uint8_t SDEP_Parse(void);
 uint8_t SDEP_Init(void);
