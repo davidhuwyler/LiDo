@@ -94,7 +94,6 @@ void LLWU_ISR(void)
 	 //Clear interrupt Flag: Wakeup Source was LightSensor Interrupt
 	 else if (LLWU_F2 & LLWU_F2_WUF12_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
-		 //UI_ButtonCounter();
 		 LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
 		 //Trigger ExtInt behavior, because the actual Interrupt is Disables in StopMode:
 		 ExtInt_LI_DONE_OnInterrupt();
