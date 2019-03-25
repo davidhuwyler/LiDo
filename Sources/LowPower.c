@@ -4,6 +4,8 @@
  *  Created on: Feb 22, 2019
  *      Author: dave
  *
+ * NXP Application notes to LowPower: AN4470 & AN4503
+ *
  */
 #include "LowPower.h"
 #include "Cpu.h"
@@ -37,10 +39,10 @@ void LowPower_EnterLowpowerMode(void)
 		  SMC_STOPCTRL &=  ~SMC_STOPCTRL_LLSM_MASK;
 		  SMC_STOPCTRL |=  SMC_STOPCTRL_LLSM(3); // LLS3=3, LLS2=2
 
-		  volatile unsigned int dummyread;
-		  dummyread = SMC_PMCTRL;
-		  SCB_SCR |= SCB_SCR_SLEEPDEEP_MASK;
-		  __asm volatile("wfi");
+		  volatile unsigned int dummyread;		// wait for write to complete to SMC before stopping core
+		  dummyread = SMC_PMCTRL;				// AN4503 p.26
+		  SCB_SCR |= SCB_SCR_SLEEPDEEP_MASK;	// Set the SLEEPDEEP bit to enable deep sleep mode
+		  __asm volatile("wfi");				// start entry into low-power mode
 	}
 	else
 	{
