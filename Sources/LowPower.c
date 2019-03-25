@@ -25,6 +25,9 @@ void LowPower_EnterLowpowerMode(void)
 	if(stopModeAllowed)
 	{
 		  CS1_ExitCritical();
+
+		  //OSC_CR &= ~OSC_CR_EREFSTEN_MASK; // Disable Ext. Clock in StopMode
+
 		  SMC_PMPROT = SMC_PMPROT_ALLS_MASK;	//Allow LLS (LowLeakageStop) Datasheet p355
 		  SMC_PMCTRL &= ~SMC_PMCTRL_STOPM_MASK;
 		  SMC_PMCTRL &= ~SMC_PMCTRL_RUNM(0x3);
