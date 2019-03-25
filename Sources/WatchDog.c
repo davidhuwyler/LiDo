@@ -21,7 +21,7 @@ static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources][3] 
 		{		//WatchDog_KickedByApplication_c
 				1100,							//KickIntervall [ms] x SampleIntervall [s] (Ex: Sampleintervall = 2s Kickintervall = 1100ms: Dog needs to be fed every 2200ms
 				0,								//LowerBoundary ComputationTime im Ms for the Main Task
-				600,							//HighBoundary ComputationTime im Ms for the Main Task
+				950,							//HighBoundary ComputationTime im Ms for the Main Task  950
 		}
 };
 

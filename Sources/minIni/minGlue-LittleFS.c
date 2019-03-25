@@ -35,7 +35,7 @@ int ini_fileReadOpen(lfs_file_t *file, const char *name)
 int ini_fileWriteOpen(lfs_file_t *file, const char *name)
 {
 	lfs_t* FS_lfs = FS_GetFileSystem();
-	return (lfs_file_open(FS_lfs, file, name, LFS_O_WRONLY | LFS_O_CREAT)== 0);
+	return (lfs_file_open(FS_lfs, file, name, LFS_O_RDWR | LFS_O_CREAT)== 0);
 }
 
 int ini_fileClose(lfs_file_t *file)

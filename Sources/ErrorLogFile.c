@@ -31,10 +31,10 @@ uint8_t ErrorLogFile_LogError(uint16 SDEP_error_alert_cmdId, uint8_t* message)
 	uint8_t keyBuf[50];
 
 	UTIL1_Num16uToStr(keyBuf,50,SDEP_error_alert_cmdId);
-	UTIL1_strcat(keyBuf,50," ");
+	UTIL1_strcat(keyBuf,50,"_");
 	TmDt1_GetInternalRTCTimeDate(&time,&date);
 	TmDt1_AddDateString(keyBuf,50,&date,"dd.mm.yyyy");
-	UTIL1_strcat(keyBuf,50," ");
+	UTIL1_strcat(keyBuf,50,"_");
 	TmDt1_AddTimeString(keyBuf,50,&time,"hh:mm.ss,cc");
 
 	FS_GetFileAccessSemaphore(&fileSema);
