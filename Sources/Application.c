@@ -189,11 +189,11 @@ static void APP_main_task(void *param) {
 	  {
 		  if(FS_closeLiDoSampleFile(&sampleFile) != ERR_OK)
 		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		  }
 		  if(FS_openLiDoSampleFile(&sampleFile) != ERR_OK)
 		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
 	  }
 
@@ -206,7 +206,7 @@ static void APP_main_task(void *param) {
 		  }
 		  else
 		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
 	  }
 
@@ -219,7 +219,7 @@ static void APP_main_task(void *param) {
 		  }
 		  if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
 		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
 		  }
 
 	  }
@@ -231,7 +231,7 @@ static void APP_main_task(void *param) {
 		  }
 		  else
 		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_STORAGE_ERROR);
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		  }
 	  }
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);

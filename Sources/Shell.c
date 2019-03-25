@@ -24,6 +24,7 @@
 #include "UI.h"
 #include "USB1.h"
 #include "CDC1.h"
+#include "ErrorLogFile.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -40,6 +41,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   SPIF_ParseCommand,
   FS_ParseCommand,
   AppData_ParseCommand,
+  ErrorLogFile_ParseCommand,
   NULL /* sentinel */
 };
 
