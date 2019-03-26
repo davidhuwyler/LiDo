@@ -8,6 +8,9 @@
  *
  *      - User Button PTC11
  *      - LEDs
+ *
+ *      Debouncin internet resource:
+ *      http://www.ganssle.com/debouncing.htm
  */
 #include "UI.h"
 #include "FRTOS1.h"
@@ -25,7 +28,8 @@ static xTimerHandle uiButtonDebounceTimer;
 static xTimerHandle uiLEDtoggleTimer;
 static xTimerHandle uiLEDmodeIndicatorTimer;
 
-static bool buttonDebouncingStarted = FALSE;
+static bool ongoingButtonPress = FALSE;
+
 static uint8_t buttonCnt = 0;
 
 
@@ -46,17 +50,12 @@ static void UI_Button_3pressDetected(void)
 
 static void UI_Button_4pressDetected(void)
 {
-	LED1_On();
-	xTimerChangePeriod(uiLEDmodeIndicatorTimer,pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS),0);
-	xTimerStartFromISR(uiLEDmodeIndicatorTimer, 0);
 	SHELL_requestDisabling();
+	LED1_Off();
 }
 
 static void UI_Button_5pressDetected(void)
 {
-	LED1_On();
-	xTimerChangePeriod(uiLEDmodeIndicatorTimer,pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS*2),0);
-	xTimerStartFromISR(uiLEDmodeIndicatorTimer, 0);
 	APP_requestForSoftwareReset();
 }
 
@@ -64,10 +63,11 @@ static void UI_Button_5pressDetected(void)
 void UI_ButtonCounter(void)
 {
 	static TickType_t lastButtonPressTimeStamp;
-	if(!buttonDebouncingStarted)
+	if(!ongoingButtonPress)
 	{
+		 ongoingButtonPress = TRUE;
 		 buttonCnt++;
-		 buttonDebouncingStarted = TRUE;
+
 		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS)
 		 {
 		    for(;;); /* failure?!? */
@@ -79,7 +79,7 @@ void UI_ButtonCounter(void)
 		 }
 	}
 }
-//http://www.ganssle.com/debouncing-pt2.htm
+
 static void vTimerCallback_ButtonMultiPressTimer(xTimerHandle pxTimer)
 {
 	switch(buttonCnt)
@@ -111,10 +111,20 @@ static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 {
 	if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
 	{
-		LED1_Neg();
-	    //buttonCnt++;
+		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS)
+		{
+		   for(;;); /* failure?!? */
+		}
 	}
-	buttonDebouncingStarted = FALSE;
+	else
+	{
+		if (xTimerReset(uiButtonMultiPressTimer, 0)!=pdPASS)
+		{
+		   for(;;); /* failure?!? */
+		}
+		ongoingButtonPress = FALSE;
+	}
+
 }
 
 static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
@@ -175,16 +185,6 @@ void UI_Init(void)
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
 
-}
-
-BaseType_t xEnterTicklessIdle(void)
-{
-	//TODO
-	if(xTimerIsTimerActive(uiButtonMultiPressTimer) || xTimerIsTimerActive(uiButtonDebounceTimer))
-	{
-		return pdFALSE;
-	}
-	return pdTRUE;
 }
 
 
