@@ -66,6 +66,7 @@ void UI_ButtonCounter(void)
 	static TickType_t lastButtonPressTimeStamp;
 	if(!buttonDebouncingStarted)
 	{
+		 buttonCnt++;
 		 buttonDebouncingStarted = TRUE;
 		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS)
 		 {
@@ -78,7 +79,7 @@ void UI_ButtonCounter(void)
 		 }
 	}
 }
-
+//http://www.ganssle.com/debouncing-pt2.htm
 static void vTimerCallback_ButtonMultiPressTimer(xTimerHandle pxTimer)
 {
 	switch(buttonCnt)
@@ -111,7 +112,7 @@ static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 	if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
 	{
 		LED1_Neg();
-	    buttonCnt++;
+	    //buttonCnt++;
 	}
 	buttonDebouncingStarted = FALSE;
 }
@@ -176,6 +177,15 @@ void UI_Init(void)
 
 }
 
+BaseType_t xEnterTicklessIdle(void)
+{
+	//TODO
+	if(xTimerIsTimerActive(uiButtonMultiPressTimer) || xTimerIsTimerActive(uiButtonDebounceTimer))
+	{
+		return pdFALSE;
+	}
+	return pdTRUE;
+}
 
 
 

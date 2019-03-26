@@ -100,7 +100,7 @@ void SPIF_WaitIfBusy(void)
 
 //After Entering DeepPowerDown it takes 10us to take effect
 //Experimental...
-uint8_t SPIF_GoIntoDeepPowerDown()
+uint8_t SPIF_GoIntoDeepPowerDown(void)
 {
 	  CS1_CriticalVariable();
 	  CS1_EnterCritical();

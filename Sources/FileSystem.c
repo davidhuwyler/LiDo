@@ -790,7 +790,7 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 	int32_t fileSize;
 	int result;
 
-	if(xSemaphoreTake(fileSystemAccessSema,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTake(fileSystemAccessSema,pdMS_TO_TICKS(500)) == pdTRUE)
 	{
 		if (io == NULL)
 		{
