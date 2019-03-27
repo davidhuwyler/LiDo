@@ -8,11 +8,7 @@
 #ifndef SOURCES_WATCHDOG_H_
 #define SOURCES_WATCHDOG_H_
 
-//#include <stdint.h>
-//#include <stddef.h>
-//#include <stdbool.h>
-
-#define WATCHDOG_TASK_DELAY 1000
+#define WATCHDOG_TASK_DELAY 500 //Needs to be smaller than the Watchdogperiode
 
 typedef enum
 {

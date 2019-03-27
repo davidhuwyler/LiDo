@@ -55,6 +55,7 @@
 
 static LDD_TDeviceData* SPIdeviceHandle;
 static LDD_TUserData*  SPIuserDataHandle;
+static SemaphoreHandle_t spifAccessMutex;
 
 /* W25Q128 chip select is LOW active */
 #define SPIF_CS_ENABLE()   PIN_SPIF_CS_ClrVal()
@@ -102,74 +103,62 @@ void SPIF_WaitIfBusy(void)
 //Experimental...
 uint8_t SPIF_GoIntoDeepPowerDown(void)
 {
-	  CS1_CriticalVariable();
-	  CS1_EnterCritical();
-	  if(spifIsAwake)
+	  if(xSemaphoreTake(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && spifIsAwake)
 	  {
 		  spifIsAwake = FALSE;
-		  CS1_ExitCritical();
 		  SPIF_WaitIfBusy();
 		  SPIF_CS_ENABLE();
 		  SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
 		  SPIF_CS_DISABLE();
+		  xSemaphoreGive(spifAccessMutex);
 		  return ERR_OK;
 	  }
-	  else
+	  else if(!spifIsAwake)
 	  {
-		  CS1_ExitCritical();
-		  return ERR_FAILED;
+		  xSemaphoreGive(spifAccessMutex);
 	  }
+	  return ERR_FAILED;
 }
 
 //Experimental...
 uint8_t SPIF_ReleaseFromDeepPowerDown_noWait()
 {
-	  CS1_CriticalVariable();
-	  CS1_EnterCritical();
-	  if(!spifIsAwake)
+	  if(xSemaphoreTake(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
 	  {
-
 		  spifIsAwake = TRUE;
 		  SPIF_CS_ENABLE();
-		  CS1_ExitCritical();
-
 		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
 		  SPIF_CS_DISABLE();
-
 		  //It takes 30 us to wake from DeepPowerDown no access to the SPIF is allowed!
+		  xSemaphoreGive(spifAccessMutex);
 		  return ERR_OK;
 	  }
-	  else
+	  else if(spifIsAwake)
 	  {
-		  CS1_ExitCritical();
-		  return ERR_FAILED;
+		  xSemaphoreGive(spifAccessMutex);
 	  }
+	  return ERR_FAILED;
 
 }
 
 //Experimental...
 uint8_t SPIF_ReleaseFromDeepPowerDown()
 {
-	  CS1_CriticalVariable();
-	  CS1_EnterCritical();
-	  if(!spifIsAwake)
+	  if(xSemaphoreTake(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
 	  {
 		  spifIsAwake = TRUE;
 		  SPIF_CS_ENABLE();
-		  CS1_ExitCritical();
-
 		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
 		  SPIF_CS_DISABLE();
-
 		  WAIT1_Waitus(30);	//It takes 30 us to wake from DeepPowerDown
-
+		  xSemaphoreGive(spifAccessMutex);
 		  return ERR_OK;
 	  }
-	  else
+	  else if(spifIsAwake)
 	  {
-		  CS1_ExitCritical();
-		  return ERR_FAILED;
+		  xSemaphoreGive(spifAccessMutex);
 	  }
+	  return ERR_FAILED;
 }
 
 uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
@@ -633,6 +622,8 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 
 uint8_t SPIF_Init(void)
 {
+	  spifAccessMutex = xSemaphoreCreateRecursiveMutex();
+	  xSemaphoreGive(spifAccessMutex);
 	  uint8_t buf[SPIF_ID_BUF_SIZE];
 	  PIN_SPIF_PWR_SetVal();   //Power the Chip
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!

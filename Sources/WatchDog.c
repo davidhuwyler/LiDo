@@ -13,7 +13,8 @@
 #include "CS1.h"
 #include "AppDataFile.h"
 #include "SDEP.h"
-
+#include "WDog1.h"
+#include "LowPower.h"
 
 // Configure Watchdog Kicksources:
 static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources][3] =
@@ -82,11 +83,24 @@ static void WatchDog_Task(void *param) {
 					break;
 			}
 
-			//Watchdog dosnt support variable Feed times, therefore SW Reset is used:
-			KIN1_SoftwareReset();
+			//KIN1_SoftwareReset();
+			for(;;);
+		}
+		else
+		{
+			WDog1_Clear();
 		}
 
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(WATCHDOG_TASK_DELAY));
+		if(LowPower_StopModeIsEnabled)
+		{
+			uint8_t sampleIntervall_s;
+			AppDataFile_GetSampleIntervall(&sampleIntervall_s);
+			vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(sampleIntervall_s*WATCHDOG_TASK_DELAY));
+		}
+		else
+		{
+			vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(WATCHDOG_TASK_DELAY));
+		}
   } /* for */
 }
 
@@ -115,4 +129,3 @@ void WatchDog_Kick(WatchDog_KickSource_e kickSource, uint16_t computationDuratio
 	watchDogKickSourceParams[kickSource][1] = computationDuration_ms;
 	CS1_ExitCritical();
 }
-

@@ -13,5 +13,6 @@
 void LowPower_EnterLowpowerMode(void);
 void LowPower_EnableStopMode(void);
 void LowPower_DisableStopMode(void);
+bool LowPower_StopModeIsEnabled(void);
 
 #endif /* SOURCES_LOWPOWER_H_ */

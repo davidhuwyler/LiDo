@@ -73,6 +73,16 @@ void LowPower_DisableStopMode(void)
 	CS1_ExitCritical();
 }
 
+bool LowPower_StopModeIsEnabled(void)
+{
+	bool temp;
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	temp = stopModeAllowed;
+	CS1_ExitCritical();
+	return temp;
+}
+
 
 void LLWU_ISR(void)
 {
