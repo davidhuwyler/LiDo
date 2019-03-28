@@ -26,8 +26,13 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io);
 uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io);
 uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io);
 
+uint8_t FS_openFile(lfs_file_t* file,uint8_t* filename);
+uint8_t FS_closeFile(lfs_file_t* file);
+uint8_t FS_writeLine(lfs_file_t* file,uint8_t* line);
+uint8_t FS_readLine(lfs_file_t* file,uint8_t* lineBuf,size_t bufSize,uint8_t* nofReadChars);
+
+
 uint8_t FS_openLiDoSampleFile(lfs_file_t* file);
-uint8_t FS_closeLiDoSampleFile(lfs_file_t* file);
 uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file);
 
 //Functions ported from FatFS

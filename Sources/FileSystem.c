@@ -166,12 +166,10 @@ int FS_putc (
   return -1;
 }
 
-
 /*-----------------------------------------------------------------------*/
 /* Put a string to the file
  * (ported from FatFS function: f_puts())                                            */
 /*-----------------------------------------------------------------------*/
-
 
 int FS_puts (
   const char* str, /* Pointer to the string to be output */
@@ -593,7 +591,6 @@ uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 	{
 		return ERR_BUSY;
 	}
-
 }
 
 
@@ -605,7 +602,6 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 	static lfs_file_t file;
 	static int32_t filePos;
 	size_t fileSize;
-
 	uint8_t buf[200];
 
 	if( nofBytes > 200)
@@ -703,7 +699,25 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 	}
 }
 
-uint8_t FS_closeLiDoSampleFile(lfs_file_t* file)
+uint8_t FS_openFile(lfs_file_t* file,uint8_t* filename)
+{
+	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	{
+		if (lfs_file_open(&FS_lfs, file, filename, LFS_O_RDWR | LFS_O_CREAT| LFS_O_APPEND) < 0)
+		{
+			xSemaphoreGive(fileSystemAccessMutex);
+			return ERR_FAILED;
+		}
+		xSemaphoreGive(fileSystemAccessMutex);
+		return ERR_OK;
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+}
+
+uint8_t FS_closeFile(lfs_file_t* file)
 {
 	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
 	{
@@ -722,6 +736,53 @@ uint8_t FS_closeLiDoSampleFile(lfs_file_t* file)
 	{
 		return ERR_BUSY;
 	}
+}
+
+uint8_t FS_writeLine(lfs_file_t* file,uint8_t* line)
+{
+	uint8_t lineBuf[200];
+	UTIL1_strcpy(lineBuf,200,line);
+	UTIL1_strcat(lineBuf,200,"\r\n");
+
+	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	{
+		if (lfs_file_write(&FS_lfs, file, lineBuf,UTIL1_strlen(lineBuf)) < 0)
+		{
+			lfs_file_close(&FS_lfs, file);
+			xSemaphoreGive(fileSystemAccessMutex);
+			return ERR_FAILED;
+		}
+		xSemaphoreGive(fileSystemAccessMutex);
+		return ERR_OK;
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+}
+
+uint8_t FS_readLine(lfs_file_t* file,uint8_t* lineBuf,size_t bufSize,uint8_t* nofReadChars)
+{
+	lineBuf[0] = '\0';
+	uint8_t ch;
+	*nofReadChars = 0;
+
+	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	{
+		while(lfs_file_read(&FS_lfs, file, &ch, 1) != 0 &&  ch != '\n')
+		{
+			(*nofReadChars)++;
+			UTIL1_chcat(lineBuf,200,ch);
+		}
+		UTIL1_chcat(lineBuf,200,ch);
+		xSemaphoreGive(fileSystemAccessMutex);
+		return ERR_OK;
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+
 }
 
 /*
@@ -771,6 +832,8 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file)
 	}
 }
 
+
+//Function for the Shell PrintHex command
 static uint8_t readFromFile(void *hndl, uint32_t addr, uint8_t *buf,size_t bufSize)
 {
 	lfs_file_t *fp;

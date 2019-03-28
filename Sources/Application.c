@@ -91,7 +91,7 @@ static void APP_softwareResetIfRequested(lfs_file_t* file)
 		CS1_ExitCritical();
 		if(fileIsOpen)
 		{
-			FS_closeLiDoSampleFile(file);
+			FS_closeFile(file);
 		}
 		//TODO deinit Stuff...
 		KIN1_SoftwareReset();
@@ -172,6 +172,7 @@ static bool APP_newDay(void)
 static void APP_main_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
+  static TickType_t lastTaskExecutionDuration = 1; //Time it took to execute the task last time
   liDoSample_t sample;
   uint8_t samplingIntervall;
   lfs_file_t sampleFile;
@@ -180,6 +181,9 @@ static void APP_main_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
+	  AppDataFile_GetSampleIntervall(&samplingIntervall);
+	  WatchDog_Kick(WatchDog_KickedByApplication_c,lastTaskExecutionDuration);
+
 	  //SPIF_ReleaseFromDeepPowerDown();
 	  APP_softwareResetIfRequested(&sampleFile);
 	  APP_toggleEnableSamplingIfRequested();
@@ -187,7 +191,7 @@ static void APP_main_task(void *param) {
 	  //New Day: Make new File!
 	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
-		  if(FS_closeLiDoSampleFile(&sampleFile) != ERR_OK)
+		  if(FS_closeFile(&sampleFile) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		  }
@@ -225,7 +229,7 @@ static void APP_main_task(void *param) {
 	  }
 	  else if (fileIsOpen)
 	  {
-		  if(FS_closeLiDoSampleFile(&sampleFile) == ERR_OK)
+		  if(FS_closeFile(&sampleFile) == ERR_OK)
 		  {
 			  fileIsOpen = FALSE;
 		  }
@@ -234,9 +238,9 @@ static void APP_main_task(void *param) {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		  }
 	  }
-	  AppDataFile_GetSampleIntervall(&samplingIntervall);
-	  WatchDog_Kick(WatchDog_KickedByApplication_c,xTaskGetTickCount() - xLastWakeTime);
+
 	  //SPIF_GoIntoDeepPowerDown();
+	  lastTaskExecutionDuration = xTaskGetTickCount() - xLastWakeTime;
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
 }

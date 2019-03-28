@@ -9,14 +9,13 @@
 #include "TmDt1.h"
 #include "FRTOS1.h"
 #include "UTIL1.h"
-#include "minIni/minIni.h"
+#include "FileSystem.h"
 
-#define ERRORLOG_FILENAME "./errorLog.ini"
-#define ERRORLOG_SECTION "ErrorLog"
+#define ERRORLOG_FILENAME "./errorLog.txt"
+#define ERRORLOG_LINEBUFFER_SIZE 100
 
-#define DEFAULT_BOOL 0
-#define DEFAULT_INT 1000
-#define DEFAULT_STRING "-"
+static lfs_file_t errorLogFile;
+static uint8_t errorLogLineBuf[ERRORLOG_LINEBUFFER_SIZE];
 
 uint8_t ErrorLogFile_Init(void)
 {
@@ -25,71 +24,47 @@ uint8_t ErrorLogFile_Init(void)
 
 uint8_t ErrorLogFile_LogError(uint16 SDEP_error_alert_cmdId, uint8_t* message)
 {
-	SemaphoreHandle_t fileSema;
 	TIMEREC time;
 	DATEREC date;
-	uint8_t keyBuf[50];
 
-	UTIL1_Num16uToStr(keyBuf,50,SDEP_error_alert_cmdId);
-	UTIL1_strcat(keyBuf,50,"_");
+	UTIL1_Num16uToStr(errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE,SDEP_error_alert_cmdId);
+	UTIL1_chcat(errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE, ' ');
 	TmDt1_GetInternalRTCTimeDate(&time,&date);
-	TmDt1_AddDateString(keyBuf,50,&date,"dd.mm.yyyy");
-	UTIL1_strcat(keyBuf,50,"_");
-	TmDt1_AddTimeString(keyBuf,50,&time,"hh:mm.ss,cc");
 
-	FS_GetFileAccessSemaphore(&fileSema);
-	if(xSemaphoreTake(fileSema,pdMS_TO_TICKS(500)))
-	{
-		if(ini_puts(ERRORLOG_SECTION, keyBuf, message, ERRORLOG_FILENAME) == 0)
-		{
-			xSemaphoreGive(fileSema);
-			return ERR_FAILED;
-		}
-		xSemaphoreGive(fileSema);
-		return ERR_OK;
-	}
-	else
-	{
-		return ERR_BUSY;
-	}
+	UTIL1_strcatNum16uFormatted(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, date.Day, '0', 2);
+	UTIL1_chcat(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, '.');
+	UTIL1_strcatNum16uFormatted(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, date.Month, '0', 2);
+	UTIL1_chcat(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, '.');
+	UTIL1_strcatNum16u(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, (uint16_t)date.Year);
+
+	UTIL1_chcat(errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE, ' ');
+	UTIL1_strcatNum16sFormatted(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, time.Hour, '0', 2);
+	UTIL1_chcat(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, ':');
+	UTIL1_strcatNum16sFormatted(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, time.Min, '0', 2);
+	UTIL1_chcat(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, ':');
+	UTIL1_strcatNum16sFormatted(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, time.Sec, '0', 2);
+
+	UTIL1_chcat(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, ' ');
+	UTIL1_strcat(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, message);
+
+	FS_openFile(&errorLogFile,ERRORLOG_FILENAME);
+	FS_writeLine(&errorLogFile,errorLogLineBuf);
+	FS_closeFile(&errorLogFile);
 }
 
 static uint8_t ErrorLogFile_PrintList(CLS1_ConstStdIOType *io)
 {
-	SemaphoreHandle_t fileSema;
-	uint8_t lineBuffer[100];
-	uint8_t valueBuffer[50];
-	uint8_t keyBuffer[50];
+	uint8_t nofReadChars;
+	FS_openFile(&errorLogFile,ERRORLOG_FILENAME);
 
-	FS_GetFileAccessSemaphore(&fileSema);
-	if(xSemaphoreTake(fileSema,pdMS_TO_TICKS(500)))
+	while(FS_readLine(&errorLogFile,errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE,&nofReadChars) == 0 &&
+		  nofReadChars != 0)
 	{
-		int i = 0;
-		while(ini_getkey(ERRORLOG_SECTION, i, keyBuffer, 50, ERRORLOG_FILENAME) > 0)
-		{
-
-			i++;
-
-			if(ini_gets(ERRORLOG_SECTION, keyBuffer, DEFAULT_STRING, valueBuffer, 50, ERRORLOG_FILENAME) == 0)
-			{
-				xSemaphoreGive(fileSema);
-				return ERR_FAILED;
-			}
-
-			UTIL1_strcpy(lineBuffer,100,keyBuffer);
-			UTIL1_strcat(lineBuffer,100," Message: ");
-			UTIL1_strcat(lineBuffer,100,valueBuffer);
-			UTIL1_strcat(lineBuffer,100,"\r\n");
-			CLS1_SendStr(lineBuffer,io->stdErr);
-		}
-
-		xSemaphoreGive(fileSema);
-		return ERR_OK;
+		CLS1_SendStr(errorLogLineBuf,io->stdErr);
 	}
-	else
-	{
-		return ERR_BUSY;
-	}
+
+	FS_closeFile(&errorLogFile);
+	return ERR_OK;
 }
 
 

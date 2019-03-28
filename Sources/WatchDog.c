@@ -22,7 +22,7 @@ static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources][3] 
 		{		//WatchDog_KickedByApplication_c
 				1100,							//KickIntervall [ms] x SampleIntervall [s] (Ex: Sampleintervall = 2s Kickintervall = 1100ms: Dog needs to be fed every 2200ms
 				0,								//LowerBoundary ComputationTime im Ms for the Main Task
-				950,							//HighBoundary ComputationTime im Ms for the Main Task  950
+				960,							//HighBoundary ComputationTime im Ms for the Main Task
 		}
 };
 
@@ -71,7 +71,7 @@ static void WatchDog_Task(void *param) {
 		if(!feedTheDog)//Reset!
 		{
 			//TODO Power Off SPIF und Sensoren
-
+			WDog1_Clear();
 			//Log Watchdog Reset:
 			switch(i)
 			{
@@ -83,6 +83,7 @@ static void WatchDog_Task(void *param) {
 					break;
 			}
 
+			vTaskDelay(pdMS_TO_TICKS(100)); //Let the Shell print out the Alert message...
 			//KIN1_SoftwareReset();
 			for(;;);
 		}
@@ -91,7 +92,7 @@ static void WatchDog_Task(void *param) {
 			WDog1_Clear();
 		}
 
-		if(LowPower_StopModeIsEnabled)
+		if(LowPower_StopModeIsEnabled())
 		{
 			uint8_t sampleIntervall_s;
 			AppDataFile_GetSampleIntervall(&sampleIntervall_s);
