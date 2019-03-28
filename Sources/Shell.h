@@ -14,6 +14,8 @@
 #include "Platform.h"
 #include "CLS1.h"
 
+#define SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS 10000
+
 void SHELL_Parse(void);
 void SHELL_Init(void);
 

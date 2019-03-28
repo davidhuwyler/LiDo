@@ -29,6 +29,7 @@
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
 static bool shellDisablingRequest = FALSE;
+static bool shellDisablingIsInitiated = FALSE;
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
@@ -68,11 +69,12 @@ static void SHELL_SwitchIOifNeeded(void)
 static void SHELL_Disable(void)
 {
 	static uint8_t cnt = 0;
+	shellDisablingIsInitiated = TRUE;
 	if(cnt==2)
 	{
 		UI_StopShellIndicator();
-		CDC1_Deinit();
-		USB1_Deinit();
+		//CDC1_Deinit();
+		//USB1_Deinit();
 		LowPower_EnableStopMode();
 		vTaskSuspend(shellTaskHandle);
 	}
@@ -92,7 +94,11 @@ static void SHELL_task(void *param) {
 	  //SPIF_ReleaseFromDeepPowerDown();
 	  CS1_CriticalVariable();
 	  CS1_EnterCritical();
-	  if(shellDisablingRequest)
+
+	  //Disable Shell if Requested (button or SDEP) or if Shell runns already longer than 10s and USB_CDC is disconnected
+	  if(shellDisablingRequest ||
+	     ((xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
+		 shellDisablingIsInitiated)
 	  {
 		  CS1_ExitCritical();
 		  SHELL_Disable();
@@ -101,6 +107,7 @@ static void SHELL_task(void *param) {
 	  {
 		  CS1_ExitCritical();
 	  }
+
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
