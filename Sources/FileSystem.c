@@ -15,7 +15,7 @@
 #include "littleFS/lfs.h"
 #include "Shell.h"
 
-#define FS_FILE_NAME_SIZE  32 /* Length of file name, used in buffers */
+#define FS_FILE_NAME_SIZE  48 /* Length of file name, used in buffers */
 
 /* variables used by the file system */
 static bool FS_isMounted = FALSE;
@@ -672,16 +672,21 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 
 uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 {
+	uint8_t fileNameBuf[50];
+	TIMEREC time;
 	DATEREC date;
-	uint8_t fileNameBuf[20];
-	TmDt1_GetDate(&date);
-	fileNameBuf[0] = '\0';
-	UTIL1_strcatNum16uFormatted(fileNameBuf, 15, date.Day, '0', 2);
-	UTIL1_chcat(fileNameBuf, 15, '_');
-	UTIL1_strcatNum16uFormatted(fileNameBuf, 15, date.Month, '0', 2);
-	UTIL1_chcat(fileNameBuf, 15, '_');
-	UTIL1_strcatNum16u(fileNameBuf, 15, (uint16_t)date.Year);
-	UTIL1_strcat(fileNameBuf, 15, ".txt");
+	TmDt1_GetInternalRTCTimeDate(&time,&date);
+
+	UTIL1_strcpy(fileNameBuf,50,"Samples_");
+	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Day, '0', 2);
+	UTIL1_chcat(fileNameBuf, 50, '_');
+	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Month, '0', 2);
+	UTIL1_chcat(fileNameBuf, 50, '_');
+	UTIL1_strcatNum16u(fileNameBuf, 50, (uint16_t)date.Year);
+	UTIL1_chcat(fileNameBuf, 50, '_');
+	UTIL1_chcat(fileNameBuf, 50, '_');
+	UTIL1_strcatNum16sFormatted(fileNameBuf, 50, time.Hour, '0', 2);
+	UTIL1_strcat(fileNameBuf, 50, ".bin");
 
 	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
 	{
@@ -690,6 +695,23 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 			xSemaphoreGive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
+		xSemaphoreGive(fileSystemAccessMutex);
+		return ERR_OK;
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+}
+
+uint8_t FS_getLiDoSampleOutOfFile(lfs_file_t* file,uint8_t* sampleBuf,size_t bufSize,uint8_t* nofReadChars)
+{
+	sampleBuf[0] = '\0';
+	uint8_t ch;
+
+	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	{
+		*nofReadChars = lfs_file_read(&FS_lfs, file, sampleBuf, bufSize);
 		xSemaphoreGive(fileSystemAccessMutex);
 		return ERR_OK;
 	}

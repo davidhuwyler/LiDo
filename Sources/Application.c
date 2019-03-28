@@ -67,12 +67,10 @@ static void APP_toggleEnableSamplingIfRequested(void)
 		if(AppDataFile_GetSamplingEnabled())
 		{
 			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
-			//AppDataFile_SetSamplingEnables(false);
 		}
 		else
 		{
             AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
-			//AppDataFile_SetSamplingEnables(true);
 		}
 	}
 	else
@@ -168,14 +166,28 @@ static bool APP_newDay(void)
 	 return FALSE;
 }
 
+static bool APP_newHour(void)
+{
+	 static TIMEREC oldTime;
+	 TIMEREC newTime;
+
+	 TmDt1_GetTime(&newTime);
+	 if(newTime.Hour != oldTime.Hour)
+	 {
+		 oldTime = newTime;
+		 return TRUE;
+	 }
+	 return FALSE;
+}
+
 
 static void APP_main_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   static TickType_t lastTaskExecutionDuration = 1; //Time it took to execute the task last time
   liDoSample_t sample;
-  uint8_t samplingIntervall;
   lfs_file_t sampleFile;
+  uint8_t samplingIntervall;
   sampleSemaphore = xSemaphoreCreateBinary();
   xSemaphoreGive(sampleSemaphore);
   for(;;)
@@ -188,8 +200,8 @@ static void APP_main_task(void *param) {
 	  APP_softwareResetIfRequested(&sampleFile);
 	  APP_toggleEnableSamplingIfRequested();
 
-	  //New Day: Make new File!
-	  if(APP_newDay() && fileIsOpen && AppDataFile_GetSamplingEnabled())
+	  //New Hour: Make new File!
+	  if(APP_newHour() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
 		  if(FS_closeFile(&sampleFile) != ERR_OK)
 		  {
@@ -279,4 +291,137 @@ void APP_Run(void) {
 
 	vTaskStartScheduler();
 	for(;;) {}
+}
+
+
+static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
+  uint8_t buf[32];
+  CLS1_SendStatusStr((unsigned char*)"APP", (const unsigned char*)"\r\n", io->stdOut);
+  return ERR_OK;
+}
+
+static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
+{
+	lfs_file_t sampleFile;
+	uint8_t nofReadChars;
+	bool samplingWasEnabled = FALSE;
+	uint8_t sampleBuf[LIDO_SAMPLE_SIZE];
+	uint8_t samplePrintLine[120];
+	uint16_t sampleNr = 0;
+	int32 unixTimeStamp;
+	TIMEREC time;
+	DATEREC date;
+
+	if(AppDataFile_GetSamplingEnabled())
+	{
+		samplingWasEnabled = TRUE;
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
+	}
+
+	if(FS_openFile(&sampleFile,fileNameSrc) != ERR_OK)
+	{
+		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile open failed");
+		return ERR_FAILED;
+	}
+
+	while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&
+		  nofReadChars == LIDO_SAMPLE_SIZE)
+	{
+		sampleNr ++;
+
+		unixTimeStamp = (int32)(sampleBuf[1] | sampleBuf[2]<<8 | sampleBuf[3]<<16 | sampleBuf[4]<<24);
+		TmDt1_UnixSecondsToTimeDate(unixTimeStamp,0,&time,&date);
+
+		UTIL1_strcpy(samplePrintLine,120,"#");
+		UTIL1_strcatNum16uFormatted(samplePrintLine,120,sampleNr,'0',3);
+
+		UTIL1_strcat(samplePrintLine,120," D: ");
+		UTIL1_strcatNum16uFormatted(samplePrintLine, 120, date.Day, '0', 2);
+		UTIL1_chcat(samplePrintLine, 120, '.');
+		UTIL1_strcatNum16uFormatted(samplePrintLine, 120, date.Month, '0', 2);
+		UTIL1_chcat(samplePrintLine, 120, '.');
+		UTIL1_strcatNum16u(samplePrintLine, 120, (uint16_t)date.Year);
+
+		UTIL1_strcat(samplePrintLine,120," T: ");
+		UTIL1_strcatNum16sFormatted(samplePrintLine, 120, time.Hour, '0', 2);
+		UTIL1_chcat(samplePrintLine, 120, ':');
+		UTIL1_strcatNum16sFormatted(samplePrintLine, 120, time.Min, '0', 2);
+		UTIL1_chcat(samplePrintLine, 120, ':');
+		UTIL1_strcatNum16sFormatted(samplePrintLine, 120, time.Sec, '0', 2);
+
+		UTIL1_strcat(samplePrintLine,120," L: x");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[5] | sampleBuf[6]<<8));
+		UTIL1_strcat(samplePrintLine,120," y");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[7] | sampleBuf[8]<<8));
+		UTIL1_strcat(samplePrintLine,120," z");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[9] | sampleBuf[10]<<8));
+		UTIL1_strcat(samplePrintLine,120," ir");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[11] | sampleBuf[12]<<8));
+		UTIL1_strcat(samplePrintLine,120," b");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[13] | sampleBuf[14]<<8));
+		UTIL1_strcat(samplePrintLine,120," b");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[15] | sampleBuf[16]<<8));
+
+		UTIL1_strcat(samplePrintLine,120," A: x");
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[17]);
+		UTIL1_strcat(samplePrintLine,120," y");
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
+		UTIL1_strcat(samplePrintLine,120," z");
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[19]);
+
+		if(sampleBuf[20] & 0x80 )  //MarkerPresent!
+		{
+			UTIL1_strcat(samplePrintLine,120," T: ");
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[20] & ~0x80);
+			UTIL1_strcat(samplePrintLine,120," M: true");
+		}
+		else
+		{
+			UTIL1_strcat(samplePrintLine,120," T: ");
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[20]);
+			UTIL1_strcat(samplePrintLine,120," M: false");
+		}
+
+		UTIL1_strcat(samplePrintLine,120,"\r\n");
+		CLS1_SendStr(samplePrintLine,io->stdErr);
+	}
+
+	if(FS_closeFile(&sampleFile) != ERR_OK)
+	{
+		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
+		return ERR_FAILED;
+	}
+	return ERR_OK;
+}
+
+
+uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io)
+{
+  unsigned char fileName[48];
+  size_t lenRead;
+  uint8_t res = ERR_OK;
+  const uint8_t *p;
+
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "APP help")==0)
+  {
+    CLS1_SendHelpStr((unsigned char*)"APP", (const unsigned char*)"Group of Application commands\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  printFile <file>", (const unsigned char*)"Prints a LiDo Sample File\r\n", io->stdOut);
+    *handled = TRUE;
+    return ERR_OK;
+  }
+  else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
+    *handled = TRUE;
+    return PrintStatus(io);
+  }
+  else if (UTIL1_strncmp((char* )cmd, "APP printFile ",	sizeof("APP printFile ") - 1)	== 0)
+  {
+	*handled = TRUE;
+	if ((UTIL1_ReadEscapedName(cmd + sizeof("APP printFile ") - 1,fileName, sizeof(fileName), &lenRead, NULL, NULL)	== ERR_OK))
+	{
+		return PrintLiDoFile(fileName, io);
+	}
+	return ERR_FAILED;
+  }
+  return res;
 }

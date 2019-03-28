@@ -6,6 +6,7 @@
  */
 #include "Platform.h"
 
+#include "Application.h"
 #include "Shell.h"
 #include "CLS1.h"
 #include "KIN1.h"
@@ -43,6 +44,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   FS_ParseCommand,
   AppData_ParseCommand,
   ErrorLogFile_ParseCommand,
+  APP_ParseCommand,
   NULL /* sentinel */
 };
 
@@ -96,9 +98,9 @@ static void SHELL_task(void *param) {
 	  CS1_EnterCritical();
 
 	  //Disable Shell if Requested (button or SDEP) or if Shell runns already longer than 10s and USB_CDC is disconnected
-	  if(shellDisablingRequest ||
-	     ((xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
-		 shellDisablingIsInitiated)
+	  if(	shellDisablingRequest ||
+	     (( xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
+		 	shellDisablingIsInitiated)
 	  {
 		  CS1_ExitCritical();
 		  SHELL_Disable();

@@ -8,10 +8,8 @@
 #ifndef SOURCES_APPLICATION_H_
 #define SOURCES_APPLICATION_H_
 
-//#include <stdint.h>
-//#include <stddef.h>
-//#include <stdbool.h>
-
+#include "Platform.h"
+#include "CLS1.h"
 
 #define CONFIG_ENABLE_STOPMODE
 
@@ -39,5 +37,6 @@ uint8_t APP_getCurrentSample(liDoSample_t* curSample);
 void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);
+uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
 #endif /* SOURCES_APPLICATION_H_ */
