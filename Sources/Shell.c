@@ -75,8 +75,15 @@ static void SHELL_Disable(void)
 	if(cnt==2)
 	{
 		UI_StopShellIndicator();
-		//CDC1_Deinit();
-		//USB1_Deinit();
+		CDC1_Deinit();
+		USB1_Deinit();
+
+		//Switch Peripheral Clock from ICR48 to FLL clock (Datasheet p.265)
+		//More Infos in AN4905 Crystal-less USB operation on Kinetis MCUs
+		SIM_SOPT2 &= ~SIM_SOPT2_PLLFLLSEL_MASK;
+		SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(0x0);
+		USB0_CLK_RECOVER_IRC_EN = 0x0;	//Disable USB Clock (IRC 48MHz)
+
 		LowPower_EnableStopMode();
 		vTaskSuspend(shellTaskHandle);
 	}
