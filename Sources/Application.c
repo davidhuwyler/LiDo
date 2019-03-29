@@ -62,6 +62,7 @@ static void APP_toggleEnableSamplingIfRequested(void)
 	CS1_EnterCritical();
 	if(toggleEnablingSampling)
 	{
+		WatchDog_StartComputationTime(WatchDog_ToggleEnableSampling);
         toggleEnablingSampling = FALSE;
     	CS1_ExitCritical();
 		if(AppDataFile_GetSamplingEnabled())
@@ -72,6 +73,7 @@ static void APP_toggleEnableSamplingIfRequested(void)
 		{
             AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
 		}
+		WatchDog_StopComputationTime(WatchDog_ToggleEnableSampling);
 	}
 	else
 	{
@@ -109,6 +111,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 
 	  if(xSemaphoreTake(sampleSemaphore,pdMS_TO_TICKS(500)))
 	  {
+		  WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
 		  RTC_getTimeUnixFormat(&unixTimestamp);
 		  sample->unixTimeStamp = unixTimestamp;
 		  if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
@@ -143,6 +146,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 			  sample->temp = accelAndTemp.temp;
 		  }
 		  crc8_liDoSample(sample);
+		  WatchDog_StopComputationTime(WatchDog_TakeLidoSample);
 		  xSemaphoreGive(sampleSemaphore);
 		  return ERR_OK;
 	  }
@@ -194,7 +198,7 @@ static void APP_main_task(void *param) {
   {
 	  xLastWakeTime = xTaskGetTickCount();
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
-	  WatchDog_Kick(WatchDog_KickedByApplication_c,lastTaskExecutionDuration);
+	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
 
 	  //SPIF_ReleaseFromDeepPowerDown();
 	  APP_softwareResetIfRequested(&sampleFile);
@@ -203,19 +207,24 @@ static void APP_main_task(void *param) {
 	  //New Hour: Make new File!
 	  if(APP_newHour() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
+		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
 		  if(FS_closeFile(&sampleFile) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		  }
+		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
 		  if(FS_openLiDoSampleFile(&sampleFile) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
+		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
 	  }
 
 	  //OpenFile if needed
 	  if(AppDataFile_GetSamplingEnabled() && !fileIsOpen)
 	  {
+		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
 		  if(FS_openLiDoSampleFile(&sampleFile) == ERR_OK)
 		  {
 			  fileIsOpen = TRUE;
@@ -224,6 +233,7 @@ static void APP_main_task(void *param) {
 		  {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
+		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
 	  }
 
 	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
@@ -233,14 +243,17 @@ static void APP_main_task(void *param) {
 		  {
 			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
 		  }
+
+		  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
 		  if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
 		  }
-
+		  WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
 	  }
 	  else if (fileIsOpen)
 	  {
+		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
 		  if(FS_closeFile(&sampleFile) == ERR_OK)
 		  {
 			  fileIsOpen = FALSE;
@@ -249,10 +262,11 @@ static void APP_main_task(void *param) {
 		  {
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		  }
+		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
 	  }
 
 	  //SPIF_GoIntoDeepPowerDown();
-	  lastTaskExecutionDuration = xTaskGetTickCount() - xLastWakeTime;
+	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
 }

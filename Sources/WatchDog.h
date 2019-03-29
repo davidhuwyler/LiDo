@@ -12,12 +12,17 @@
 
 typedef enum
 {
-	WatchDog_KickedByApplication_c,
+	WatchDog_OpenCloseLidoSampleFile,
+	WatchDog_WriteToLidoSampleFile,
+	WatchDog_TakeLidoSample,
+	WatchDog_ToggleEnableSampling,
+	WatchDog_MeasureTaskRunns,
 	WatchDog_NOF_KickSources
 }WatchDog_KickSource_e;
 
 void WatchDog_Init(void);
 
-void WatchDog_Kick(WatchDog_KickSource_e kickSource, uint16_t computationDuration_ms);
+void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource);
+void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource);
 
 #endif /* SOURCES_WATCHDOG_H_ */

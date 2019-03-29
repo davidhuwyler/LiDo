@@ -16,17 +16,24 @@
 #include "WDog1.h"
 #include "LowPower.h"
 
-// Configure Watchdog Kicksources:
-static const uint16 watchDogKickIntervallPerSource[WatchDog_NOF_KickSources][3] =
-{
-		{		//WatchDog_KickedByApplication_c
-				1100,							//KickIntervall [ms] x SampleIntervall [s] (Ex: Sampleintervall = 2s Kickintervall = 1100ms: Dog needs to be fed every 2200ms
-				0,								//LowerBoundary ComputationTime im Ms for the Main Task
-				960,							//HighBoundary ComputationTime im Ms for the Main Task
-		}
-};
+#define MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS 4000
 
-static uint16 watchDogKickSourceParams[WatchDog_NOF_KickSources][2]; //{ IntervallUntilDogBytes, LastRegisteredComputationTime }
+typedef struct
+{
+	bool		isSingleCheckWatchdogSouce;		//If true, the WatchdogSource needs to be activated every Check and KickIntervall is not checked
+	bool 		sourceIsActive;					//Flags an active WatchdogSource
+	bool		compTimeMeasurementRunning;	//Flags an active WatchdogSource Time Measurement
+	bool		requestForDeactivation;			//Variable is checked if a source wants to deatcivate its watchdog
+	uint16_t	measuredCompTime;				//Measured Computation Time in ms
+	TickType_t	timeStampLastKick;				//Time since last WatchDog kick from this Souce in ms
+	uint16_t 	lowerCompTimeLimit;				//Lower Boundary of allowed Computatoin time
+	uint16_t 	uppwerCompTimeLimit;			//Upper Boundary of allowed Computatoin time
+	uint16_t	maxKickIntervallLimitRaw;		//Upper Boundary of allowed Time between kicks
+	bool		kickIntervallXSampleIntervall;	//If true, the maxKickIntervallLimit is multiplied with the Lido Sampleintervall
+	uint16_t	maxKickIntervallLimit;			//maxKickIntervallLimitRaw x SampleIntervall
+} watchDogKickSource_t;
+
+static watchDogKickSource_t watchDogKickSources[WatchDog_NOF_KickSources];
 
 
 static void WatchDog_Task(void *param) {
@@ -41,42 +48,72 @@ static void WatchDog_Task(void *param) {
 
 		for(i = 0; i< WatchDog_NOF_KickSources ; i++)
 		{
-			CS1_CriticalVariable();
-			CS1_EnterCritical();
-			if(watchDogKickSourceParams[i][0] == 0)		//FeedDog intervall ran out?
+			if(watchDogKickSources[i].sourceIsActive)
 			{
-				feedTheDog = FALSE; // --> WatchDog Source ran out... Reset!
-				CS1_ExitCritical();
-				break;
-			}
-			else if(watchDogKickSourceParams[i][1] < watchDogKickIntervallPerSource[i][1] || //ComputationTime of the Source in boundary?
-					watchDogKickSourceParams[i][1] > watchDogKickIntervallPerSource[i][2] )
-			{
-				feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
-				CS1_ExitCritical();
-				break;
-			}
-			else if(watchDogKickSourceParams[i][0]>=WATCHDOG_TASK_DELAY)
-			{
-				watchDogKickSourceParams[i][0] -= WATCHDOG_TASK_DELAY;
-			}
-			else
-			{
-				watchDogKickSourceParams[i][0] = 0;
-			}
-			CS1_ExitCritical();
-		}
+				CS1_CriticalVariable();
+				CS1_EnterCritical();
 
+				//Check Watchdog Kick Intervall
+				if(!watchDogKickSources[i].isSingleCheckWatchdogSouce &&
+					(xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].maxKickIntervallLimit)	//FeedDog intervall ran out?
+				{
+					feedTheDog = FALSE; // --> WatchDog Source ran out... Reset!
+					CS1_ExitCritical();
+					break;
+				}
+
+				//Check ComutationTime
+				if(watchDogKickSources[i].compTimeMeasurementRunning)
+				{ //If measurement Runns, only check upper Boundary
+					if((xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].uppwerCompTimeLimit )
+					{
+						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
+						CS1_ExitCritical();
+						break;
+					}
+				}
+				else
+				{
+					 if(watchDogKickSources[i].measuredCompTime < watchDogKickSources[i].lowerCompTimeLimit || //ComputationTime of the Source in boundary?
+							watchDogKickSources[i].measuredCompTime > watchDogKickSources[i].uppwerCompTimeLimit )
+					{
+						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
+						CS1_ExitCritical();
+						break;
+					}
+				}
+
+				if(watchDogKickSources[i].requestForDeactivation)
+				{
+					watchDogKickSources[i].sourceIsActive = FALSE;
+				}
+
+				CS1_ExitCritical();
+			}
+		}
 
 		if(!feedTheDog)//Reset!
 		{
 			//TODO Power Off SPIF und Sensoren
 			WDog1_Clear();
-			//Log Watchdog Reset:
+
+			//Send SDEP Alarm and Log Watchdog Reset:
 			switch(i)
 			{
-				case 0 : //Kicksource: WatchDog_KickedByApplication_c
-					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset Source: MainTask");
+				case WatchDog_OpenCloseLidoSampleFile :
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at OpenCloseLidoSampleFile");
+					break;
+				case WatchDog_WriteToLidoSampleFile :
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at WriteToLidoSampleFile");
+					break;
+				case WatchDog_TakeLidoSample :
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at TakeLidoSample");
+					break;
+				case WatchDog_ToggleEnableSampling :
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at ToggleEnableSampling");
+					break;
+				case WatchDog_MeasureTaskRunns :
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at MeasureTaskRunns");
 					break;
 				default:
 					SDEP_InitiateNewAlert(SDEP_ALERT_WATCHDOG_RESET);
@@ -108,25 +145,108 @@ static void WatchDog_Task(void *param) {
 void WatchDog_Init(void)
 {
 	//initial Dog feed...
-	for(int i = 0; i< WatchDog_NOF_KickSources ; i++)
-	{
-		watchDogKickSourceParams[i][0] = watchDogKickIntervallPerSource[i][0];
-		watchDogKickSourceParams[i][1] = watchDogKickIntervallPerSource[i][1];
-	}
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].isSingleCheckWatchdogSouce	= TRUE;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 20;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= 180;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].maxKickIntervallLimitRaw  	= 1100; //(no effect if isSingleCheckWatchdogSouce = true) Intervall in which the Dog has to be kicked
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].maxKickIntervallLimit  		= 1100; //(no effect if isSingleCheckWatchdogSouce = true) Gets Calculated later, but should be initialized to MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].kickIntervallXSampleIntervall	= TRUE; //(no effect if isSingleCheckWatchdogSouce = true) If true, the kickIntervall maxKickIntervallLimitRaw gets multiplied by the Sambleintervall
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].measuredCompTime 				= 50;	//Watchdog internal Variable: Initialize to between lowerCompTimeLimit and uppwerCompTimeLimit
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].timeStampLastKick 			= 0;	//Watchdog internal Variable: Initialize to 0
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].sourceIsActive 				= FALSE;//True= Source is active after init
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].requestForDeactivation		= FALSE;//Watchdog internal Variable: Initialize to false
 
-	if (xTaskCreate(WatchDog_Task, "WatchDog", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].isSingleCheckWatchdogSouce		= TRUE;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].lowerCompTimeLimit 				= 0;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].uppwerCompTimeLimit 			= 2000;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].maxKickIntervallLimitRaw 		= 1100;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].maxKickIntervallLimit  			= 1100;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].kickIntervallXSampleIntervall	= TRUE;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].measuredCompTime 				= 0;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].timeStampLastKick 				= 0;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].sourceIsActive 					= FALSE;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].requestForDeactivation			= FALSE;
+
+	watchDogKickSources[WatchDog_TakeLidoSample].isSingleCheckWatchdogSouce				= TRUE;
+	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 50;
+	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 200;
+	watchDogKickSources[WatchDog_TakeLidoSample].maxKickIntervallLimitRaw  				= 1100;
+	watchDogKickSources[WatchDog_TakeLidoSample].maxKickIntervallLimit  				= 1100;
+	watchDogKickSources[WatchDog_TakeLidoSample].kickIntervallXSampleIntervall			= TRUE;
+	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						= 50;
+	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						= 0;
+	watchDogKickSources[WatchDog_TakeLidoSample].sourceIsActive 						= FALSE;
+	watchDogKickSources[WatchDog_TakeLidoSample].requestForDeactivation					= FALSE;
+
+	watchDogKickSources[WatchDog_ToggleEnableSampling].isSingleCheckWatchdogSouce		= TRUE;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 500;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].uppwerCompTimeLimit 				= 3000;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].maxKickIntervallLimitRaw			= 1100;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].maxKickIntervallLimit  			= 1100;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].kickIntervallXSampleIntervall	= TRUE;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].measuredCompTime 				= 500;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].timeStampLastKick 				= 0;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].sourceIsActive 					= FALSE;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].requestForDeactivation			= FALSE;
+
+	watchDogKickSources[WatchDog_MeasureTaskRunns].isSingleCheckWatchdogSouce			= FALSE;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit 					= 0;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 1100;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= 0;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].timeStampLastKick 					= 0;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= TRUE;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
+
+
+	if (xTaskCreate(WatchDog_Task, "WatchDog", 1000/sizeof(StackType_t), NULL,  configMAX_PRIORITIES /*tskIDLE_PRIORITY+2*/, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
 }
 
-void WatchDog_Kick(WatchDog_KickSource_e kickSource, uint16_t computationDuration_ms)
+
+void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
-	uint8_t sampleIntervall_s;
-	AppDataFile_GetSampleIntervall(&sampleIntervall_s);
-	watchDogKickSourceParams[kickSource][0] = watchDogKickIntervallPerSource[kickSource][0] * sampleIntervall_s;
-	watchDogKickSourceParams[kickSource][1] = computationDuration_ms;
+	watchDogKickSources[kickSource].timeStampLastKick = xTaskGetTickCount();
+	watchDogKickSources[kickSource].sourceIsActive 					= TRUE;
+	watchDogKickSources[kickSource].requestForDeactivation 			= FALSE;
+	watchDogKickSources[kickSource].compTimeMeasurementRunning		= TRUE;
+
+	CS1_ExitCritical();
+}
+
+void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource)
+{
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	watchDogKickSources[kickSource].measuredCompTime = xTaskGetTickCount() - watchDogKickSources[kickSource].timeStampLastKick;
+	watchDogKickSources[kickSource].compTimeMeasurementRunning		= FALSE;
+
+	if(!watchDogKickSources[kickSource].isSingleCheckWatchdogSouce)
+	{
+		if(watchDogKickSources[kickSource].kickIntervallXSampleIntervall)
+		{
+			uint8_t sampleIntervall_s;
+			AppDataFile_GetSampleIntervall(&sampleIntervall_s);
+			watchDogKickSources[kickSource].maxKickIntervallLimit = watchDogKickSources[kickSource].maxKickIntervallLimitRaw * sampleIntervall_s;
+		}
+		else
+		{
+			watchDogKickSources[kickSource].maxKickIntervallLimit;
+		}
+		if(watchDogKickSources[kickSource].maxKickIntervallLimit < MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS)
+		{
+			watchDogKickSources[kickSource].maxKickIntervallLimit = MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS;
+		}
+	}
+	else
+	{
+		watchDogKickSources[kickSource].requestForDeactivation 	= TRUE;
+	}
 	CS1_ExitCritical();
 }
