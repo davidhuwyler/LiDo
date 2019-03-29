@@ -146,8 +146,8 @@ void WatchDog_Init(void)
 {
 	//initial Dog feed...
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].isSingleCheckWatchdogSouce	= TRUE;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 20;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= 180;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 5;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= 550;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].maxKickIntervallLimitRaw  	= 1100; //(no effect if isSingleCheckWatchdogSouce = true) Intervall in which the Dog has to be kicked
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].maxKickIntervallLimit  		= 1100; //(no effect if isSingleCheckWatchdogSouce = true) Gets Calculated later, but should be initialized to MINIMUM_HIGHEST_ALLOWED_TASK_EXECUTION_MS
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].kickIntervallXSampleIntervall	= TRUE; //(no effect if isSingleCheckWatchdogSouce = true) If true, the kickIntervall maxKickIntervallLimitRaw gets multiplied by the Sambleintervall
@@ -179,7 +179,7 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_TakeLidoSample].requestForDeactivation					= FALSE;
 
 	watchDogKickSources[WatchDog_ToggleEnableSampling].isSingleCheckWatchdogSouce		= TRUE;
-	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 500;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 200;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].uppwerCompTimeLimit 				= 3000;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].maxKickIntervallLimitRaw			= 1100;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].maxKickIntervallLimit  			= 1100;
