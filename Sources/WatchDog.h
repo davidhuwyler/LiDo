@@ -25,4 +25,7 @@ void WatchDog_Init(void);
 void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource);
 void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource);
 
+void WatchDog_DisableSource(WatchDog_KickSource_e kickSource);
+void WatchDog_EnableSource(WatchDog_KickSource_e kickSource);
+
 #endif /* SOURCES_WATCHDOG_H_ */

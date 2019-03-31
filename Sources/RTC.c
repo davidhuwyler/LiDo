@@ -24,7 +24,7 @@ void RTC_getTime(LDD_RTC_TTime* rtcTime)
 	RTC1_GetTime(rtcDeviceDataHandle,rtcTime);
 }
 
-void RTC_getTimeUnixFormat(uint32_t* rtcTimeUnix)
+void RTC_getTimeUnixFormat(int32_t* rtcTimeUnix)
 {
 	TIMEREC time;
 	DATEREC date;
@@ -50,6 +50,12 @@ void RTC_init(bool softInit)
 	if(timeToSet.Year>=2099) //RTC1 component needs the year to be smaller than 2099
 	{
 		timeToSet.Year = 2019;
+		timeToSet.Day = 01;
+		timeToSet.Month = 01;
+		timeToSet.Hour = 0;
+		timeToSet.Minute = 0;
+		timeToSet.Second = 0;
+		RTC_setTime(&timeToSet);
 	}
 }
 

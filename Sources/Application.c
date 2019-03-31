@@ -26,11 +26,13 @@
 #include "WatchDog.h"
 #include "SPIF.h"
 
-static SemaphoreHandle_t sampleSemaphore;
+static SemaphoreHandle_t sampleMutex;
+static QueueHandle_t lidoSamplesToWrite;
 static volatile bool fileIsOpen = FALSE;
 static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
+
 
 void APP_setMarkerInLog(void)
 {
@@ -102,17 +104,15 @@ static void APP_softwareResetIfRequested(lfs_file_t* file)
 	}
 }
 
-uint8_t APP_getCurrentSample(liDoSample_t* sample)
+uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp)
 {
 	  LightChannels_t lightB0,lightB1;
 	  AccelAxis_t accelAndTemp;
-	  int32_t unixTimestamp;
 	  uint8_t err = ERR_OK;
 
-	  if(xSemaphoreTake(sampleSemaphore,pdMS_TO_TICKS(500)))
+	  if(xSemaphoreTake(sampleMutex,pdMS_TO_TICKS(500)))
 	  {
 		  WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
-		  RTC_getTimeUnixFormat(&unixTimestamp);
 		  sample->unixTimeStamp = unixTimestamp;
 		  if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
 		  {
@@ -147,7 +147,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample)
 		  }
 		  crc8_liDoSample(sample);
 		  WatchDog_StopComputationTime(WatchDog_TakeLidoSample);
-		  xSemaphoreGive(sampleSemaphore);
+		  xSemaphoreGive(sampleMutex);
 		  return ERR_OK;
 	  }
 	  else
@@ -188,21 +188,64 @@ static bool APP_newHour(void)
 static void APP_main_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
-  static TickType_t lastTaskExecutionDuration = 1; //Time it took to execute the task last time
   liDoSample_t sample;
-  lfs_file_t sampleFile;
   uint8_t samplingIntervall;
-  sampleSemaphore = xSemaphoreCreateBinary();
-  xSemaphoreGive(sampleSemaphore);
+  static int32_t unixTSlastSample;
+  int32_t unixTScurrentSample;
+  sampleMutex = xSemaphoreCreateRecursiveMutex();
+  xSemaphoreGive(sampleMutex);
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
+	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 
+	  //Sync with RTC
+	  RTC_getTimeUnixFormat(&unixTScurrentSample);
+	  while(unixTScurrentSample < (unixTSlastSample + samplingIntervall))
+	  {
+		  vTaskDelay(pdMS_TO_TICKS(100));
+		  RTC_getTimeUnixFormat(&unixTScurrentSample);
+	  }
+
+	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
+	  {
+		  LED1_Neg();
+		  RTC_getTimeUnixFormat(&unixTScurrentSample);
+		  if(APP_getCurrentSample(&sample,unixTScurrentSample) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+		  }
+
+	      if( xQueueSendToBack( lidoSamplesToWrite,  ( void * ) &sample, pdMS_TO_TICKS(500)) != pdPASS )
+	      {
+	    	  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+	      }
+	  }
+
+	  unixTSlastSample = unixTScurrentSample;
+
+	  //SPIF_GoIntoDeepPowerDown();
+
+	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
+	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((samplingIntervall*1000)-50)); // -50 is added to be faster than the RTC, is corrected in the Sync section
+  } /* for */
+}
+
+static void APP_writeLidoFile(void *param) {
+  (void)param;
+  TickType_t xLastWakeTime;
+  liDoSample_t sample;
+  lfs_file_t sampleFile;
+  uint8_t samplingIntervall;
+
+  for(;;)
+  {
+	  xLastWakeTime = xTaskGetTickCount();
 	  //SPIF_ReleaseFromDeepPowerDown();
 	  APP_softwareResetIfRequested(&sampleFile);
 	  APP_toggleEnableSamplingIfRequested();
+	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 
 	  //New Hour: Make new File!
 	  if(APP_newHour() && fileIsOpen && AppDataFile_GetSamplingEnabled())
@@ -238,18 +281,20 @@ static void APP_main_task(void *param) {
 
 	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
 	  {
-		  LED1_Neg();
-		  if(APP_getCurrentSample(&sample) != ERR_OK)
+		  //Write all pending samples to file
+		  while(xQueuePeek(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500)) == pdPASS)
 		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+			  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
+			  if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
+			  {
+				  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
+			  }
+			  else
+			  {
+				  xQueueReceive(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500));
+			  }
+			  WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
 		  }
-
-		  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
-		  if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
-		  {
-			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
-		  }
-		  WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
 	  }
 	  else if (fileIsOpen)
 	  {
@@ -266,7 +311,7 @@ static void APP_main_task(void *param) {
 	  }
 
 	  //SPIF_GoIntoDeepPowerDown();
-	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
+
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
 }
@@ -282,7 +327,20 @@ static void APP_init_task(void *param) {
 	AppDataFile_Init();
 	SHELL_Init();
 	WatchDog_Init();
-	if (xTaskCreate(APP_main_task, "Init", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+
+	//APP init()
+	lidoSamplesToWrite = xQueueCreate( 5, sizeof( liDoSample_t ) );
+    if( lidoSamplesToWrite == NULL )
+    {
+    	for(;;){} /* error! probably out of memory */
+    }
+
+	if (xTaskCreate(APP_main_task, "mainTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	{
+	    for(;;){} /* error! probably out of memory */
+	}
+
+	if (xTaskCreate(APP_writeLidoFile, "lidoFileWriter", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
@@ -337,6 +395,8 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile open failed");
 		return ERR_FAILED;
 	}
+
+	WatchDog_DisableSource(WatchDog_MeasureTaskRunns);
 
 	while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&
 		  nofReadChars == LIDO_SAMPLE_SIZE)
@@ -405,6 +465,8 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
 		return ERR_FAILED;
 	}
+
+	WatchDog_EnableSource(WatchDog_MeasureTaskRunns);
 	return ERR_OK;
 }
 

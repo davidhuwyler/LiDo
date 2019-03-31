@@ -66,7 +66,8 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		return ERR_OK;
 
 	case SDEP_CMDID_GET_SAMPLE:
-		APP_getCurrentSample(&sample);
+		RTC_getTimeUnixFormat(&sint32Param);
+		APP_getCurrentSample(&sample,sint32Param);
 		answer.payload[0] = (uint8_t)sample.unixTimeStamp;
 		answer.payload[1] = (uint8_t)(sample.unixTimeStamp>>8);
 		answer.payload[2] = (uint8_t)(sample.unixTimeStamp>>16);

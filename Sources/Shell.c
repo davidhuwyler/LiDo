@@ -97,6 +97,7 @@ static void SHELL_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   shellEnabledTimestamp = xTaskGetTickCount();
+  unsigned short charsInUARTbuf;
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
@@ -124,7 +125,8 @@ static void SHELL_task(void *param) {
 	  SDEPio_HandleFileCMDs(0);
 	  SDEP_SendPendingAlert();
 	  //SPIF_GoIntoDeepPowerDown();
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(10));
+	  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+
   } /* for */
 }
 
