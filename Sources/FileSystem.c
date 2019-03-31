@@ -95,18 +95,30 @@ char* FS_gets (
   char c, *p = buff;
   byte s[2];
   uint32_t rc;
-  while (n < len - 1) { /* Read characters until buffer gets filled */
-    rc = lfs_file_read(&FS_lfs,fp,s,1);
-    if (rc != 1) break;
-    c = s[0];
 
-    if (c == '\r') continue; /* Strip '\r' */
-    *p++ = c;
-    n++;
-    if (c == '\n') break;   /* Break on EOL */
-  }
-  *p = 0;
-  return n ? buff : 0;      /* When no data read (eof or error), return with error. */
+	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	{
+		  while (n < len - 1) { /* Read characters until buffer gets filled */
+		    rc = lfs_file_read(&FS_lfs,fp,s,1);
+		    if (rc != 1) break;
+		    c = s[0];
+
+		    if (c == '\r') continue; /* Strip '\r' */
+		    *p++ = c;
+		    n++;
+		    if (c == '\n') break;   /* Break on EOL */
+		  }
+		  *p = 0;
+		  xSemaphoreGive(fileSystemAccessMutex);
+		  return n ? buff : 0;      /* When no data read (eof or error), return with error. */
+	}
+	else
+	{
+		return 0;
+	}
+
+
+
 }
 
 /*-----------------------------------------------------------------------*/
@@ -149,22 +161,22 @@ void putc_bfd (
 
 
 
-int FS_putc (
-  char c,  /* A character to be output */
-  lfs_file_t* fp   /* Pointer to the file object */
-)
-{
-  putbuff pb;
-  uint32_t nw;
-  pb.fp = fp;     /* Initialize output buffer */
-  pb.nchr = pb.idx = 0;
-  putc_bfd(&pb, c); /* Put a character */
-  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
-  if (   pb.idx >= 0  /* Flush buffered characters to the file */
-    && nw>=0
-    && (uint32_t)pb.idx == nw) return pb.nchr;
-  return -1;
-}
+//int FS_putc (
+//  char c,  /* A character to be output */
+//  lfs_file_t* fp   /* Pointer to the file object */
+//)
+//{
+//  putbuff pb;
+//  uint32_t nw;
+//  pb.fp = fp;     /* Initialize output buffer */
+//  pb.nchr = pb.idx = 0;
+//  putc_bfd(&pb, c); /* Put a character */
+//  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
+//  if (   pb.idx >= 0  /* Flush buffered characters to the file */
+//    && nw>=0
+//    && (uint32_t)pb.idx == nw) return pb.nchr;
+//  return -1;
+//}
 
 /*-----------------------------------------------------------------------*/
 /* Put a string to the file
@@ -179,18 +191,31 @@ int FS_puts (
   putbuff pb;
   uint32_t nw;
 
-  pb.fp = fp;       /* Initialize output buffer */
-  pb.nchr = pb.idx = 0;
+	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	{
+		  pb.fp = fp;       /* Initialize output buffer */
+		  pb.nchr = pb.idx = 0;
 
-  while (*str)      /* Put the string */
-    putc_bfd(&pb, *str++);
+		  while (*str)      /* Put the string */
+		    putc_bfd(&pb, *str++);
 
-  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
+		  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
 
-  if (   pb.idx >= 0    /* Flush buffered characters to the file */
-    && nw>=0
-    && (uint32_t)pb.idx == nw) return pb.nchr;
-  return -1;
+		  if (   pb.idx >= 0    /* Flush buffered characters to the file */
+		    && nw>=0
+		    && (uint32_t)pb.idx == nw)
+			  {
+			  	  xSemaphoreGive(fileSystemAccessMutex);
+			  	  return pb.nchr;
+			  }
+
+		  xSemaphoreGive(fileSystemAccessMutex);
+		  return -1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 

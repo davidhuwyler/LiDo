@@ -60,6 +60,10 @@
             <description></description>
             <sequence value="h[10] h[05] h[00] h[0E] h[30] h[31] h[5F] h[30] h[31] h[5F] h[32] h[30] h[30] h[30] h[2E] h[74] h[78] h[74] h[13]" />
         </SequenceItem>
+        <SequenceItem name="GetFile (Samples_01_01_2019__01.bin)">
+            <description></description>
+            <sequence value="h[10] h[05] h[00] h[1A] h[53] h[61] h[6D] h[70] h[6C] h[65] h[73] h[5F] h[30] h[31] h[5F] h[30] h[31] h[5F] h[32] h[30] h[31] h[39] h[5F] h[5F] h[30] h[31] h[2E] h[62] h[69] h[6E] h[52]" />
+        </SequenceItem>
         <SequenceItem name="GetFile (bench.txt)">
             <description></description>
             <sequence value="h[10] h[05] h[00] h[09] h[62] h[65] h[6E] h[63] h[68] h[2E] h[74] h[78] h[74] h[BE]" />
