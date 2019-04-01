@@ -188,7 +188,9 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		{
 			break;
 		}
+
 		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		//APP_CloseSampleFile();
 		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],answer.payload);
 		answer.payloadSize = 0;
 		answer.payload =0;

@@ -16,6 +16,7 @@
 #include "Shell.h"
 
 #define FS_FILE_NAME_SIZE  48 /* Length of file name, used in buffers */
+#define FS_ACCESS_MUTEX_WAIT_TIME_MS 5000
 
 /* variables used by the file system */
 static bool FS_isMounted = FALSE;
@@ -96,7 +97,7 @@ char* FS_gets (
   byte s[2];
   uint32_t rc;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		  while (n < len - 1) { /* Read characters until buffer gets filled */
 		    rc = lfs_file_read(&FS_lfs,fp,s,1);
@@ -109,16 +110,13 @@ char* FS_gets (
 		    if (c == '\n') break;   /* Break on EOL */
 		  }
 		  *p = 0;
-		  xSemaphoreGive(fileSystemAccessMutex);
+		  xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		  return n ? buff : 0;      /* When no data read (eof or error), return with error. */
 	}
 	else
 	{
 		return 0;
 	}
-
-
-
 }
 
 /*-----------------------------------------------------------------------*/
@@ -159,25 +157,6 @@ void putc_bfd (
   pb->nchr++;
 }
 
-
-
-//int FS_putc (
-//  char c,  /* A character to be output */
-//  lfs_file_t* fp   /* Pointer to the file object */
-//)
-//{
-//  putbuff pb;
-//  uint32_t nw;
-//  pb.fp = fp;     /* Initialize output buffer */
-//  pb.nchr = pb.idx = 0;
-//  putc_bfd(&pb, c); /* Put a character */
-//  nw = lfs_file_write(&FS_lfs,pb.fp, pb.buf, (uint32_t)pb.idx);
-//  if (   pb.idx >= 0  /* Flush buffered characters to the file */
-//    && nw>=0
-//    && (uint32_t)pb.idx == nw) return pb.nchr;
-//  return -1;
-//}
-
 /*-----------------------------------------------------------------------*/
 /* Put a string to the file
  * (ported from FatFS function: f_puts())                                            */
@@ -191,7 +170,7 @@ int FS_puts (
   putbuff pb;
   uint32_t nw;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		  pb.fp = fp;       /* Initialize output buffer */
 		  pb.nchr = pb.idx = 0;
@@ -205,11 +184,11 @@ int FS_puts (
 		    && nw>=0
 		    && (uint32_t)pb.idx == nw)
 			  {
-			  	  xSemaphoreGive(fileSystemAccessMutex);
+			  	  xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			  	  return pb.nchr;
 			  }
 
-		  xSemaphoreGive(fileSystemAccessMutex);
+		  xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		  return -1;
 	}
 	else
@@ -223,7 +202,7 @@ uint8_t FS_Format(CLS1_ConstStdIOType *io)
 {
 	int res;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (FS_isMounted)
 		{
@@ -231,7 +210,7 @@ uint8_t FS_Format(CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("File system is mounted, unmount it first.\r\n",io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		if (io != NULL)
@@ -245,7 +224,7 @@ uint8_t FS_Format(CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr(" done.\r\n", io->stdOut);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_OK;
 		}
 		else
@@ -254,7 +233,7 @@ uint8_t FS_Format(CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr(" FAILED!\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 	}
@@ -268,7 +247,7 @@ uint8_t FS_Mount(CLS1_ConstStdIOType *io)
 {
 	int res;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (FS_isMounted)
 		{
@@ -276,7 +255,7 @@ uint8_t FS_Mount(CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("File system is already mounted.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		if (io != NULL)
@@ -291,7 +270,7 @@ uint8_t FS_Mount(CLS1_ConstStdIOType *io)
 				CLS1_SendStr(" done.\r\n", io->stdOut);
 			}
 			FS_isMounted = TRUE;
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_OK;
 		}
 		else
@@ -299,7 +278,7 @@ uint8_t FS_Mount(CLS1_ConstStdIOType *io)
 			if (io != NULL) {
 				CLS1_SendStr(" FAILED!\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 	}
@@ -313,7 +292,7 @@ uint8_t FS_Unmount(CLS1_ConstStdIOType *io)
 {
 	int res;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 		{
@@ -321,7 +300,7 @@ uint8_t FS_Unmount(CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("File system is already unmounted.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		if (io != NULL)
@@ -336,7 +315,7 @@ uint8_t FS_Unmount(CLS1_ConstStdIOType *io)
 				CLS1_SendStr(" done.\r\n", io->stdOut);
 			}
 			FS_isMounted = FALSE;
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_OK;
 		}
 		else
@@ -345,7 +324,7 @@ uint8_t FS_Unmount(CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr(" FAILED!\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 	}
@@ -367,12 +346,12 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 		return ERR_FAILED; /* listing a directory without an I/O channel does not make any sense */
 	}
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 		{
 			CLS1_SendStr("File system is not mounted, mount it first.\r\n",	io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		if (path == NULL)
@@ -383,7 +362,7 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 		if (res != LFS_ERR_OK)
 		{
 			CLS1_SendStr("FAILED lfs_dir_open()!\r\n", io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		for (;;)
@@ -392,7 +371,7 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 			if (res < 0)
 			{
 				CLS1_SendStr("FAILED lfs_dir_read()!\r\n", io->stdErr);
-				xSemaphoreGive(fileSystemAccessMutex);
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
 			if (res == 0)
@@ -427,10 +406,10 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 		res = lfs_dir_close(&FS_lfs, &dir);
 		if (res != LFS_ERR_OK) {
 			CLS1_SendStr("FAILED lfs_dir_close()!\r\n", io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -450,12 +429,12 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 		return ERR_FAILED; /* listing a directory without an I/O channel does not make any sense */
 	}
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 		{
 			CLS1_SendStr("File system is not mounted, mount it first.\r\n",	io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		if (path == NULL)
@@ -466,7 +445,7 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 		if (res != LFS_ERR_OK)
 		{
 			CLS1_SendStr("FAILED lfs_dir_open()!\r\n", io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		for (;;)
@@ -475,7 +454,7 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 			if (res < 0)
 			{
 				CLS1_SendStr("FAILED lfs_dir_read()!\r\n", io->stdErr);
-				xSemaphoreGive(fileSystemAccessMutex);
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
 			if (res == 0)
@@ -492,10 +471,10 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 		res = lfs_dir_close(&FS_lfs, &dir);
 		if (res != LFS_ERR_OK) {
 			CLS1_SendStr("FAILED lfs_dir_close()!\r\n", io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -513,7 +492,7 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 	int result, nofBytesRead;
 	uint8_t buffer[32]; /* copy buffer */
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 		{
@@ -521,7 +500,7 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 			{
 				CLS1_SendStr("ERROR: File system is not mounted.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 
@@ -530,7 +509,7 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 		if (result < 0)
 		{
 			CLS1_SendStr((const unsigned char*) "*** Failed opening source file!\r\n",io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		/* create destination file */
@@ -539,7 +518,7 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 		{
 			(void) lfs_file_close(&FS_lfs, &fsrc);
 			CLS1_SendStr((const unsigned char*) "*** Failed opening destination file!\r\n",	io->stdErr);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		/* now copy source to destination */
@@ -576,7 +555,7 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 			CLS1_SendStr((const unsigned char*) "*** Failed closing destination file!\r\n",	io->stdErr);
 			res = ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -589,7 +568,7 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 
 uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io)
 {
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 		{
@@ -597,7 +576,7 @@ uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 			{
 				CLS1_SendStr("ERROR: File system is not mounted.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		if (lfs_rename(&FS_lfs, srcPath, dstPath) < 0)
@@ -606,10 +585,10 @@ uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 			{
 				CLS1_SendStr("ERROR: failed renaming file or directory.\r\n",io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -634,11 +613,11 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 		nofBytes = 200;
 	}
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (lfs_file_open(&FS_lfs, &file, filePath, LFS_O_RDONLY) < 0)
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 
@@ -658,7 +637,7 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 
 		if (fileSize < 0)
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 
@@ -671,7 +650,7 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 			lfs_file_close(&FS_lfs, &file);
 			CLS1_SendData(buf,nofBytes,io->stdErr);
 			filePos = filePos + nofBytes;
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_OK;
 		}
 		else
@@ -683,7 +662,7 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 			lfs_file_close(&FS_lfs, &file);
 			CLS1_SendData(buf,fileSize,io->stdErr);
 			filePos = filePos + fileSize;
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_PARAM_SIZE; //EOF
 		}
 
@@ -713,14 +692,14 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 	UTIL1_strcatNum16sFormatted(fileNameBuf, 50, time.Hour, '0', 2);
 	UTIL1_strcat(fileNameBuf, 50, ".bin");
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -734,10 +713,10 @@ uint8_t FS_getLiDoSampleOutOfFile(lfs_file_t* file,uint8_t* sampleBuf,size_t buf
 	sampleBuf[0] = '\0';
 	uint8_t ch;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		*nofReadChars = lfs_file_read(&FS_lfs, file, sampleBuf, bufSize);
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -748,14 +727,14 @@ uint8_t FS_getLiDoSampleOutOfFile(lfs_file_t* file,uint8_t* sampleBuf,size_t buf
 
 uint8_t FS_openFile(lfs_file_t* file,uint8_t* filename)
 {
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (lfs_file_open(&FS_lfs, file, filename, LFS_O_RDWR | LFS_O_CREAT| LFS_O_APPEND) < 0)
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -766,16 +745,16 @@ uint8_t FS_openFile(lfs_file_t* file,uint8_t* filename)
 
 uint8_t FS_closeFile(lfs_file_t* file)
 {
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if(lfs_file_close(&FS_lfs, file) ==0)
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_OK;
 		}
 		else
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 	}
@@ -791,15 +770,15 @@ uint8_t FS_writeLine(lfs_file_t* file,uint8_t* line)
 	UTIL1_strcpy(lineBuf,200,line);
 	UTIL1_strcat(lineBuf,200,"\r\n");
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (lfs_file_write(&FS_lfs, file, lineBuf,UTIL1_strlen(lineBuf)) < 0)
 		{
 			lfs_file_close(&FS_lfs, file);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -814,7 +793,7 @@ uint8_t FS_readLine(lfs_file_t* file,uint8_t* lineBuf,size_t bufSize,uint8_t* no
 	uint8_t ch;
 	*nofReadChars = 0;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		while(lfs_file_read(&FS_lfs, file, &ch, 1) != 0 &&  ch != '\n')
 		{
@@ -822,7 +801,7 @@ uint8_t FS_readLine(lfs_file_t* file,uint8_t* lineBuf,size_t bufSize,uint8_t* no
 			UTIL1_chcat(lineBuf,200,ch);
 		}
 		UTIL1_chcat(lineBuf,200,ch);
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -839,7 +818,7 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file)
 {
 	uint8_t lidoSampleBuf[LIDO_SAMPLE_SIZE];
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		lidoSampleBuf[0] = '@';		//SampleMarker
 		lidoSampleBuf[1] = (uint8_t)sample->unixTimeStamp;
@@ -867,10 +846,10 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file)
 		if (lfs_file_write(&FS_lfs, file, lidoSampleBuf,LIDO_SAMPLE_SIZE) < 0)
 		{
 			lfs_file_close(&FS_lfs, file);
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -900,11 +879,11 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 	int32_t fileSize;
 	int result;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE)
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)) == pdTRUE)
 	{
 		if (io == NULL)
 		{
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED; /* printing a file without an I/O channel does not make any sense */
 		}
 		if (!FS_isMounted)
@@ -913,7 +892,7 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("ERROR: File system is not mounted.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		result = lfs_file_open(&FS_lfs, &file, filePath, LFS_O_RDONLY);
@@ -923,7 +902,7 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("ERROR: Failed opening file.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		fileSize = lfs_file_size(&FS_lfs, &file);
@@ -934,7 +913,7 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 				CLS1_SendStr("ERROR: getting file size\r\n", io->stdErr);
 				(void) lfs_file_close(&FS_lfs, &file);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		res = CLS1_PrintMemory(&file, 0, fileSize - 1, 4, 16, readFromFile, io);
@@ -944,7 +923,7 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
 		}
 		(void) lfs_file_close(&FS_lfs, &file);
 
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return res;
 	}
 	else
@@ -957,7 +936,7 @@ uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io)
 {
 	int result;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 		{
@@ -965,7 +944,7 @@ uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("ERROR: File system is not mounted.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 		result = lfs_remove(&FS_lfs, filePath);
@@ -975,11 +954,11 @@ uint8_t FS_RemoveFile(const char *filePath, CLS1_ConstStdIOType *io)
 			{
 				CLS1_SendStr("ERROR: Failed removing file.\r\n", io->stdErr);
 			}
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_FAILED;
 		}
 
-		xSemaphoreGive(fileSystemAccessMutex);
+		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
 	}
 	else
@@ -1002,7 +981,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 	TIMEREC time, startTime;
 	int32_t start_mseconds, mseconds;
 
-	if(xSemaphoreTake(fileSystemAccessMutex,pdMS_TO_TICKS(500)))
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
 		if (!FS_isMounted)
 			{
@@ -1010,7 +989,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 				{
 					CLS1_SendStr("ERROR: File system is not mounted.\r\n", io->stdErr);
 				}
-				xSemaphoreGive(fileSystemAccessMutex);
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
 			/* write benchmark */
@@ -1024,7 +1003,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 			if (lfs_file_open(&FS_lfs, &file, "./bench.txt", LFS_O_WRONLY | LFS_O_CREAT)< 0)
 			{
 				CLS1_SendStr((const unsigned char*) "*** Failed creating benchmark file!\r\n",io->stdErr);
-				xSemaphoreGive(fileSystemAccessMutex);
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
 			for (i = 0; i < 10240; i++)
@@ -1033,7 +1012,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 				{
 					CLS1_SendStr((const unsigned char*) "*** Failed writing file!\r\n",	io->stdErr);
 					(void) lfs_file_close(&FS_lfs, &file);
-					xSemaphoreGive(fileSystemAccessMutex);
+					xSemaphoreGiveRecursive(fileSystemAccessMutex);
 					return ERR_FAILED;
 				}
 			}
@@ -1061,7 +1040,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 			if (lfs_file_open(&FS_lfs, &file, "./bench.txt", LFS_O_RDONLY) < 0)
 			{
 				CLS1_SendStr((const unsigned char*) "*** Failed opening benchmark file!\r\n",io->stdErr);
-				xSemaphoreGive(fileSystemAccessMutex);
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
 			for (i = 0; i < 10240; i++)
@@ -1070,7 +1049,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 				{
 					CLS1_SendStr((const unsigned char*) "*** Failed reading file!\r\n",	io->stdErr);
 					(void) lfs_file_close(&FS_lfs, &file);
-					xSemaphoreGive(fileSystemAccessMutex);
+					xSemaphoreGiveRecursive(fileSystemAccessMutex);
 					return ERR_FAILED;
 				}
 			}
@@ -1112,7 +1091,7 @@ uint8_t FS_RunBenchmark(CLS1_ConstStdIOType *io)
 			CLS1_SendStr((const unsigned char*) " kB/s)\r\n", io->stdOut);
 			CLS1_SendStr((const unsigned char*) "done!\r\n", io->stdOut);
 
-			xSemaphoreGive(fileSystemAccessMutex);
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
 			return ERR_OK;
 	}
 
@@ -1258,7 +1237,7 @@ void FS_GetFileAccessSemaphore(SemaphoreHandle_t* sema)
 uint8_t FS_Init(void)
 {
 	fileSystemAccessMutex = xSemaphoreCreateRecursiveMutex();
-	xSemaphoreGive(fileSystemAccessMutex);
+	xSemaphoreGiveRecursive(fileSystemAccessMutex);
 	if (SPIF_Init() != ERR_OK)
 	{
 		return ERR_FAILED;

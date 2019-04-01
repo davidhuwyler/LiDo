@@ -27,12 +27,12 @@ typedef struct
 	int8_t   accelX;
 	int8_t   accelY;
 	int8_t   accelZ;
-	uint8_t	 temp;
+	uint8_t	 temp; //Bit7 = UserButtonMarker
 	uint8_t	 crc;
 } liDoSample_t;
 
-
 void APP_Run(void);
+void APP_CloseSampleFile(void);
 uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp);
 void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);

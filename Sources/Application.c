@@ -26,8 +26,12 @@
 #include "WatchDog.h"
 #include "SPIF.h"
 
+#define MUTEX_WAIT_TIME_MS 2000
 static SemaphoreHandle_t sampleMutex;
+static SemaphoreHandle_t fileAccessMutex;
 static QueueHandle_t lidoSamplesToWrite;
+static lfs_file_t sampleFile;
+
 static volatile bool fileIsOpen = FALSE;
 static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
@@ -83,7 +87,7 @@ static void APP_toggleEnableSamplingIfRequested(void)
 	}
 }
 
-static void APP_softwareResetIfRequested(lfs_file_t* file)
+static void APP_softwareResetIfRequested()
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
@@ -93,7 +97,7 @@ static void APP_softwareResetIfRequested(lfs_file_t* file)
 		CS1_ExitCritical();
 		if(fileIsOpen)
 		{
-			FS_closeFile(file);
+			FS_closeFile(&sampleFile);
 		}
 		//TODO deinit Stuff...
 		KIN1_SoftwareReset();
@@ -110,7 +114,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp)
 	  AccelAxis_t accelAndTemp;
 	  uint8_t err = ERR_OK;
 
-	  if(xSemaphoreTake(sampleMutex,pdMS_TO_TICKS(500)))
+	  if(xSemaphoreTakeRecursive(sampleMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS)))
 	  {
 		  WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
 		  sample->unixTimeStamp = unixTimestamp;
@@ -147,7 +151,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp)
 		  }
 		  crc8_liDoSample(sample);
 		  WatchDog_StopComputationTime(WatchDog_TakeLidoSample);
-		  xSemaphoreGive(sampleMutex);
+		  xSemaphoreGiveRecursive(sampleMutex);
 		  return ERR_OK;
 	  }
 	  else
@@ -185,7 +189,7 @@ static bool APP_newHour(void)
 }
 
 
-static void APP_main_task(void *param) {
+static void APP_sample_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   liDoSample_t sample;
@@ -193,7 +197,7 @@ static void APP_main_task(void *param) {
   static int32_t unixTSlastSample;
   int32_t unixTScurrentSample;
   sampleMutex = xSemaphoreCreateRecursiveMutex();
-  xSemaphoreGive(sampleMutex);
+  xSemaphoreGiveRecursive(sampleMutex);
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
@@ -208,7 +212,7 @@ static void APP_main_task(void *param) {
 		  RTC_getTimeUnixFormat(&unixTScurrentSample);
 	  }
 
-	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
+	  if(AppDataFile_GetSamplingEnabled())
 	  {
 		  LED1_Neg();
 		  RTC_getTimeUnixFormat(&unixTScurrentSample);
@@ -232,24 +236,14 @@ static void APP_main_task(void *param) {
   } /* for */
 }
 
-static void APP_writeLidoFile(void *param) {
-  (void)param;
-  TickType_t xLastWakeTime;
-  liDoSample_t sample;
-  lfs_file_t sampleFile;
-  uint8_t samplingIntervall;
 
-  for(;;)
-  {
-	  xLastWakeTime = xTaskGetTickCount();
-	  //SPIF_ReleaseFromDeepPowerDown();
-	  APP_softwareResetIfRequested(&sampleFile);
-	  APP_toggleEnableSamplingIfRequested();
-	  AppDataFile_GetSampleIntervall(&samplingIntervall);
-
+static void APP_makeNewFileIfNeeded()
+{
+	  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
 	  //New Hour: Make new File!
 	  if(APP_newHour() && fileIsOpen && AppDataFile_GetSamplingEnabled())
 	  {
+
 		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
 		  if(FS_closeFile(&sampleFile) != ERR_OK)
 		  {
@@ -263,8 +257,12 @@ static void APP_writeLidoFile(void *param) {
 		  }
 		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
 	  }
+	  xSemaphoreGiveRecursive(fileAccessMutex);
+}
 
-	  //OpenFile if needed
+static void APP_openFileIfNeeded()
+{
+	  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
 	  if(AppDataFile_GetSamplingEnabled() && !fileIsOpen)
 	  {
 		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
@@ -278,9 +276,16 @@ static void APP_writeLidoFile(void *param) {
 		  }
 		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
 	  }
+	  xSemaphoreGiveRecursive(fileAccessMutex);
+}
 
+static void APP_writeQueuedSamplesToFile()
+{
+	  liDoSample_t sample;
+	  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
 	  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
 	  {
+
 		  //Write all pending samples to file
 		  while(xQueuePeek(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500)) == pdPASS)
 		  {
@@ -298,6 +303,7 @@ static void APP_writeLidoFile(void *param) {
 	  }
 	  else if (fileIsOpen)
 	  {
+		  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
 		  WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
 		  if(FS_closeFile(&sampleFile) == ERR_OK)
 		  {
@@ -309,11 +315,53 @@ static void APP_writeLidoFile(void *param) {
 		  }
 		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
 	  }
+	  xSemaphoreGiveRecursive(fileAccessMutex);
+}
+
+static void APP_writeLidoFile_task(void *param) {
+  (void)param;
+  TickType_t xLastWakeTime;
+
+  uint8_t samplingIntervall;
+
+  fileAccessMutex = xSemaphoreCreateRecursiveMutex();
+  xSemaphoreGiveRecursive(fileAccessMutex);
+
+  for(;;)
+  {
+	  xLastWakeTime = xTaskGetTickCount();
+	  //SPIF_ReleaseFromDeepPowerDown();
+	  APP_softwareResetIfRequested();
+	  APP_toggleEnableSamplingIfRequested();
+
+	  AppDataFile_GetSampleIntervall(&samplingIntervall);
+	  APP_makeNewFileIfNeeded();
+	  APP_openFileIfNeeded();
+	  APP_writeQueuedSamplesToFile();
 
 	  //SPIF_GoIntoDeepPowerDown();
 
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
+}
+
+void APP_init(void)
+{
+	lidoSamplesToWrite = xQueueCreate( 12, sizeof( liDoSample_t ) );
+    if( lidoSamplesToWrite == NULL )
+    {
+    	for(;;){} /* error! probably out of memory */
+    }
+
+	if (xTaskCreate(APP_sample_task, "sampleTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	{
+	    for(;;){} /* error! probably out of memory */
+	}
+
+	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
+	{
+	    for(;;){} /* error! probably out of memory */
+	}
 }
 
 static void APP_init_task(void *param) {
@@ -327,24 +375,26 @@ static void APP_init_task(void *param) {
 	AppDataFile_Init();
 	SHELL_Init();
 	WatchDog_Init();
+	APP_init();
 
-	//APP init()
-	lidoSamplesToWrite = xQueueCreate( 5, sizeof( liDoSample_t ) );
-    if( lidoSamplesToWrite == NULL )
-    {
-    	for(;;){} /* error! probably out of memory */
-    }
-
-	if (xTaskCreate(APP_main_task, "mainTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
-	{
-	    for(;;){} /* error! probably out of memory */
-	}
-
-	if (xTaskCreate(APP_writeLidoFile, "lidoFileWriter", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
-	{
-	    for(;;){} /* error! probably out of memory */
-	}
 	vTaskSuspend(xTaskGetCurrentTaskHandle());
+}
+
+void APP_CloseSampleFile(void)
+{
+	xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
+	if(fileIsOpen)
+	{
+		if(FS_closeFile(&sampleFile) != ERR_OK)
+		{
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
+		}
+		else
+		{
+			fileIsOpen = FALSE;
+		}
+	}
+	xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
 void APP_Run(void) {

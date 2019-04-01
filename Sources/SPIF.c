@@ -103,19 +103,19 @@ void SPIF_WaitIfBusy(void)
 //Experimental...
 uint8_t SPIF_GoIntoDeepPowerDown(void)
 {
-	  if(xSemaphoreTake(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && spifIsAwake)
+	  if(xSemaphoreTakeRecursive(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && spifIsAwake)
 	  {
 		  spifIsAwake = FALSE;
 		  SPIF_WaitIfBusy();
 		  SPIF_CS_ENABLE();
 		  SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
 		  SPIF_CS_DISABLE();
-		  xSemaphoreGive(spifAccessMutex);
+		  xSemaphoreGiveRecursive(spifAccessMutex);
 		  return ERR_OK;
 	  }
 	  else if(!spifIsAwake)
 	  {
-		  xSemaphoreGive(spifAccessMutex);
+		  xSemaphoreGiveRecursive(spifAccessMutex);
 	  }
 	  return ERR_FAILED;
 }
@@ -123,19 +123,19 @@ uint8_t SPIF_GoIntoDeepPowerDown(void)
 //Experimental...
 uint8_t SPIF_ReleaseFromDeepPowerDown_noWait()
 {
-	  if(xSemaphoreTake(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
+	  if(xSemaphoreTakeRecursive(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
 	  {
 		  spifIsAwake = TRUE;
 		  SPIF_CS_ENABLE();
 		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
 		  SPIF_CS_DISABLE();
 		  //It takes 30 us to wake from DeepPowerDown no access to the SPIF is allowed!
-		  xSemaphoreGive(spifAccessMutex);
+		  xSemaphoreGiveRecursive(spifAccessMutex);
 		  return ERR_OK;
 	  }
 	  else if(spifIsAwake)
 	  {
-		  xSemaphoreGive(spifAccessMutex);
+		  xSemaphoreGiveRecursive(spifAccessMutex);
 	  }
 	  return ERR_FAILED;
 
@@ -144,19 +144,19 @@ uint8_t SPIF_ReleaseFromDeepPowerDown_noWait()
 //Experimental...
 uint8_t SPIF_ReleaseFromDeepPowerDown()
 {
-	  if(xSemaphoreTake(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
+	  if(xSemaphoreTakeRecursive(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
 	  {
 		  spifIsAwake = TRUE;
 		  SPIF_CS_ENABLE();
 		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
 		  SPIF_CS_DISABLE();
 		  WAIT1_Waitus(30);	//It takes 30 us to wake from DeepPowerDown
-		  xSemaphoreGive(spifAccessMutex);
+		  xSemaphoreGiveRecursive(spifAccessMutex);
 		  return ERR_OK;
 	  }
 	  else if(spifIsAwake)
 	  {
-		  xSemaphoreGive(spifAccessMutex);
+		  xSemaphoreGiveRecursive(spifAccessMutex);
 	  }
 	  return ERR_FAILED;
 }
@@ -623,7 +623,7 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 uint8_t SPIF_Init(void)
 {
 	  spifAccessMutex = xSemaphoreCreateRecursiveMutex();
-	  xSemaphoreGive(spifAccessMutex);
+	  xSemaphoreGiveRecursive(spifAccessMutex);
 	  uint8_t buf[SPIF_ID_BUF_SIZE];
 	  PIN_SPIF_PWR_SetVal();   //Power the Chip
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!
