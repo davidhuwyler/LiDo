@@ -13,8 +13,9 @@
 
 #define CONFIG_ENABLE_STOPMODE
 
+#define LIDO_FILE_HEADER "LiDo Sample File. V1.0"
 
-#define LIDO_SAMPLE_SIZE 22
+#define LIDO_SAMPLE_SIZE 21
 typedef struct
 {
 	int32_t  unixTimeStamp;

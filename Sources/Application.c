@@ -256,6 +256,12 @@ static void APP_makeNewFileIfNeeded()
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
 		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+		  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
+		  if(FS_writeLine(&sampleFile,LIDO_FILE_HEADER) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
+		  }
+		  WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
 	  }
 	  xSemaphoreGiveRecursive(fileAccessMutex);
 }
@@ -448,12 +454,22 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 
 	WatchDog_DisableSource(WatchDog_MeasureTaskRunns);
 
+	//Read + Print Header:
+	if(FS_readLine(&sampleFile,samplePrintLine,120,&nofReadChars) != ERR_OK)
+	{
+		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile read Header failed");
+		return ERR_FAILED;
+	}
+	CLS1_SendStr(samplePrintLine,io->stdErr);
+	CLS1_SendStr("\r\n",io->stdErr);
+
+	//Read + Print Samples
 	while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&
 		  nofReadChars == LIDO_SAMPLE_SIZE)
 	{
 		sampleNr ++;
 
-		unixTimeStamp = (int32)(sampleBuf[1] | sampleBuf[2]<<8 | sampleBuf[3]<<16 | sampleBuf[4]<<24);
+		unixTimeStamp = (int32)(sampleBuf[0] | sampleBuf[1]<<8 | sampleBuf[2]<<16 | sampleBuf[3]<<24);
 		TmDt1_UnixSecondsToTimeDate(unixTimeStamp,0,&time,&date);
 
 		UTIL1_strcpy(samplePrintLine,120,"#");
@@ -474,35 +490,35 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		UTIL1_strcatNum16sFormatted(samplePrintLine, 120, time.Sec, '0', 2);
 
 		UTIL1_strcat(samplePrintLine,120," L: x");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[5] | sampleBuf[6]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[4] | sampleBuf[5]<<8));
 		UTIL1_strcat(samplePrintLine,120," y");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[7] | sampleBuf[8]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[6] | sampleBuf[7]<<8));
 		UTIL1_strcat(samplePrintLine,120," z");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[9] | sampleBuf[10]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[8] | sampleBuf[9]<<8));
 		UTIL1_strcat(samplePrintLine,120," ir");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[11] | sampleBuf[12]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[10] | sampleBuf[11]<<8));
 		UTIL1_strcat(samplePrintLine,120," b");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[13] | sampleBuf[14]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[12] | sampleBuf[13]<<8));
 		UTIL1_strcat(samplePrintLine,120," b");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[15] | sampleBuf[16]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[14] | sampleBuf[15]<<8));
 
 		UTIL1_strcat(samplePrintLine,120," A: x");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[17]);
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[16]);
 		UTIL1_strcat(samplePrintLine,120," y");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[17]);
 		UTIL1_strcat(samplePrintLine,120," z");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[19]);
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
 
 		if(sampleBuf[20] & 0x80 )  //MarkerPresent!
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
-			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[20] & ~0x80);
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19] & ~0x80);
 			UTIL1_strcat(samplePrintLine,120," M: true");
 		}
 		else
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
-			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[20]);
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19]);
 			UTIL1_strcat(samplePrintLine,120," M: false");
 		}
 
