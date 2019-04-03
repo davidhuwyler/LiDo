@@ -13,8 +13,9 @@
 
 #define CONFIG_ENABLE_STOPMODE
 
+#define LIDO_FILE_HEADER "LiDo Sample File. V1.0"
 
-#define LIDO_SAMPLE_SIZE 22
+#define LIDO_SAMPLE_SIZE 21
 typedef struct
 {
 	int32_t  unixTimeStamp;
@@ -38,5 +39,7 @@ void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);
 uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+
+//void void RTC_ALARM_ISR(void);
 
 #endif /* SOURCES_APPLICATION_H_ */

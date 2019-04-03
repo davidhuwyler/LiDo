@@ -27,6 +27,7 @@
 #include "SPIF.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
+static TaskHandle_t sampletaskHandle;
 static SemaphoreHandle_t sampleMutex;
 static SemaphoreHandle_t fileAccessMutex;
 static QueueHandle_t lidoSamplesToWrite;
@@ -204,13 +205,13 @@ static void APP_sample_task(void *param) {
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 
-	  //Sync with RTC
-	  RTC_getTimeUnixFormat(&unixTScurrentSample);
-	  while(unixTScurrentSample < (unixTSlastSample + samplingIntervall))
-	  {
-		  vTaskDelay(pdMS_TO_TICKS(100));
-		  RTC_getTimeUnixFormat(&unixTScurrentSample);
-	  }
+//	  //Sync with RTC
+//	  RTC_getTimeUnixFormat(&unixTScurrentSample);
+//	  while(unixTScurrentSample < (unixTSlastSample + samplingIntervall))
+//	  {
+//		  vTaskDelay(pdMS_TO_TICKS(100));
+//		  RTC_getTimeUnixFormat(&unixTScurrentSample);
+//	  }
 
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
@@ -232,7 +233,8 @@ static void APP_sample_task(void *param) {
 	  //SPIF_GoIntoDeepPowerDown();
 
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((samplingIntervall*1000)-50)); // -50 is added to be faster than the RTC, is corrected in the Sync section
+	  vTaskSuspend(sampletaskHandle);
+	  //vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((samplingIntervall*1000)-50)); // -50 is added to be faster than the RTC, is corrected in the Sync section
   } /* for */
 }
 
@@ -256,6 +258,12 @@ static void APP_makeNewFileIfNeeded()
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
 		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+		  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
+		  if(FS_writeLine(&sampleFile,LIDO_FILE_HEADER) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
+		  }
+		  WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
 	  }
 	  xSemaphoreGiveRecursive(fileAccessMutex);
 }
@@ -347,13 +355,18 @@ static void APP_writeLidoFile_task(void *param) {
 
 void APP_init(void)
 {
+	RTC_TAR = RTC_TSR + 1 ; 		//RTC Alarm at RTC Time +1s
+	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
+
+
+
 	lidoSamplesToWrite = xQueueCreate( 12, sizeof( liDoSample_t ) );
     if( lidoSamplesToWrite == NULL )
     {
     	for(;;){} /* error! probably out of memory */
     }
 
-	if (xTaskCreate(APP_sample_task, "sampleTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	if (xTaskCreate(APP_sample_task, "sampleTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, sampletaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
@@ -448,12 +461,22 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 
 	WatchDog_DisableSource(WatchDog_MeasureTaskRunns);
 
+	//Read + Print Header:
+	if(FS_readLine(&sampleFile,samplePrintLine,120,&nofReadChars) != ERR_OK)
+	{
+		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile read Header failed");
+		return ERR_FAILED;
+	}
+	CLS1_SendStr(samplePrintLine,io->stdErr);
+	CLS1_SendStr("\r\n",io->stdErr);
+
+	//Read + Print Samples
 	while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&
 		  nofReadChars == LIDO_SAMPLE_SIZE)
 	{
 		sampleNr ++;
 
-		unixTimeStamp = (int32)(sampleBuf[1] | sampleBuf[2]<<8 | sampleBuf[3]<<16 | sampleBuf[4]<<24);
+		unixTimeStamp = (int32)(sampleBuf[0] | sampleBuf[1]<<8 | sampleBuf[2]<<16 | sampleBuf[3]<<24);
 		TmDt1_UnixSecondsToTimeDate(unixTimeStamp,0,&time,&date);
 
 		UTIL1_strcpy(samplePrintLine,120,"#");
@@ -474,35 +497,35 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		UTIL1_strcatNum16sFormatted(samplePrintLine, 120, time.Sec, '0', 2);
 
 		UTIL1_strcat(samplePrintLine,120," L: x");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[5] | sampleBuf[6]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[4] | sampleBuf[5]<<8));
 		UTIL1_strcat(samplePrintLine,120," y");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[7] | sampleBuf[8]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[6] | sampleBuf[7]<<8));
 		UTIL1_strcat(samplePrintLine,120," z");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[9] | sampleBuf[10]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[8] | sampleBuf[9]<<8));
 		UTIL1_strcat(samplePrintLine,120," ir");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[11] | sampleBuf[12]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[10] | sampleBuf[11]<<8));
 		UTIL1_strcat(samplePrintLine,120," b");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[13] | sampleBuf[14]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[12] | sampleBuf[13]<<8));
 		UTIL1_strcat(samplePrintLine,120," b");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[15] | sampleBuf[16]<<8));
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[14] | sampleBuf[15]<<8));
 
 		UTIL1_strcat(samplePrintLine,120," A: x");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[17]);
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[16]);
 		UTIL1_strcat(samplePrintLine,120," y");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[17]);
 		UTIL1_strcat(samplePrintLine,120," z");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[19]);
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
 
 		if(sampleBuf[20] & 0x80 )  //MarkerPresent!
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
-			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[20] & ~0x80);
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19] & ~0x80);
 			UTIL1_strcat(samplePrintLine,120," M: true");
 		}
 		else
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
-			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[20]);
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19]);
 			UTIL1_strcat(samplePrintLine,120," M: false");
 		}
 
@@ -550,4 +573,42 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 	return ERR_FAILED;
   }
   return res;
+}
+
+void RTC_ALARM_ISR(void)
+{
+	if(RTC_SR & RTC_SR_TIF_MASK)/* Timer invalid (Vbat POR or RTC SW reset)? */
+	{
+		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
+		RTC_TPR = 0x00U;			 /* Reset prescaler */
+		RTC_TSR = 0x02UL;			 /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
+	}
+	else if(RTC_SR & RTC_SR_TOF_MASK)
+	{
+		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
+		RTC_TPR = 0x00U;			 /* Reset prescaler */
+		RTC_TSR = 0x02UL;			 /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
+	}
+	else /* Alarm interrupt */
+	{
+		uint8_t sampleIntervall;
+		AppDataFile_GetSampleIntervall(&sampleIntervall);
+		RTC_TAR = RTC_TSR + sampleIntervall ; 		//SetNext RTC Alarm
+		xTaskResumeFromISR(sampletaskHandle);		//Enable Sample Task for Execution
+	}
+
+//	  if ((Status & RTC_PDD_TIF_INT) != 0x00U) { /* Timer invalid (Vbat POR or RTC SW reset)? */
+//	    /* Restart RTC module */
+//	    RTC_PDD_EnableCounter(RTC_BASE_PTR, PDD_DISABLE); /* Disable counter */
+//	    RTC_PDD_WriteTimePrescalerReg(RTC_BASE_PTR, 0x00U); /* Reset prescaler */
+//	    RTC_PDD_WriteTimeSecondsReg(RTC_BASE_PTR, 0x02UL); /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
+//	  } else if ((Status & RTC_PDD_TOF_INT) != 0x00u) { /* Timer overflow ? */
+//	    /* Restart RTC module */
+//	    RTC_PDD_EnableCounter(RTC_BASE_PTR, PDD_DISABLE); /* Disable counter */
+//	    RTC_PDD_WriteTimePrescalerReg(RTC_BASE_PTR, 0x00U); /* Reset prescaler */
+//	    RTC_PDD_WriteTimeSecondsReg(RTC_BASE_PTR, 0x02UL); /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
+//	  } else {                             /* Alarm interrupt */
+//	    (void)DevDataPtr;                  /* Parameter is not used, suppress unused argument warning */
+//	    RTC_PDD_WriteTimeAlarmReg(RTC_BASE_PTR, RTC_PDD_ReadTimeAlarmReg(RTC_BASE_PTR)); /* Clear alarm interrupt flag */
+//	  }
 }

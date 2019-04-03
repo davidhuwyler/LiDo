@@ -673,7 +673,6 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 	}
 }
 
-
 uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 {
 	uint8_t fileNameBuf[50];
@@ -820,28 +819,27 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file)
 
 	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
-		lidoSampleBuf[0] = '@';		//SampleMarker
-		lidoSampleBuf[1] = (uint8_t)sample->unixTimeStamp;
-		lidoSampleBuf[2] = (uint8_t)(sample->unixTimeStamp>>8);
-		lidoSampleBuf[3] = (uint8_t)(sample->unixTimeStamp>>16);
-		lidoSampleBuf[4] = (uint8_t)(sample->unixTimeStamp>>24);
-		lidoSampleBuf[5] = (uint8_t)sample->lightChannelX;
-		lidoSampleBuf[6] = (uint8_t)(sample->lightChannelX>>8);
-		lidoSampleBuf[7] = (uint8_t)sample->lightChannelY;
-		lidoSampleBuf[8] = (uint8_t)(sample->lightChannelY>>8);
-		lidoSampleBuf[9] = (uint8_t)sample->lightChannelZ;
-		lidoSampleBuf[10] = (uint8_t)(sample->lightChannelZ>>8);
-		lidoSampleBuf[11] = (uint8_t)sample->lightChannelIR;
-		lidoSampleBuf[12] = (uint8_t)(sample->lightChannelIR>>8);
-		lidoSampleBuf[13] = (uint8_t)sample->lightChannelB440;
-		lidoSampleBuf[14] = (uint8_t)(sample->lightChannelB440>>8);
-		lidoSampleBuf[15] = (uint8_t)sample->lightChannelB490;
-		lidoSampleBuf[16] = (uint8_t)(sample->lightChannelB490>>8);
-		lidoSampleBuf[17] = (uint8_t)sample->accelX;
-		lidoSampleBuf[18] = (uint8_t)sample->accelY;
-		lidoSampleBuf[19] = (uint8_t)sample->accelZ;
-		lidoSampleBuf[20] = (uint8_t)sample->temp;
-		lidoSampleBuf[21] = (uint8_t)sample->crc;
+		lidoSampleBuf[0] = (uint8_t)sample->unixTimeStamp;
+		lidoSampleBuf[1] = (uint8_t)(sample->unixTimeStamp>>8);
+		lidoSampleBuf[2] = (uint8_t)(sample->unixTimeStamp>>16);
+		lidoSampleBuf[3] = (uint8_t)(sample->unixTimeStamp>>24);
+		lidoSampleBuf[4] = (uint8_t)sample->lightChannelX;
+		lidoSampleBuf[5] = (uint8_t)(sample->lightChannelX>>8);
+		lidoSampleBuf[6] = (uint8_t)sample->lightChannelY;
+		lidoSampleBuf[7] = (uint8_t)(sample->lightChannelY>>8);
+		lidoSampleBuf[8] = (uint8_t)sample->lightChannelZ;
+		lidoSampleBuf[9] = (uint8_t)(sample->lightChannelZ>>8);
+		lidoSampleBuf[10] = (uint8_t)sample->lightChannelIR;
+		lidoSampleBuf[11] = (uint8_t)(sample->lightChannelIR>>8);
+		lidoSampleBuf[12] = (uint8_t)sample->lightChannelB440;
+		lidoSampleBuf[13] = (uint8_t)(sample->lightChannelB440>>8);
+		lidoSampleBuf[14] = (uint8_t)sample->lightChannelB490;
+		lidoSampleBuf[15] = (uint8_t)(sample->lightChannelB490>>8);
+		lidoSampleBuf[16] = (uint8_t)sample->accelX;
+		lidoSampleBuf[17] = (uint8_t)sample->accelY;
+		lidoSampleBuf[18] = (uint8_t)sample->accelZ;
+		lidoSampleBuf[19] = (uint8_t)sample->temp;
+		lidoSampleBuf[20] = (uint8_t)sample->crc;
 
 		if (lfs_file_write(&FS_lfs, file, lidoSampleBuf,LIDO_SAMPLE_SIZE) < 0)
 		{
