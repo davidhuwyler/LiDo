@@ -46,6 +46,7 @@
 #include "SDEPpendingAlertsBuffer.h"
 #include "WDog1.h"
 #include "WatchDogLdd1.h"
+#include "INT_RTC.h"
 #include "XF1.h"
 #include "CS1.h"
 #include "KIN1.h"

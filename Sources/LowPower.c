@@ -93,6 +93,14 @@ void LLWU_ISR(void)
 		 LLWU_F3 |= LLWU_F3_MWUF0_MASK; //Clear WakeUpInt Flag
 	 }
 
+	 //Clear interrupt Flag: Wakeup Source was RTC Alarm Interrupt
+	 if (LLWU_F3 & LLWU_F3_MWUF5_MASK)//Reset Interrupt Flag Datasheet p393
+	 {
+		 LLWU_F3 |= LLWU_F3_MWUF5_MASK; //Clear WakeUpInt Flag
+		 RTC_ALARM_ISR();
+	 }
+
+
 	 //Clear interrupt Flag: Wakeup Source was UserButton
 	 else if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
