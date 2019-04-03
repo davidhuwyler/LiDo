@@ -355,8 +355,9 @@ static void APP_writeLidoFile_task(void *param) {
 
 void APP_init(void)
 {
-	RTC_TAR = RTC_TSR + 1 ; 		//RTC Alarm at RTC Time +1s
+	RTC_SR |= RTC_SR_TCE_MASK;	//RTC Counter enable
 	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
+	RTC_TAR = RTC_TSR; 		//RTC Alarm at RTC Time +1s
 
 
 
@@ -366,7 +367,7 @@ void APP_init(void)
     	for(;;){} /* error! probably out of memory */
     }
 
-	if (xTaskCreate(APP_sample_task, "sampleTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, sampletaskHandle) != pdPASS)
+	if (xTaskCreate(APP_sample_task, "sampleTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
@@ -593,22 +594,11 @@ void RTC_ALARM_ISR(void)
 	{
 		uint8_t sampleIntervall;
 		AppDataFile_GetSampleIntervall(&sampleIntervall);
-		RTC_TAR = RTC_TSR + sampleIntervall ; 		//SetNext RTC Alarm
+		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
 		xTaskResumeFromISR(sampletaskHandle);		//Enable Sample Task for Execution
 	}
 
-//	  if ((Status & RTC_PDD_TIF_INT) != 0x00U) { /* Timer invalid (Vbat POR or RTC SW reset)? */
-//	    /* Restart RTC module */
-//	    RTC_PDD_EnableCounter(RTC_BASE_PTR, PDD_DISABLE); /* Disable counter */
-//	    RTC_PDD_WriteTimePrescalerReg(RTC_BASE_PTR, 0x00U); /* Reset prescaler */
-//	    RTC_PDD_WriteTimeSecondsReg(RTC_BASE_PTR, 0x02UL); /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
-//	  } else if ((Status & RTC_PDD_TOF_INT) != 0x00u) { /* Timer overflow ? */
-//	    /* Restart RTC module */
-//	    RTC_PDD_EnableCounter(RTC_BASE_PTR, PDD_DISABLE); /* Disable counter */
-//	    RTC_PDD_WriteTimePrescalerReg(RTC_BASE_PTR, 0x00U); /* Reset prescaler */
-//	    RTC_PDD_WriteTimeSecondsReg(RTC_BASE_PTR, 0x02UL); /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
-//	  } else {                             /* Alarm interrupt */
-//	    (void)DevDataPtr;                  /* Parameter is not used, suppress unused argument warning */
-//	    RTC_PDD_WriteTimeAlarmReg(RTC_BASE_PTR, RTC_PDD_ReadTimeAlarmReg(RTC_BASE_PTR)); /* Clear alarm interrupt flag */
-//	  }
+	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+	     exception return operation might vector to incorrect interrupt */
+	__DSB();
 }
