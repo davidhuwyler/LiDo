@@ -577,11 +577,6 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 
 void RTC_ALARM_ISR(void)
 {
-	uint8_t sampleIntervall;
-	AppDataFile_GetSampleIntervall(&sampleIntervall);
-	RTC_TAR = RTC_TSR + sampleIntervall ; 		//SetNext RTC Alarm
-	xTaskResumeFromISR(sampletaskHandle);
-
 	if(RTC_SR & RTC_SR_TIF_MASK)/* Timer invalid (Vbat POR or RTC SW reset)? */
 	{
 		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
@@ -596,6 +591,8 @@ void RTC_ALARM_ISR(void)
 	}
 	else /* Alarm interrupt */
 	{
+		uint8_t sampleIntervall;
+		AppDataFile_GetSampleIntervall(&sampleIntervall);
 		RTC_TAR = RTC_TSR + sampleIntervall ; 		//SetNext RTC Alarm
 		xTaskResumeFromISR(sampletaskHandle);		//Enable Sample Task for Execution
 	}
