@@ -701,7 +701,7 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
-			if(FS_writeLine(&sampleFile,LIDO_FILE_HEADER) != ERR_OK)
+			if(FS_writeLine(file,LIDO_FILE_HEADER) != ERR_OK)
 			{
 				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;

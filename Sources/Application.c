@@ -258,12 +258,6 @@ static void APP_makeNewFileIfNeeded()
 			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
 		  }
 		  WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
-		  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
-		  if(FS_writeLine(&sampleFile,LIDO_FILE_HEADER) != ERR_OK)
-		  {
-			  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
-		  }
-		  WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
 	  }
 	  xSemaphoreGiveRecursive(fileAccessMutex);
 }
@@ -343,6 +337,7 @@ static void APP_writeLidoFile_task(void *param) {
 	  APP_toggleEnableSamplingIfRequested();
 
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
+
 	  APP_makeNewFileIfNeeded();
 	  APP_openFileIfNeeded();
 	  APP_writeQueuedSamplesToFile();
@@ -355,12 +350,19 @@ static void APP_writeLidoFile_task(void *param) {
 
 void APP_init(void)
 {
-	RTC_SR |= RTC_SR_TCE_MASK;	//RTC Counter enable
+	//Init the RTC alarm Interrupt:
+	//RTC_SR |= RTC_SR_TCE_MASK;		//RTC Counter enable
+	//RTC_WAR |= 0xFF; 				//Enable WriteAccess to all RTC Registers  --> No effect if once cleared...
+	//RTC_RAR |= 0xFF;				//Enable ReadAccess toa all RTC Registers  --> No effect if once cleared...
+
+	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
 	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
-	RTC_TAR = RTC_TSR; 		//RTC Alarm at RTC Time +1s
+	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
+	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
+	RTC_TAR = RTC_TSR; 				//RTC Alarm at RTC Time
 
-
-
+	//Init the SampleQueue, SampleTask and the WriteLidoFile Task
+	//The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
 	lidoSamplesToWrite = xQueueCreate( 12, sizeof( liDoSample_t ) );
     if( lidoSamplesToWrite == NULL )
     {
