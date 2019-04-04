@@ -16,7 +16,7 @@
 #include "WDog1.h"
 #include "LowPower.h"
 
-#define FILE_OPEN_CLOSE_MAX_DURATION_MS 10000   // 6000 --> to WDT reset --> WatchDog_WriteToLidoSampleFile
+#define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 10000   // 6000 --> to WDT reset --> WatchDog_WriteToLidoSampleFile
 
 typedef struct
 {
@@ -148,7 +148,7 @@ void WatchDog_Init(void)
 	//initial Dog feed...
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].isSingleCheckWatchdogSouce	= TRUE;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 0;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= 550;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].measuredCompTime 				= watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].timeStampLastKick 			= 0;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].sourceIsActive 				= FALSE;
@@ -157,7 +157,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].isSingleCheckWatchdogSouce		= TRUE;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].lowerCompTimeLimit 				= 0;
-	watchDogKickSources[WatchDog_WriteToLidoSampleFile].uppwerCompTimeLimit 			= FILE_OPEN_CLOSE_MAX_DURATION_MS;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].uppwerCompTimeLimit 			= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].measuredCompTime 				= watchDogKickSources[WatchDog_WriteToLidoSampleFile].lowerCompTimeLimit ;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].timeStampLastKick 				= 0;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].sourceIsActive 					= FALSE;
@@ -175,7 +175,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_ToggleEnableSampling].isSingleCheckWatchdogSouce		= TRUE;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 200;
-	watchDogKickSources[WatchDog_ToggleEnableSampling].uppwerCompTimeLimit 				= FILE_OPEN_CLOSE_MAX_DURATION_MS;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].uppwerCompTimeLimit 				= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].measuredCompTime 				= watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].timeStampLastKick 				= 0;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].sourceIsActive 					= FALSE;

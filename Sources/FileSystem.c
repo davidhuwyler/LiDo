@@ -693,10 +693,19 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 
 	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
-		if (lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)
+		if (lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_APPEND) < 0)
 		{
-			xSemaphoreGiveRecursive(fileSystemAccessMutex);
-			return ERR_FAILED;
+			//If file dosnt exist, create it and add the  header
+			if(lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)
+			{
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
+				return ERR_FAILED;
+			}
+			if(FS_writeLine(&sampleFile,LIDO_FILE_HEADER) != ERR_OK)
+			{
+				xSemaphoreGiveRecursive(fileSystemAccessMutex);
+				return ERR_FAILED;
+			}
 		}
 		xSemaphoreGiveRecursive(fileSystemAccessMutex);
 		return ERR_OK;
