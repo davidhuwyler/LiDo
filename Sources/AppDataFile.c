@@ -88,7 +88,7 @@ uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
 		return ERR_OK;
 }
 
-uint8_t AppDataFile_CreateFile(const CLS1_StdIOType *io)
+uint8_t AppDataFile_CreateFile(void)
 {
 	for(int i = 0 ; i < APPDATA_NOF_KEYS ; i++)
 	{
@@ -140,7 +140,7 @@ uint8_t AppData_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIO
   else if (UTIL1_strcmp((char*)cmd, "AppData create")==0)
   {
     *handled = TRUE;
-    return AppDataFile_CreateFile(io);
+    return AppDataFile_CreateFile();
   }
   else if (UTIL1_strcmp((char*)cmd, "AppData print")==0)
   {

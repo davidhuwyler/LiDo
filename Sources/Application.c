@@ -25,6 +25,7 @@
 #include "TmDt1.h"
 #include "WatchDog.h"
 #include "SPIF.h"
+#include "WDog1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 static TaskHandle_t sampletaskHandle;
@@ -192,27 +193,14 @@ static bool APP_newHour(void)
 
 static void APP_sample_task(void *param) {
   (void)param;
-  TickType_t xLastWakeTime;
   liDoSample_t sample;
-  uint8_t samplingIntervall;
   static int32_t unixTSlastSample;
   int32_t unixTScurrentSample;
   sampleMutex = xSemaphoreCreateRecursiveMutex();
   xSemaphoreGiveRecursive(sampleMutex);
   for(;;)
   {
-	  xLastWakeTime = xTaskGetTickCount();
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
-	  AppDataFile_GetSampleIntervall(&samplingIntervall);
-
-//	  //Sync with RTC
-//	  RTC_getTimeUnixFormat(&unixTScurrentSample);
-//	  while(unixTScurrentSample < (unixTSlastSample + samplingIntervall))
-//	  {
-//		  vTaskDelay(pdMS_TO_TICKS(100));
-//		  RTC_getTimeUnixFormat(&unixTScurrentSample);
-//	  }
-
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
 		  LED1_Neg();
@@ -227,14 +215,8 @@ static void APP_sample_task(void *param) {
 	    	  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
 	      }
 	  }
-
-	  unixTSlastSample = unixTScurrentSample;
-
-	  //SPIF_GoIntoDeepPowerDown();
-
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 	  vTaskSuspend(sampletaskHandle);
-	  //vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((samplingIntervall*1000)-50)); // -50 is added to be faster than the RTC, is corrected in the Sync section
   } /* for */
 }
 
@@ -350,17 +332,6 @@ static void APP_writeLidoFile_task(void *param) {
 
 void APP_init(void)
 {
-	//Init the RTC alarm Interrupt:
-	//RTC_SR |= RTC_SR_TCE_MASK;		//RTC Counter enable
-	//RTC_WAR |= 0xFF; 				//Enable WriteAccess to all RTC Registers  --> No effect if once cleared...
-	//RTC_RAR |= 0xFF;				//Enable ReadAccess toa all RTC Registers  --> No effect if once cleared...
-
-	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
-	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
-	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
-	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
-	RTC_TAR = RTC_TSR; 				//RTC Alarm at RTC Time
-
 	//Init the SampleQueue, SampleTask and the WriteLidoFile Task
 	//The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
 	lidoSamplesToWrite = xQueueCreate( 12, sizeof( liDoSample_t ) );
@@ -378,22 +349,90 @@ void APP_init(void)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
+
+	//Init the RTC alarm Interrupt:
+	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
+	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
+	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
+	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
+	RTC_TAR = RTC_TSR; 				//RTC Alarm at RTC Time
+}
+
+static bool APP_WaitIfButtonPressed3s(void)
+{
+	  if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
+	  {
+		  for(int i = 0 ; i < 30 ; i++)
+		  {
+			  WDog1_Clear();
+			  WAIT1_Waitms(100);
+			  LED1_Neg();
+			  if(ExtInt_UI_BTN_GetVal() == TRUE) // --> Button released
+			  {
+				  return FALSE;
+			  }
+		  }
+		  return TRUE;
+	  }
+	  else
+	  {
+		  return FALSE;
+	  }
+
 }
 
 static void APP_init_task(void *param) {
   (void)param;
-	RTC_init(1);
-	SDEP_Init();
-	UI_Init();
-	LightSensor_init();
-	AccelSensor_init();
-	FS_Init();
-	AppDataFile_Init();
-	SHELL_Init();
-	WatchDog_Init();
-	APP_init();
 
-	vTaskSuspend(xTaskGetCurrentTaskHandle());
+  bool createAppData = FALSE;
+
+  if(!APP_WaitIfButtonPressed3s()) //Normal init
+  {
+		RTC_init(1);
+		SDEP_Init();
+		UI_Init();
+		LightSensor_init();
+		AccelSensor_init();
+		FS_Init();
+		AppDataFile_Init();
+		SHELL_Init();
+		WatchDog_Init();
+		APP_init();
+  }
+  else //Init With HardReset RTC
+  {
+		RTC_init(0);		//HardReset RTC
+		SDEP_Init();
+		LightSensor_init();
+		AccelSensor_init();
+		if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
+		{
+			LED1_Off();
+			for(int i = 0 ; i < 30 ; i++){WAIT1_Waitms(100);WDog1_Clear();}
+			if(APP_WaitIfButtonPressed3s()) //Format SPIF
+			{
+				FS_FormatInit();	//Format FS
+				createAppData = TRUE;
+			}
+			else
+			{
+				FS_Init();
+			}
+		}
+		WDog1_Clear();
+		AppDataFile_Init();
+		UI_Init();
+		SHELL_Init();
+		WatchDog_Init();
+		APP_init();
+  }
+
+  if(createAppData)
+  {
+	  //vTaskDelay(pdMS_TO_TICKS(1000));
+	  AppDataFile_CreateFile();
+  }
+  vTaskSuspend(xTaskGetCurrentTaskHandle());
 }
 
 void APP_CloseSampleFile(void)
@@ -470,6 +509,8 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile read Header failed");
 		return ERR_FAILED;
 	}
+
+	CLS1_SendStr("\r\n",io->stdErr);
 	CLS1_SendStr(samplePrintLine,io->stdErr);
 	CLS1_SendStr("\r\n",io->stdErr);
 
@@ -519,7 +560,7 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		UTIL1_strcat(samplePrintLine,120," z");
 		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
 
-		if(sampleBuf[20] & 0x80 )  //MarkerPresent!
+		if(sampleBuf[19] & 0x80 )  //MarkerPresent!
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
 			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19] & ~0x80);

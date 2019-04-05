@@ -24,6 +24,7 @@ const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2] =
 };
 
 uint8_t AppDataFile_Init(void);
+uint8_t AppDataFile_CreateFile(void);
 uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall);
 uint8_t AppDataFile_SetSampleIntervall(uint8_t sampleIntervall);
 bool AppDataFile_GetSamplingEnabled(void);

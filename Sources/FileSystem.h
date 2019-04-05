@@ -19,6 +19,7 @@
 lfs_t* FS_GetFileSystem(void);
 uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
 uint8_t FS_Init(void);
+uint8_t FS_FormatInit(void);
 void FS_GetFileAccessSemaphore(SemaphoreHandle_t* sema);
 
 uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofBytes, CLS1_ConstStdIOType *io);

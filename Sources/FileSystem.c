@@ -1253,3 +1253,16 @@ uint8_t FS_Init(void)
 	return FS_Mount(NULL);
 }
 
+uint8_t FS_FormatInit(void)
+{
+	fileSystemAccessMutex = xSemaphoreCreateRecursiveMutex();
+	xSemaphoreGiveRecursive(fileSystemAccessMutex);
+	if (SPIF_Init() != ERR_OK)
+	{
+		return ERR_FAILED;
+	}
+	//return ERR_OK;
+	FS_Format(NULL);
+	return FS_Mount(NULL);
+}
+

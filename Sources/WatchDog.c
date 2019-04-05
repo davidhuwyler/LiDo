@@ -187,10 +187,10 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1300;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 1300;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 1300;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 1800;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 1800;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].timeStampLastKick 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= TRUE;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceForceDisabled					= FALSE;
 
