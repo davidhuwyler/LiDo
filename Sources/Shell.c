@@ -122,11 +122,12 @@ static void SHELL_task(void *param) {
 	  SDEP_Parse();
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
 	  SDEPio_HandleShellCMDs();
-	  SDEPio_HandleFileCMDs(0);
 	  SDEP_SendPendingAlert();
-	  //SPIF_GoIntoDeepPowerDown();
-	  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
-
+	  if(SDEPio_HandleFileCMDs(0) == ERR_RXEMPTY)
+	  {
+		  //SPIF_GoIntoDeepPowerDown();
+		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+	  }
   } /* for */
 }
 
