@@ -16,7 +16,7 @@
 #include "WDog1.h"
 #include "LowPower.h"
 
-#define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 10000   // 6000 --> to WDT reset --> WatchDog_WriteToLidoSampleFile
+#define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 15000   // 10'000 --> to WDT reset --> WatchDog_WriteToLidoSampleFile
 
 typedef struct
 {

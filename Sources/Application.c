@@ -334,7 +334,7 @@ void APP_init(void)
 {
 	//Init the SampleQueue, SampleTask and the WriteLidoFile Task
 	//The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
-	lidoSamplesToWrite = xQueueCreate( 12, sizeof( liDoSample_t ) );
+	lidoSamplesToWrite = xQueueCreate( 16, sizeof( liDoSample_t ) );
     if( lidoSamplesToWrite == NULL )
     {
     	for(;;){} /* error! probably out of memory */
@@ -345,17 +345,17 @@ void APP_init(void)
 	    for(;;){} /* error! probably out of memory */
 	}
 
-	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
-	{
-	    for(;;){} /* error! probably out of memory */
-	}
-
 	//Init the RTC alarm Interrupt:
 	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
 	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
 	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
 	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
-	RTC_TAR = RTC_TSR; 				//RTC Alarm at RTC Time
+	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
+
+	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
+	{
+	    for(;;){} /* error! probably out of memory */
+	}
 }
 
 static bool APP_WaitIfButtonPressed3s(void)
@@ -388,7 +388,7 @@ static void APP_init_task(void *param) {
 
   if(!APP_WaitIfButtonPressed3s()) //Normal init
   {
-		RTC_init(1);
+		RTC_init(TRUE);
 		SDEP_Init();
 		UI_Init();
 		LightSensor_init();
@@ -401,7 +401,8 @@ static void APP_init_task(void *param) {
   }
   else //Init With HardReset RTC
   {
-		RTC_init(0);		//HardReset RTC
+	  	WDog1_Clear();
+		RTC_init(FALSE);		//HardReset RTC
 		SDEP_Init();
 		LightSensor_init();
 		AccelSensor_init();
