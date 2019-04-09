@@ -35,7 +35,9 @@ static CLS1_ConstStdIOType SDEP_FileioNonPtr =
 static CLS1_ConstStdIOTypePtr SDEP_Fileio = &SDEP_FileioNonPtr;
 
 static bool newSDEPshellMessage = FALSE;
-static uint8_t filePathBuf[40];
+
+#define SDEP_FILE_PATH_BUF_SIZE 60
+static uint8_t filePathBuf[SDEP_FILE_PATH_BUF_SIZE];
 static bool fileToRead = FALSE;
 
 uint8_t SDEPio_HandleShellCMDs(void)
@@ -73,7 +75,7 @@ uint8_t SDEPio_HandleShellCMDs(void)
 
 uint8_t SDEPio_SetReadFileCMD(uint8_t* filename)
 {
-	UTIL1_strcpy(filePathBuf,40,filename);
+	UTIL1_strcpy(filePathBuf,SDEP_FILE_PATH_BUF_SIZE,filename);
 	fileToRead = TRUE;
 }
 

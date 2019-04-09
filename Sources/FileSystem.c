@@ -8,6 +8,7 @@
  *  https://github.com/ErichStyger/mcuoneclipse/blob/master/Examples/KDS/tinyK20/tinyK20_LittleFS_W25Q128/Sources/fs.c
  */
 
+#include "Platform.h"
 #include "FileSystem.h"
 #include "SPIF.h"
 #include "CLS1.h"
@@ -418,6 +419,12 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 	}
 }
 
+
+/*
+ * Prints a list of Files and Directories of a given path
+ * If path == NULL, the Files and Direcotries of the root-directory are printed
+ * The First two characters of every line determin if its a File (F:) or a Directory (D:)
+ */
 uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 {
 	int res;
@@ -462,11 +469,22 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 				break;
 			}
 
-			if(info.type == LFS_TYPE_REG)
+			switch (info.type)
 			{
-				CLS1_SendStr(info.name, io->stdOut);
-				CLS1_SendStr("\r\n", io->stdOut);
+			case LFS_TYPE_REG:
+				CLS1_SendStr("F:", io->stdOut);
+				break;
+			case LFS_TYPE_DIR:
+				CLS1_SendStr("D:", io->stdOut);
+				break;
+			default:
+				CLS1_SendStr("?:", io->stdOut);
+				break;
 			}
+
+			CLS1_SendStr(info.name, io->stdOut);
+			CLS1_SendStr("\r\n", io->stdOut);
+
 		} /* for */
 		res = lfs_dir_close(&FS_lfs, &dir);
 		if (res != LFS_ERR_OK) {
@@ -680,6 +698,17 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 	DATEREC date;
 	TmDt1_GetInternalRTCTimeDate(&time,&date);
 
+#ifdef USE_FOLDERS_TO_STORE_FILES
+	UTIL1_strcpy(fileNameBuf,50,"/Samples/");
+	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Day, '0', 2);
+	UTIL1_chcat(fileNameBuf, 50, '_');
+	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Month, '0', 2);
+	UTIL1_chcat(fileNameBuf, 50, '_');
+	UTIL1_strcatNum16u(fileNameBuf, 50, (uint16_t)date.Year);
+	UTIL1_chcat(fileNameBuf, 50, '/');
+	UTIL1_strcatNum16sFormatted(fileNameBuf, 50, time.Hour, '0', 2);
+	UTIL1_strcat(fileNameBuf, 50, ".bin");
+#else
 	UTIL1_strcpy(fileNameBuf,50,"Samples_");
 	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Day, '0', 2);
 	UTIL1_chcat(fileNameBuf, 50, '_');
@@ -690,6 +719,7 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 	UTIL1_chcat(fileNameBuf, 50, '_');
 	UTIL1_strcatNum16sFormatted(fileNameBuf, 50, time.Hour, '0', 2);
 	UTIL1_strcat(fileNameBuf, 50, ".bin");
+#endif
 
 	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{

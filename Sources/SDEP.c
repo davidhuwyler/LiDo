@@ -96,7 +96,14 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 	case SDEP_CMDID_GET_FILELIST:
 	{
 		SDEPio_getSDEPfileIO(&io);
-		FS_FileList(NULL,io);
+		if(command->payloadSize == 0)
+		{
+			FS_FileList(NULL,io);
+		}
+		else
+		{
+			FS_FileList(command->payload,io);
+		}
 		SDEPio_HandleFileCMDs(SDEP_CMDID_GET_FILELIST);
 		return ERR_OK;
 	}
