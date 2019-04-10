@@ -637,9 +637,16 @@ void RTC_ALARM_ISR(void)
 	else /* Alarm interrupt */
 	{
 		uint8_t sampleIntervall;
+		BaseType_t xYieldRequired;
 		AppDataFile_GetSampleIntervall(&sampleIntervall);
 		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
-		xTaskResumeFromISR(sampletaskHandle);		//Enable Sample Task for Execution
+
+	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
+
+	    if( xYieldRequired == pdTRUE )
+	    {
+	        portYIELD_FROM_ISR(pdTRUE);
+	    }
 	}
 
 	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
