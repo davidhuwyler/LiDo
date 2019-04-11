@@ -52,6 +52,14 @@
             <description></description>
             <sequence value="h[10] h[04] h[00] h[00] h[CC]" />
         </SequenceItem>
+        <SequenceItem name="GetFileList (/Samples)">
+            <description></description>
+            <sequence value="h[10] h[04] h[00] h[08] h[2F] h[53] h[61] h[6D] h[70] h[6C] h[65] h[73] h[D2]" />
+        </SequenceItem>
+        <SequenceItem name="GetFileList (/Samples/01_01_2000)">
+            <description></description>
+            <sequence value="h[10] h[04] h[00] h[13] h[2F] h[53] h[61] h[6D] h[70] h[6C] h[65] h[73] h[2F] h[30] h[31] h[5F] h[30] h[31] h[5F] h[32] h[30] h[30] h[30] h[53]" />
+        </SequenceItem>
         <SequenceItem name="GetFIle (appData.ini)">
             <description></description>
             <sequence value="h[10] h[05] h[00] h[0B] h[61] h[70] h[70] h[44] h[61] h[74] h[61] h[2E] h[69] h[6E] h[69] h[82]" />
@@ -67,6 +75,10 @@
         <SequenceItem name="GetFile (Samples_01_01_2000__00.bin)">
             <description></description>
             <sequence value="h[10] h[05] h[00] h[1A] h[53] h[61] h[6D] h[70] h[6C] h[65] h[73] h[5F] h[30] h[31] h[5F] h[30] h[31] h[5F] h[32] h[30] h[30] h[30] h[5F] h[5F] h[30] h[30] h[2E] h[62] h[69] h[6E] h[E0]" />
+        </SequenceItem>
+        <SequenceItem name="GetFile (/Samples/01_01_2000/00.bin)">
+            <description></description>
+            <sequence value="h[10] h[05] h[00] h[1A] h[2F] h[53] h[61] h[6D] h[70] h[6C] h[65] h[73] h[2F] h[30] h[31] h[5F] h[30] h[31] h[5F] h[32] h[30] h[30] h[30] h[2F] h[30] h[30] h[2E] h[62] h[69] h[6E] h[E1]" />
         </SequenceItem>
         <SequenceItem name="GetFile (bench.txt)">
             <description></description>

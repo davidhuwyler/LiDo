@@ -431,6 +431,7 @@ static void APP_init_task(void *param) {
   if(createAppData)
   {
 	  //vTaskDelay(pdMS_TO_TICKS(1000));
+	  FS_createLidoSampleFolder();
 	  AppDataFile_CreateFile();
   }
   vTaskSuspend(xTaskGetCurrentTaskHandle());

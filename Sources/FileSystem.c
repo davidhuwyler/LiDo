@@ -16,7 +16,7 @@
 #include "littleFS/lfs.h"
 #include "Shell.h"
 
-#define FS_FILE_NAME_SIZE  48 /* Length of file name, used in buffers */
+#define FS_FILE_NAME_SIZE  60 /* Length of file name, used in buffers */
 #define FS_ACCESS_MUTEX_WAIT_TIME_MS 5000
 
 /* variables used by the file system */
@@ -469,21 +469,24 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
 				break;
 			}
 
-			switch (info.type)
+			if(!(UTIL1_strcmp(info.name,".") == 0 || UTIL1_strcmp(info.name,"..") == 0 ))
 			{
-			case LFS_TYPE_REG:
-				CLS1_SendStr("F:", io->stdOut);
-				break;
-			case LFS_TYPE_DIR:
-				CLS1_SendStr("D:", io->stdOut);
-				break;
-			default:
-				CLS1_SendStr("?:", io->stdOut);
-				break;
-			}
+				switch (info.type)
+				{
+				case LFS_TYPE_REG:
+					CLS1_SendStr("F:", io->stdOut);
+					break;
+				case LFS_TYPE_DIR:
+					CLS1_SendStr("D:", io->stdOut);
+					break;
+				default:
+					CLS1_SendStr("?:", io->stdOut);
+					break;
+				}
 
-			CLS1_SendStr(info.name, io->stdOut);
-			CLS1_SendStr("\r\n", io->stdOut);
+				CLS1_SendStr(info.name, io->stdOut);
+				CLS1_SendStr("\r\n", io->stdOut);
+			}
 
 		} /* for */
 		res = lfs_dir_close(&FS_lfs, &dir);
@@ -691,41 +694,52 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 	}
 }
 
+uint8_t FS_createLidoSampleFolder(void)
+{
+	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
+	{
+		if (lfs_mkdir(&FS_lfs, "/Samples") != LFS_ERR_OK)
+		{
+			xSemaphoreGiveRecursive(fileSystemAccessMutex);
+			return ERR_FAILED;
+		}
+	}
+	else
+	{
+		return ERR_BUSY;
+	}
+}
+
+
 uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 {
-	uint8_t fileNameBuf[50];
+	uint8_t fileNameBuf[FS_FILE_NAME_SIZE];
+	uint8_t filePathBuf[FS_FILE_NAME_SIZE];
 	TIMEREC time;
 	DATEREC date;
 	TmDt1_GetInternalRTCTimeDate(&time,&date);
 
-#ifdef USE_FOLDERS_TO_STORE_FILES
-	UTIL1_strcpy(fileNameBuf,50,"/Samples/");
-	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Day, '0', 2);
-	UTIL1_chcat(fileNameBuf, 50, '_');
-	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Month, '0', 2);
-	UTIL1_chcat(fileNameBuf, 50, '_');
-	UTIL1_strcatNum16u(fileNameBuf, 50, (uint16_t)date.Year);
-	UTIL1_chcat(fileNameBuf, 50, '/');
-	UTIL1_strcatNum16sFormatted(fileNameBuf, 50, time.Hour, '0', 2);
-	UTIL1_strcat(fileNameBuf, 50, ".bin");
-#else
-	UTIL1_strcpy(fileNameBuf,50,"Samples_");
-	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Day, '0', 2);
-	UTIL1_chcat(fileNameBuf, 50, '_');
-	UTIL1_strcatNum16uFormatted(fileNameBuf, 50, date.Month, '0', 2);
-	UTIL1_chcat(fileNameBuf, 50, '_');
-	UTIL1_strcatNum16u(fileNameBuf, 50, (uint16_t)date.Year);
-	UTIL1_chcat(fileNameBuf, 50, '_');
-	UTIL1_chcat(fileNameBuf, 50, '_');
-	UTIL1_strcatNum16sFormatted(fileNameBuf, 50, time.Hour, '0', 2);
-	UTIL1_strcat(fileNameBuf, 50, ".bin");
-#endif
+	UTIL1_strcpy(filePathBuf,FS_FILE_NAME_SIZE,"/Samples/");
+	UTIL1_strcatNum16uFormatted(filePathBuf, FS_FILE_NAME_SIZE, date.Day, '0', 2);
+	UTIL1_chcat(filePathBuf, FS_FILE_NAME_SIZE, '_');
+	UTIL1_strcatNum16uFormatted(filePathBuf, FS_FILE_NAME_SIZE, date.Month, '0', 2);
+	UTIL1_chcat(filePathBuf, FS_FILE_NAME_SIZE, '_');
+	UTIL1_strcatNum16u(filePathBuf, FS_FILE_NAME_SIZE, (uint16_t)date.Year);
+
+	UTIL1_strcpy(fileNameBuf,FS_FILE_NAME_SIZE,filePathBuf);
+	UTIL1_chcat(fileNameBuf, FS_FILE_NAME_SIZE, '/');
+	UTIL1_strcatNum16sFormatted(fileNameBuf, FS_FILE_NAME_SIZE, time.Hour, '0', 2);
+	UTIL1_strcat(fileNameBuf, FS_FILE_NAME_SIZE, ".bin");
 
 	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
+
 		if (lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_APPEND) < 0)
 		{
-			//If file dosnt exist, create it and add the  header
+
+			//If file dosnt exist, create File and Folder and add the header
+			lfs_mkdir(&FS_lfs, filePathBuf); //Make the new Directory if it dosnt alreasy exist
+
 			if(lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)
 			{
 				xSemaphoreGiveRecursive(fileSystemAccessMutex);
@@ -1184,7 +1198,8 @@ uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled,const CLS1_StdIO
 		CLS1_SendHelpStr((unsigned char*) "  format",(const unsigned char*) "Format the file system\r\n",io->stdOut);
 		CLS1_SendHelpStr((unsigned char*) "  mount",(const unsigned char*) "Mount the file system\r\n", io->stdOut);
 		CLS1_SendHelpStr((unsigned char*) "  unmount",(const unsigned char*) "unmount the file system\r\n",	io->stdOut);
-		CLS1_SendHelpStr((unsigned char*) "  ls",(const unsigned char*) "List directory and files\r\n",	io->stdOut);
+		CLS1_SendHelpStr((unsigned char*) "  ls",(const unsigned char*) "List directory and files of root\r\n",	io->stdOut);
+		CLS1_SendHelpStr((unsigned char*) "  ls <dir>",(const unsigned char*) "List directory and files of dir (ex. /Samples)\r\n",	io->stdOut);
 		CLS1_SendHelpStr((unsigned char*) "  rm <file>",(const unsigned char*) "Remove a file\r\n", io->stdOut);
 		CLS1_SendHelpStr((unsigned char*) "  mv <src> <dst>",(const unsigned char*) "Rename a file\r\n", io->stdOut);
 		CLS1_SendHelpStr((unsigned char*) "  cp <src> <dst>",(const unsigned char*) "Copy a file\r\n", io->stdOut);
@@ -1217,6 +1232,15 @@ uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled,const CLS1_StdIO
 	{
 		*handled = TRUE;
 		return FS_Dir(NULL, io);
+	}
+	else if (UTIL1_strncmp((char* )cmd, "FS ls ",	sizeof("FS ls ") - 1)	== 0)
+	{
+		*handled = TRUE;
+		if ((UTIL1_ReadEscapedName(cmd + sizeof("FS ls ") - 1,fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL)	== ERR_OK))
+		{
+			return FS_Dir(fileNameSrc, io);
+		}
+		return ERR_FAILED;
 	}
 	else if (UTIL1_strcmp((char*)cmd, "FS benchmark") == 0)
 	{
