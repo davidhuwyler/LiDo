@@ -379,30 +379,34 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
 			{ /* no more files */
 				break;
 			}
-			switch (info.type)
+
+			if(!(UTIL1_strcmp(info.name,".") == 0 || UTIL1_strcmp(info.name,"..") == 0 ))
 			{
-			case LFS_TYPE_REG:
-				CLS1_SendStr("reg ", io->stdOut);
-				break;
-			case LFS_TYPE_DIR:
-				CLS1_SendStr("dir ", io->stdOut);
-				break;
-			default:
-				CLS1_SendStr("?   ", io->stdOut);
-				break;
-			}
-			static const char *prefixes[] = { "", "K", "M", "G" }; /* prefixes for kilo, mega and giga */
-			for (int i = sizeof(prefixes) / sizeof(prefixes[0]) - 1; i >= 0; i--)
-			{
-				if (info.size >= (1 << 10 * i) - 1)
+				switch (info.type)
 				{
-					CLS1_printf("%*u%sB ", 4 - (i != 0), info.size >> 10 * i,
-							prefixes[i]); /* \todo: remove printf */
+				case LFS_TYPE_REG:
+					CLS1_SendStr("reg ", io->stdOut);
+					break;
+				case LFS_TYPE_DIR:
+					CLS1_SendStr("dir ", io->stdOut);
+					break;
+				default:
+					CLS1_SendStr("?   ", io->stdOut);
 					break;
 				}
-			} /* for */
-			CLS1_SendStr(info.name, io->stdOut);
-			CLS1_SendStr("\r\n", io->stdOut);
+				static const char *prefixes[] = { "", "K", "M", "G" }; /* prefixes for kilo, mega and giga */
+				for (int i = sizeof(prefixes) / sizeof(prefixes[0]) - 1; i >= 0; i--)
+				{
+					if (info.size >= (1 << 10 * i) - 1)
+					{
+						CLS1_printf("%*u%sB ", 4 - (i != 0), info.size >> 10 * i,
+								prefixes[i]); /* \todo: remove printf */
+						break;
+					}
+				} /* for */
+				CLS1_SendStr(info.name, io->stdOut);
+				CLS1_SendStr("\r\n", io->stdOut);
+			}
 		} /* for */
 		res = lfs_dir_close(&FS_lfs, &dir);
 		if (res != LFS_ERR_OK) {

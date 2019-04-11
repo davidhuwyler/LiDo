@@ -170,7 +170,8 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 {
 	  c9_pin25_SetVal();
 
-	  size_t i;
+//	  word  nofSentBytes;
+
 	  if(!spifIsAwake)
 	  {
 		  SPIF_ReleaseFromDeepPowerDown();
@@ -183,7 +184,11 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 	  SPI_WRITE(address>>16);
 	  SPI_WRITE(address>>8);
 	  SPI_WRITE(address);
-	  for(i=0;i<bufSize;i++) {
+
+
+//	  SM1_SendBlock(buf,bufSize, &nofSentBytes); //Results in HardFault
+
+	  for(int i=0;i<bufSize;i++) {
 	    SPI_WRITE_READ(0, &buf[i]);
 	  }
 	  SPIF_CS_DISABLE();
@@ -296,6 +301,8 @@ uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 {
 	  b19_pin23_SetVal();
 
+//	  word  nofSentBytes;
+
 	  if(!spifIsAwake)
 	  {
 		  SPIF_ReleaseFromDeepPowerDown();
@@ -312,11 +319,16 @@ uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 	  SPI_WRITE(address>>16);
 	  SPI_WRITE(address>>8);
 	  SPI_WRITE(address);
+
+//	  SM1_SendBlock(data,dataSize, &nofSentBytes); //Results in HardFault
+
 	  while(dataSize>0) {
 	    SPI_WRITE(*data);
 	    dataSize--;
 	    data++;
 	  }
+
+
 	  SPIF_CS_DISABLE();
 
 	  b19_pin23_ClrVal();
@@ -385,10 +397,6 @@ uint8_t SPIF_ReadID(uint8_t *buf, size_t bufSize)
 		  return ERR_OK;
 	  }
 
-//	  if (buf[0]==SPIF_SPI_DEV_ID0_MANUFACTURER && buf[1]==SPIF_SPI_DEV_ID1_MEM_TYPE && buf[2]==SPIF_SPI_DEV_ID2_MEM_DENS)
-//	  {
-//		  return ERR_OK;
-//	  }
 	  return ERR_FAILED; /* not expected part */
 }
 
