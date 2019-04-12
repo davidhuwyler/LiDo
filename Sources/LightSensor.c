@@ -15,6 +15,8 @@
 #include "WAIT1.h"
 #include "CLS1.h"
 #include "CS1.h"
+#include "ExtInt_LI_DONE.h"
+#include "Application.h"
 
 #define LIGHTSENSOR_I2C_ADDRESS 0x49
 #define LIGHTSENSOR_I2C_REGISTER_DEV_ID 0x10
@@ -125,19 +127,15 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x00);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 
+	ExtInt_LI_DONE_Enable();
+
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
-	CS1_EnterCritical();
-	while(!interruptMeasurementDoneFromSensor)
-	{
-		CS1_ExitCritical();
-		vTaskDelay(pdMS_TO_TICKS(10));
-		CS1_EnterCritical();
-	}
-	interruptMeasurementDoneFromSensor = FALSE;
-	CS1_ExitCritical();
+
+	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	ExtInt_LI_DONE_Disable();
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)
@@ -163,19 +161,16 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 
 	//Bank1
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x80);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
+
+	ExtInt_LI_DONE_Enable();
+
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
-	CS1_EnterCritical();
-	while(!interruptMeasurementDoneFromSensor)
-	{
-		CS1_ExitCritical();
-		vTaskDelay(pdMS_TO_TICKS(10));
-		CS1_EnterCritical();
-	}
-	interruptMeasurementDoneFromSensor = FALSE;
-	CS1_ExitCritical();
+
+	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	ExtInt_LI_DONE_Disable();
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)
@@ -279,14 +274,3 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
   }
   return res;
 }
-
-void LightSensor_MeasurementDone(void)
-{
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	interruptMeasurementDoneFromSensor = TRUE;
-	CS1_ExitCritical();
-}
-
-
-

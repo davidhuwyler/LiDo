@@ -33,7 +33,6 @@ uint8_t FS_writeLine(lfs_file_t* file,uint8_t* line);
 uint8_t FS_readLine(lfs_file_t* file,uint8_t* lineBuf,size_t bufSize,uint8_t* nofReadChars);
 
 //LiDo Specific Functions
-uint8_t FS_createLidoSampleFolder(void);
 uint8_t FS_openLiDoSampleFile(lfs_file_t* file);
 uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file);
 uint8_t FS_getLiDoSampleOutOfFile(lfs_file_t* file,uint8_t* sampleBuf,size_t bufSize,uint8_t* nofReadChars);

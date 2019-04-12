@@ -223,7 +223,7 @@ void ExtInt_UI_BTN_OnInterrupt(void)
 */
 void ExtInt_LI_DONE_OnInterrupt(void)
 {
-	LightSensor_MeasurementDone();
+	APP_resumreSampleTaskFromISR();
   /* Write your code here ... */
 }
 

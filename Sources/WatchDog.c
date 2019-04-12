@@ -145,6 +145,7 @@ static void WatchDog_Task(void *param) {
 
 void WatchDog_Init(void)
 {
+	WDog1_Enable();
 	//initial Dog feed...
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].isSingleCheckWatchdogSouce	= TRUE;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 0;
@@ -174,7 +175,7 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_TakeLidoSample].sourceForceDisabled					= FALSE;
 
 	watchDogKickSources[WatchDog_ToggleEnableSampling].isSingleCheckWatchdogSouce		= TRUE;
-	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 200;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 0;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].uppwerCompTimeLimit 				= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].measuredCompTime 				= watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].timeStampLastKick 				= 0;

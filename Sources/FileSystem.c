@@ -698,23 +698,6 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 	}
 }
 
-uint8_t FS_createLidoSampleFolder(void)
-{
-	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
-	{
-		if (lfs_mkdir(&FS_lfs, "/Samples") != LFS_ERR_OK)
-		{
-			xSemaphoreGiveRecursive(fileSystemAccessMutex);
-			return ERR_FAILED;
-		}
-	}
-	else
-	{
-		return ERR_BUSY;
-	}
-}
-
-
 uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 {
 	uint8_t fileNameBuf[FS_FILE_NAME_SIZE];
@@ -742,6 +725,7 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 		{
 
 			//If file dosnt exist, create File and Folder and add the header
+			lfs_mkdir(&FS_lfs, "/Samples"); //Make the new Directory if it dosnt alreasy exist
 			lfs_mkdir(&FS_lfs, filePathBuf); //Make the new Directory if it dosnt alreasy exist
 
 			if(lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_CREAT| LFS_O_APPEND) < 0)

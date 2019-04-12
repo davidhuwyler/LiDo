@@ -190,6 +190,23 @@ static bool APP_newHour(void)
 	 return FALSE;
 }
 
+void APP_resumreSampleTaskFromISR(void)
+{
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	BaseType_t xYieldRequired;
+    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
+    if( xYieldRequired == pdTRUE )
+    {
+        portYIELD_FROM_ISR(pdTRUE);
+    }
+    CS1_ExitCritical();
+}
+
+void APP_suspendSampleTask(void)
+{
+	vTaskSuspend(sampletaskHandle);
+}
 
 static void APP_sample_task(void *param) {
   (void)param;
@@ -216,7 +233,7 @@ static void APP_sample_task(void *param) {
 	      }
 	  }
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
-	  vTaskSuspend(sampletaskHandle);
+	  APP_suspendSampleTask();
   } /* for */
 }
 
@@ -386,7 +403,7 @@ static void APP_init_task(void *param) {
 
   bool createAppData = FALSE;
 
-  if(!APP_WaitIfButtonPressed3s()) //Normal init
+  if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
   {
 		RTC_init(TRUE);
 		SDEP_Init();
@@ -401,38 +418,27 @@ static void APP_init_task(void *param) {
   }
   else //Init With HardReset RTC
   {
-	  	WDog1_Clear();
 		RTC_init(FALSE);		//HardReset RTC
-		SDEP_Init();
-		LightSensor_init();
-		AccelSensor_init();
 		if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
 		{
 			LED1_Off();
-			for(int i = 0 ; i < 30 ; i++){WAIT1_Waitms(100);WDog1_Clear();}
+			WAIT1_Waitms(3000);
 			if(APP_WaitIfButtonPressed3s()) //Format SPIF
 			{
-				FS_FormatInit();	//Format FS
-				createAppData = TRUE;
+				FS_FormatInit();	//Format FS after 9s ButtonPress
+				AppDataFile_Init();
+				AppDataFile_CreateFile();
 			}
-			else
-			{
-				FS_Init();
-			}
+			LED1_Off();
+			WAIT1_Waitms(3000);
 		}
-		WDog1_Clear();
-		AppDataFile_Init();
-		UI_Init();
-		SHELL_Init();
-		WatchDog_Init();
-		APP_init();
-  }
-
-  if(createAppData)
-  {
-	  //vTaskDelay(pdMS_TO_TICKS(1000));
-	  FS_createLidoSampleFolder();
-	  AppDataFile_CreateFile();
+		else
+		{
+			FS_Init();
+			AppDataFile_Init();
+			AppDataFile_SetSamplingEnables(FALSE);
+		}
+		KIN1_SoftwareReset();
   }
   vTaskSuspend(xTaskGetCurrentTaskHandle());
 }
@@ -638,16 +644,9 @@ void RTC_ALARM_ISR(void)
 	else /* Alarm interrupt */
 	{
 		uint8_t sampleIntervall;
-		BaseType_t xYieldRequired;
 		AppDataFile_GetSampleIntervall(&sampleIntervall);
 		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
-
-	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
-
-	    if( xYieldRequired == pdTRUE )
-	    {
-	        portYIELD_FROM_ISR(pdTRUE);
-	    }
+		APP_resumreSampleTaskFromISR();
 	}
 
 	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
