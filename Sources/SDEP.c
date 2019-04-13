@@ -32,6 +32,8 @@ uint8_t SDEP_SendMessage(SDEPmessage_t* response)
 
 uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 {
+	uint8_t err = ERR_OK;
+	const unsigned char *p;
 	static uint8_t outputBuf[SDEP_MESSAGE_MAX_PAYLOAD_BYTES];
 	static SDEPmessage_t answer;
 	answer.type = SDEP_TYPEBYTE_RESPONSE;
@@ -197,12 +199,46 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		}
 
 		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
-		//APP_CloseSampleFile();
 		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],answer.payload);
 		answer.payloadSize = 0;
 		answer.payload =0;
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
+
+	case SDEP_CMDID_SELFTEST:
+		//Check Sensors & IIC
+		sint32Param = 0;
+		p = outputBuf;
+		err = APP_getCurrentSample(&sample,sint32Param);
+		sample.temp &= ~0x80;  //Delete UserButton marker if there
+		if(!(sample.temp > 0 && sample.temp < 80 )) {err = ERR_FAILED;}
+
+		//Check FileSystem, MiniINI & SPIF
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], (uint8_t*)p ,25); //Read Sampleintervall from SPIF
+		UTIL1_ScanDecimal8uNumber(&p, &uint8param);
+		if(!(uint8param >= 1 && uint8param <= 100 )) {err = ERR_FAILED;}//Check Sampleintervall
+
+		//Check the Battery State TODO
+
+		//If all OK, Turn on The RGB LED for the User to check...
+		//TODO RGB Led
+
+		if(err == ERR_OK)
+		{
+			answer.payloadSize = 0;
+			answer.payload =0;
+			SDEP_SendMessage(&answer);
+		}
+		else
+		{
+			answer.type = SDEP_TYPEBYTE_ERROR;
+			answer.cmdId = SDEP_ERRID_SELFTEST_FAILED;
+			answer.payloadSize = 0;
+			answer.payload = 0;
+			SDEP_SendMessage(&answer);
+		}
+
+		return err;
 
 	case SDEP_CMDID_DELETE_FILE:
 		if(FS_RemoveFile(command->payload,NULL) != ERR_OK)

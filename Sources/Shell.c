@@ -94,38 +94,6 @@ static void SHELL_Disable(void)
 	}
 }
 
-static void SHELL_LidoSelftest(void)
-{
-	bool selftestOK = TRUE;
-	liDoSample_t sample;
-	int32 dummyTimeStamp = 0;
-	uint8_t buf[25];
-	const unsigned char *p;
-	int8_t sampleIntervall;
-	p = buf;
-
-	//Check Sensors & IIC
-	APP_getCurrentSample(&sample,dummyTimeStamp);
-	sample.temp &= ~0x80;  //Delete UserButton marker if there
-	if(!(sample.temp > 0 && sample.temp < 80 )) {selftestOK = FALSE;}
-
-	//Check FileSystem, MiniINI & SPIF
-	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], (uint8_t*)p ,25);
-	UTIL1_ScanDecimal8uNumber(&p, &sampleIntervall);
-	if(!(sampleIntervall >= 1 && sampleIntervall <= 100 )) {selftestOK = FALSE;}
-
-	//Check the Battery State TODO
-
-	//If all OK, Turn on The RGB LED for the User to check...
-	//TODO RGB Led
-	if(selftestOK)
-	{
-		LED1_On();
-		WAIT1_Waitms(500);
-		LED1_Off();
-	}
-}
-
 static void SHELL_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;

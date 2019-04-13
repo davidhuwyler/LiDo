@@ -112,5 +112,9 @@
             <description></description>
             <sequence value="h[10] h[00] h[20] h[00] h[C9]" />
         </SequenceItem>
+        <SequenceItem name="Selftest">
+            <description></description>
+            <sequence value="h[10] h[01] h[01] h[00] h[19]" />
+        </SequenceItem>
     </ItemList>
 </HtermSequenceFile>
