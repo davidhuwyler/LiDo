@@ -147,8 +147,3 @@ void SHELL_requestDisabling(void)
 	shellDisablingRequest = TRUE;
 	CS1_ExitCritical();
 }
-
-//void SHELL_enable(void)
-//{
-//	FRTOS1_xTaskResumeFromISR(shellTaskHandle);
-//}

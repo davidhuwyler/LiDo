@@ -8,9 +8,6 @@
 #ifndef SOURCES_SDEPIOHANDLER_H_
 #define SOURCES_SDEPIOHANDLER_H_
 
-//#include "Platform.h"
-//#include <stdint.h>
-//#include <stdbool.h>
 #include "CLS1.h"
 
 void SDEPio_init(void);

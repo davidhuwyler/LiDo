@@ -28,6 +28,9 @@ SDEP SetEnableSampling (false):
 SDEP SetRTC (1.1.2000 0:0:0):
 10 13 00 04 80 43 6D 38 B3
 
+SDEP SetRTC (1.4.2019 0:0:0):
+10 13 00 04 80 54 A1 5C 2D
+
 SDEP GetName
 10 01 00 00 0C 		
 

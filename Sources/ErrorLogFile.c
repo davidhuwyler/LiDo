@@ -99,5 +99,3 @@ uint8_t ErrorLogFile_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_
 	  }
 	  return res;
 }
-
-

@@ -385,7 +385,6 @@ uint8_t SDEP_SendPendingAlert(void)
 	return ERR_OK;
 }
 
-
 uint8_t SDEP_Init(void)
 {
 	SDEPio_init();

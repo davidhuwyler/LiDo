@@ -57,11 +57,7 @@ void LowPower_EnableStopMode(void)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
-#ifdef CONFIG_ENABLE_STOPMODE
 	stopModeAllowed = TRUE;
-#else
-	stopModeAllowed = FALSE;
-#endif
 	CS1_ExitCritical();
 }
 
@@ -83,7 +79,6 @@ bool LowPower_StopModeIsEnabled(void)
 	return temp;
 }
 
-
 void LLWU_ISR(void)
 {
 	 //NXP Application notes to LowPower: AN4470 & AN4503
@@ -99,7 +94,6 @@ void LLWU_ISR(void)
 		 LLWU_F3 |= LLWU_F3_MWUF5_MASK; //Clear WakeUpInt Flag
 		 RTC_ALARM_ISR();
 	 }
-
 
 	 //Clear interrupt Flag: Wakeup Source was UserButton
 	 else if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393

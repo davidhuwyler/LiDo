@@ -8,10 +8,6 @@
 #ifndef SOURCES_UI_H_
 #define SOURCES_UI_H_
 
-//#include <stdint.h>
-//#include <stddef.h>
-//#include <stdbool.h>
-
 #define UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS 1000
 #define UI_BUTTON_DEBOUNCE_INTERVALL_MS 20
 

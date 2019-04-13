@@ -207,7 +207,6 @@ uint8_t SDEPio_ShellToSDEP(const uint8_t*str,uint8_t* size)
 	return err;
 }
 
-
 /*
  * SDEP Shell Io function:
  */
@@ -227,8 +226,6 @@ bool SDEPio_ShellKeyPressed(void)
 {
 	return (bool)SDEPtoShellBuf_NofElements();
 }
-
-
 
 /*
  * SDEP File Io function:

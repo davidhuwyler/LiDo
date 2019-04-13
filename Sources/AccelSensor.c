@@ -112,5 +112,3 @@ uint8_t AccelSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
   }
   return res;
 }
-
-

@@ -17,7 +17,6 @@
 #include "SPIF.h"
 #include "Shell.h"
 
-
 #include "SM1.h"
 #include "UTIL1.h"
 #include "CLS1.h"
@@ -31,7 +30,6 @@
 #include "b19_pin23.h"
 #include "c8_pin24.h"
 #include "c9_pin25.h"
-
 
 #define SPIF_SPI_CMD_READ_DATA 0x13			//4Byte address normal read
 #define SPIF_SPI_CMD_PROGRAM_PAGE 0x12		//4Byte address

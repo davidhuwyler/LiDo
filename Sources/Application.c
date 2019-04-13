@@ -39,7 +39,6 @@ static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
 
-
 void APP_setMarkerInLog(void)
 {
 	CS1_CriticalVariable();
@@ -237,7 +236,6 @@ static void APP_sample_task(void *param) {
   } /* for */
 }
 
-
 static void APP_makeNewFileIfNeeded()
 {
 	  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
@@ -322,10 +320,12 @@ static void APP_writeQueuedSamplesToFile()
 static void APP_writeLidoFile_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
-
   uint8_t samplingIntervall;
-
   fileAccessMutex = xSemaphoreCreateRecursiveMutex();
+  if( fileAccessMutex == NULL )
+  {
+  	for(;;){} /* error! probably out of memory */
+  }
   xSemaphoreGiveRecursive(fileAccessMutex);
 
   for(;;)
@@ -400,9 +400,7 @@ static bool APP_WaitIfButtonPressed3s(void)
 
 static void APP_init_task(void *param) {
   (void)param;
-
   bool createAppData = FALSE;
-
   if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
   {
 		RTC_init(TRUE);
