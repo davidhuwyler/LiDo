@@ -26,7 +26,8 @@ static SemaphoreHandle_t fileSystemAccessMutex;
 
 #define FILESYSTEM_READ_BUFFER_SIZE 256//256
 #define FILESYSTEM_PROG_BUFFER_SIZE 256//256
-#define FILESYSTEM_LOOKAHEAD_SIZE 128 //128
+#define FILESYSTEM_LOOKAHEAD_SIZE 256 //128
+#define FILESYSTEM_CACHE_SIZE 256
 
 static int block_device_read(const struct lfs_config *c, lfs_block_t block,	lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -78,7 +79,8 @@ const struct lfs_config FS_cfg = {
 		.prog_size = FILESYSTEM_PROG_BUFFER_SIZE,
 		.block_size = 4096,
 		.block_count = 16384, /* 16384 * 4K = 64 MByte */
-		.lookahead = 128,
+	    .cache_size = FILESYSTEM_CACHE_SIZE,
+	    .lookahead_size = FILESYSTEM_LOOKAHEAD_SIZE,
 };
 
 
@@ -1169,7 +1171,7 @@ static uint8_t FS_PrintStatus(CLS1_ConstStdIOType *io)
 	UTIL1_strcat(buf, sizeof(buf), "\r\n");
 	CLS1_SendStatusStr((const unsigned char*) "  block_count", buf, io->stdOut);
 
-	UTIL1_Num32uToStr(buf, sizeof(buf), FS_cfg.lookahead);
+	UTIL1_Num32uToStr(buf, sizeof(buf), FS_cfg.lookahead_size);
 	UTIL1_strcat(buf, sizeof(buf), "\r\n");
 	CLS1_SendStatusStr((const unsigned char*) "  lookahead", buf, io->stdOut);
 	return ERR_OK;
