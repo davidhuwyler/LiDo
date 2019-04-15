@@ -81,6 +81,7 @@ const struct lfs_config FS_cfg = {
 		.block_count = 16384, /* 16384 * 4K = 64 MByte */
 	    .cache_size = FILESYSTEM_CACHE_SIZE,
 	    .lookahead_size = FILESYSTEM_LOOKAHEAD_SIZE,
+		.block_cycles = 500
 };
 
 
