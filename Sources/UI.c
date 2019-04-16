@@ -29,18 +29,28 @@ static xTimerHandle uiLEDtoggleTimer;
 static xTimerHandle uiLEDmodeIndicatorTimer;
 
 static bool ongoingButtonPress = FALSE;
-
 static uint8_t buttonCnt = 0;
+static uint8_t localNofBtnConfirmBlinks = 0;
 
+
+static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks)
+{
+	LED1_On();
+	localNofBtnConfirmBlinks = nofBtnConfirmBlinks;
+	if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,400,0) != pdPASS){for(;;);}
+	if(xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { for(;;);}
+}
 
 static void UI_Button_1pressDetected(void)
 {
+	UI_StartBtnConfirmBlinker(1);
 	APP_setMarkerInLog();
 }
 
 static void UI_Button_2pressDetected(void)
 {
-	 APP_toggleEnableSampling();
+	UI_StartBtnConfirmBlinker(2);
+	APP_toggleEnableSampling();
 }
 
 static void UI_Button_3pressDetected(void)
@@ -50,12 +60,13 @@ static void UI_Button_3pressDetected(void)
 
 static void UI_Button_4pressDetected(void)
 {
+	UI_StartBtnConfirmBlinker(4);
 	SHELL_requestDisabling();
-	LED1_Off();
 }
 
 static void UI_Button_5pressDetected(void)
 {
+	UI_StartBtnConfirmBlinker(5);
 	APP_requestForSoftwareReset();
 }
 
@@ -134,7 +145,22 @@ static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
 
 static void vTimerCallback_LED_ModeIndicator(xTimerHandle pxTimer)
 {
-	LED1_Off();
+	if(LED1_Get())
+	{
+		localNofBtnConfirmBlinks--;
+		LED1_Off();
+		if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,200,0) != pdPASS){for(;;);}
+	}
+	else
+	{
+		LED1_On();
+		if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,400,0) != pdPASS){for(;;);}
+	}
+
+	if(localNofBtnConfirmBlinks)
+	{
+		if(xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { for(;;);}
+	}
 }
 
 void UI_StopShellIndicator(void)
