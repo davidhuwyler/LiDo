@@ -48,6 +48,26 @@
 #define LIGHTSENSOR_I2C_REGISTER_CHANNEL_X_DATA_H 0xEF
 
 static volatile bool interruptMeasurementDoneFromSensor = FALSE;
+static volatile uint8_t gain = 0, intTime = 0, waitTime = 0;
+
+void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime)
+{
+	if(gain > 3)
+	{
+		paramGain = 3;
+	}
+	else if(gain <0)
+	{
+		paramGain = 0;
+	}
+	taskENTER_CRITICAL();
+	gain = paramGain;
+	intTime = paramIntegrationTime;
+	waitTime = paramWaitTime;
+	taskEXIT_CRITICAL();
+}
+
+
 
 void LightSensor_init(void)
 {
@@ -101,6 +121,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 {
 	uint8_t i2cData;
 	uint8_t res = ERR_OK;
+	uint8_t localGain = 0x3, localIntTime = 0xF0, localWaitTime = 0xF0;
 
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
@@ -117,13 +138,19 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_4 , 0x00);		//Register must be initialized with 0x00 (Datasheet p. 20)
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_5 , 0x02);		//Register must be initialized with 0x00 (Datasheet p. 20)
 
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG , 0xCA);		//Enable Interrupt after Conversion finished
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG , 0xCA);	//Enable Interrupt after Conversion finished
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04);		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_EN , 0x04);		//Enable ChannelData for Interrupts
 
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV , 0x03);	//Gain = b00=1x; b01=3.7x; b10=16x; b11=64x;
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T , 0xF0);		//IntegrationTime: (256 - value) * 2.8ms
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME , 0xF0);		//Time between Conversions: (256 - value) * 2.8ms
+	taskENTER_CRITICAL();
+	localGain = gain;
+	localIntTime = intTime;
+	localWaitTime = waitTime;
+	taskEXIT_CRITICAL();
+
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV , localGain);	//Gain = b00=1x; b01=3.7x; b10=16x; b11=64x;
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T , localIntTime);		//IntegrationTime: (256 - value) * 2.8ms
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME , localWaitTime);		//Time between Conversions: (256 - value) * 2.8ms
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x00);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 

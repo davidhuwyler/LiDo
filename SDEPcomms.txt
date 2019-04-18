@@ -88,3 +88,32 @@ SDEP Selftest
 SDEP CloseConnection
 10 00 20 00 C9
 
+-----LightSensor Commands-----
+
+SDEP GetLightSensorGain
+10 09 00 00 5D
+
+SDEP GetLightSensorIntegrationTime
+10 0A 00 00 E0
+
+SDEP GetLightSensorWaitTime
+10 0B 00 00 8B
+
+SDEP SetLightSensorGain x64
+10 15 00 01 03 A07
+
+SDEP SetLightSensorGain x16
+10 15 00 01 02 00
+
+SDEP SetLightSensorIntegrationTime 240 (44.8ms)
+10 16 00 01 F0 EA
+
+SDEP SetLightSensorIntegrationTime 250 (16.8ms)
+10 16 00 01 FA DC
+
+SDEP SetLightSensorWaitTime 240 (44.8ms)
+10 17 00 01 F0 FC
+
+SDEP SetLightSensorWaitTime 240 (16.8ms)
+10 17 00 01 FA CA
+

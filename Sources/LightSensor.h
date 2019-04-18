@@ -29,5 +29,6 @@ void LightSensor_init(void);
 uint8_t LightSensor_autoZeroBlocking(void);
 uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* bank1);
 uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime);
 
 #endif /* SOURCES_LIGHTSENSOR_H_ */

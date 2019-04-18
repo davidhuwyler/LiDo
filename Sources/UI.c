@@ -145,16 +145,17 @@ static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
 
 static void vTimerCallback_LED_ModeIndicator(xTimerHandle pxTimer)
 {
+	uint16_t timerDelayMS = 0;
 	if(LED1_Get())
 	{
 		localNofBtnConfirmBlinks--;
 		LED1_Off();
-		if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,200,0) != pdPASS){for(;;);}
+		timerDelayMS = 200;
 	}
 	else
 	{
 		LED1_On();
-		if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,400,0) != pdPASS){for(;;);}
+		timerDelayMS = 400;
 	}
 
 	if(localNofBtnConfirmBlinks)
@@ -175,6 +176,7 @@ void UI_StopShellIndicator(void)
 
 void UI_Init(void)
 {
+
 	uiButtonMultiPressTimer = xTimerCreate( "tmrUiBtn", /* name */
 										 pdMS_TO_TICKS(UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS), /* period/time */
 										 pdFALSE, /* auto reload */
@@ -210,6 +212,7 @@ void UI_Init(void)
 
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
+	ExtInt_UI_BTN_Enable();
 
 }
 

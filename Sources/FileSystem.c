@@ -15,6 +15,8 @@
 #include "TmDt1.h"
 #include "littleFS/lfs.h"
 #include "Shell.h"
+#include "AppDataFile.h"
+#include "LightSensor.h"
 
 #define FS_FILE_NAME_SIZE  60 /* Length of file name, used in buffers */
 #define FS_ACCESS_MUTEX_WAIT_TIME_MS 5000
@@ -736,7 +738,29 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;
 			}
-			if(FS_writeLine(file,LIDO_FILE_HEADER) != ERR_OK)
+
+			uint8_t headerBuf[100];
+			const unsigned char *p;
+			p = headerBuf;
+			uint8_t gain = 0, intTime = 0, waitTime = 0;
+			AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], (uint8_t*)p ,25); //Read LightSens Gain
+			UTIL1_ScanDecimal8uNumber(&p, &gain);
+			AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], (uint8_t*)p ,25); //Read LightSens IntegrationTime
+			UTIL1_ScanDecimal8uNumber(&p, &intTime);
+			AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
+			UTIL1_ScanDecimal8uNumber(&p, &waitTime);
+
+			LightSensor_setParams(gain,intTime,waitTime);
+
+			UTIL1_strcpy(headerBuf,100,LIDO_FILE_HEADER);
+			UTIL1_strcat(headerBuf,100,"  Lightsensor Params. G: ");
+			UTIL1_strcatNum8u(headerBuf,100,gain);
+			UTIL1_strcat(headerBuf,100,"  I: ");
+			UTIL1_strcatNum8u(headerBuf,100,intTime);
+			UTIL1_strcat(headerBuf,100,"  W: ");
+			UTIL1_strcatNum8u(headerBuf,100,waitTime);
+
+			if(FS_writeLine(file,headerBuf) != ERR_OK)
 			{
 				xSemaphoreGiveRecursive(fileSystemAccessMutex);
 				return ERR_FAILED;

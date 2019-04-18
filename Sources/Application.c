@@ -90,12 +90,11 @@ static void APP_toggleEnableSamplingIfRequested(void)
 
 static void APP_softwareResetIfRequested()
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
+	taskENTER_CRITICAL();
 	if(requestForSoftwareReset)
 	{
 		requestForSoftwareReset = FALSE;
-		CS1_ExitCritical();
+		taskEXIT_CRITICAL();
 		if(fileIsOpen)
 		{
 			FS_closeFile(&sampleFile);
@@ -105,7 +104,7 @@ static void APP_softwareResetIfRequested()
 	}
 	else
 	{
-		CS1_ExitCritical();
+		taskEXIT_CRITICAL();
 	}
 }
 
@@ -401,18 +400,34 @@ static bool APP_WaitIfButtonPressed3s(void)
 static void APP_init_task(void *param) {
   (void)param;
   bool createAppData = FALSE;
+
   if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
   {
 		RTC_init(TRUE);
 		SDEP_Init();
-		UI_Init();
 		LightSensor_init();
 		AccelSensor_init();
 		FS_Init();
 		AppDataFile_Init();
 		SHELL_Init();
+
+
+		//Init LightSensor Params from AppDataFileS
+		uint8_t headerBuf[5];
+		const unsigned char *p;
+		p = headerBuf;
+		uint8_t gain = 0, intTime = 0, waitTime = 0;
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], (uint8_t*)p ,25); //Read LightSens Gain
+		UTIL1_ScanDecimal8uNumber(&p, &gain);
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], (uint8_t*)p ,25); //Read LightSens IntegrationTime
+		UTIL1_ScanDecimal8uNumber(&p, &intTime);
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
+		UTIL1_ScanDecimal8uNumber(&p, &waitTime);
+		LightSensor_setParams(gain,intTime,waitTime);
+
 		WatchDog_Init();
 		APP_init();
+		UI_Init();
   }
   else //Init With HardReset RTC
   {

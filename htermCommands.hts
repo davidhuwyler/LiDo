@@ -120,5 +120,41 @@
             <description></description>
             <sequence value="h[10] h[01] h[01] h[00] h[19]" />
         </SequenceItem>
+        <SequenceItem name="LightSensor GetGain">
+            <description></description>
+            <sequence value="h[10] h[09] h[00] h[00] h[5D]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor GetIntegrationTime">
+            <description></description>
+            <sequence value="h[10] h[0A] h[00] h[00] h[E0]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor GetWaitTime">
+            <description></description>
+            <sequence value="h[10] h[0B] h[00] h[00] h[8B]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetGain (x64)">
+            <description></description>
+            <sequence value="h[10] h[15] h[00] h[01] h[03] h[07]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetGain (x16)">
+            <description></description>
+            <sequence value="h[10] h[15] h[00] h[01] h[02] h[00]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetIntegrationTime (44.8ms)">
+            <description></description>
+            <sequence value="h[10] h[16] h[00] h[01] h[F0] h[EA]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetIntegrationTime (16.8ms)">
+            <description></description>
+            <sequence value="h[10] h[16] h[00] h[01] h[FA] h[DC]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor WaitTime (16.8ms)">
+            <description></description>
+            <sequence value="h[10] h[17] h[00] h[01] h[FA] h[CA]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor WaitTime (44.8ms)">
+            <description></description>
+            <sequence value="h[10] h[17] h[00] h[01] h[F0] h[FC]" />
+        </SequenceItem>
     </ItemList>
 </HtermSequenceFile>

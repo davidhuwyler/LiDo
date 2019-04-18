@@ -153,6 +153,39 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+	case SDEP_CMDID_GET_LIGHTGAIN:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
+		{
+			break;
+		}
+		answer.payload[0] = (uint8_t)  sint32Param;
+		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_LIGHTINTTIME:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
+		{
+			break;
+		}
+		answer.payload[0] = (uint8_t)  sint32Param;
+		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_LIGHTWAITTIME:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
+		{
+			break;
+		}
+		answer.payload[0] = (uint8_t)  sint32Param;
+		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
 	case SDEP_CMDID_SET_ID:
 		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[1][0],command->payload);
 		answer.payloadSize = 0;
@@ -204,6 +237,39 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		answer.payload =0;
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
+
+	case SDEP_CMDID_SET_LIGHTGAIN:
+		uint8param = command->payload[0];
+		if(uint8param<0 ||uint8param>3)
+		{
+			break;
+		}
+
+		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0],answer.payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_SET_LIGHTINTTIME:
+		uint8param = command->payload[0];
+		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0],answer.payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_SET_LIGHTWAITTIME:
+		uint8param = command->payload[0];
+		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0],answer.payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
 
 	case SDEP_CMDID_SELFTEST:
 		//Check Sensors & IIC
