@@ -39,7 +39,7 @@ void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);
 void APP_suspendSampleTask(void);
-void APP_resumreSampleTaskFromISR(void);
+void APP_resumeSampleTaskFromISR(void);
 uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
 //void void RTC_ALARM_ISR(void);

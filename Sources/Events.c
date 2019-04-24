@@ -224,7 +224,7 @@ void ExtInt_UI_BTN_OnInterrupt(void)
 */
 void ExtInt_LI_DONE_OnInterrupt(void)
 {
-	APP_resumreSampleTaskFromISR();
+	APP_resumeSampleTaskFromISR();
   /* Write your code here ... */
 }
 

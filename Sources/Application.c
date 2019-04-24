@@ -188,16 +188,19 @@ static bool APP_newHour(void)
 	 return FALSE;
 }
 
-void APP_resumreSampleTaskFromISR(void)
+void APP_resumeSampleTaskFromISR(void)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
 	BaseType_t xYieldRequired;
-    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
-    if( xYieldRequired == pdTRUE )
-    {
-        portYIELD_FROM_ISR(pdTRUE);
-    }
+	if(sampletaskHandle!=NULL)
+	{
+	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
+	    if( xYieldRequired == pdTRUE )
+	    {
+	        portYIELD_FROM_ISR(pdTRUE);
+	    }
+	}
     CS1_ExitCritical();
 }
 
@@ -403,14 +406,12 @@ static void APP_init_task(void *param) {
 
   if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
   {
-		RTC_init(TRUE);
 		SDEP_Init();
 		LightSensor_init();
 		AccelSensor_init();
 		FS_Init();
 		AppDataFile_Init();
 		SHELL_Init();
-
 
 		//Init LightSensor Params from AppDataFileS
 		uint8_t headerBuf[5];
@@ -427,6 +428,7 @@ static void APP_init_task(void *param) {
 
 		WatchDog_Init();
 		APP_init();
+		RTC_init(TRUE);
 		UI_Init();
   }
   else //Init With HardReset RTC
@@ -659,7 +661,7 @@ void RTC_ALARM_ISR(void)
 		uint8_t sampleIntervall;
 		AppDataFile_GetSampleIntervall(&sampleIntervall);
 		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
-		APP_resumreSampleTaskFromISR();
+		APP_resumeSampleTaskFromISR();
 	}
 
 	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
