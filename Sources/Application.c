@@ -427,9 +427,10 @@ static void APP_init_task(void *param) {
 		LightSensor_setParams(gain,intTime,waitTime);
 
 		WatchDog_Init();
-		APP_init();
 		RTC_init(TRUE);
 		UI_Init();
+		APP_init();
+
   }
   else //Init With HardReset RTC
   {
