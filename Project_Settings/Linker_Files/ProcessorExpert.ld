@@ -4,13 +4,13 @@
 /*##                                   */
 /*##     Filename  : ProcessorExpert.ld */
 /*##                                   */
-/*##     Project   : LiDo              */
+/*##     Project   : LiDo_CustomPCB    */
 /*##                                   */
-/*##     Processor : MK22FN512VLH12    */
+/*##     Processor : MK22DX256VLF5     */
 /*##                                   */
 /*##     Compiler  : GNU C Compiler    */
 /*##                                   */
-/*##     Date/Time : 2019-03-04, 18:41, # CodeGen: 75 */
+/*##     Date/Time : 2019-04-24, 17:41, # CodeGen: 1 */
 /*##                                   */
 /*##     Abstract  :                   */
 /*##                                   */
@@ -37,10 +37,10 @@ __heap_size = 0x00;                    /* required amount of heap  */
 __stack_size = 0x0400;                 /* required amount of stack */
 
 MEMORY {
-  m_interrupts (RX) : ORIGIN = 0x00000000, LENGTH = 0x00000198
-  m_text      (RX) : ORIGIN = 0x00000410, LENGTH = 0x0007FBF0
-  m_data      (RW) : ORIGIN = 0x1FFF0000, LENGTH = 0x00010000
-  m_data_20000000 (RW) : ORIGIN = 0x20000000, LENGTH = 0x00010000
+  m_interrupts (RX) : ORIGIN = 0x00000000, LENGTH = 0x00000144
+  m_text      (RX) : ORIGIN = 0x00000410, LENGTH = 0x0003FBF0
+  m_data      (RW) : ORIGIN = 0x1FFFC000, LENGTH = 0x00004000
+  m_data_20000000 (RW) : ORIGIN = 0x20000000, LENGTH = 0x00004000
   m_cfmprotrom  (RX) : ORIGIN = 0x00000400, LENGTH = 0x00000010
 }
 

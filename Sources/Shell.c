@@ -26,7 +26,7 @@
 #include "USB1.h"
 #include "CDC1.h"
 #include "ErrorLogFile.h"
-#include "LED1.h"
+#include "LED_R.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -81,9 +81,9 @@ static void SHELL_Disable(void)
 
 		//Switch Peripheral Clock from ICR48 to FLL clock (Datasheet p.265)
 		//More Infos in AN4905 Crystal-less USB operation on Kinetis MCUs
-		SIM_SOPT2 &= ~SIM_SOPT2_PLLFLLSEL_MASK;
-		SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(0x0);
-		USB0_CLK_RECOVER_IRC_EN = 0x0;	//Disable USB Clock (IRC 48MHz)
+		//SIM_SOPT2 &= ~SIM_SOPT2_PLLFLLSEL_MASK;
+		//SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(0x0);
+		//USB0_CLK_RECOVER_IRC_EN = 0x0;	//Disable USB Clock (IRC 48MHz)
 
 		LowPower_EnableStopMode();
 		vTaskSuspend(shellTaskHandle);

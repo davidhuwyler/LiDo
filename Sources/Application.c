@@ -7,7 +7,7 @@
 
 #include "Application.h"
 #include "FRTOS1.h"
-#include "LED1.h"
+#include "LED_R.h"
 #include "WAIT1.h"
 #include "KIN1.h"
 #include "LightSensor.h"
@@ -16,10 +16,8 @@
 #include "RTC.h"
 #include "FileSystem.h"
 #include "UI.h"
-#include "DebugWaitOnStartPin.h"
 #include "SDEP.h"
 #include "AppDataFile.h"
-#include "ExtInt_UI_BTN.h"
 #include "CRC8.h"
 #include "RTC1.h"
 #include "TmDt1.h"
@@ -221,7 +219,7 @@ static void APP_sample_task(void *param) {
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
-		  LED1_Neg();
+		  LED_R_Neg();
 		  RTC_getTimeUnixFormat(&unixTScurrentSample);
 		  if(APP_getCurrentSample(&sample,unixTScurrentSample) != ERR_OK)
 		  {
@@ -379,14 +377,14 @@ void APP_init(void)
 
 static bool APP_WaitIfButtonPressed3s(void)
 {
-	  if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
+	  if(USER_BUTTON_PRESSED)
 	  {
 		  for(int i = 0 ; i < 30 ; i++)
 		  {
 			  WDog1_Clear();
 			  WAIT1_Waitms(100);
-			  LED1_Neg();
-			  if(ExtInt_UI_BTN_GetVal() == TRUE) // --> Button released
+			  LED_R_Neg();
+			  if(!USER_BUTTON_PRESSED)
 			  {
 				  return FALSE;
 			  }
@@ -435,9 +433,9 @@ static void APP_init_task(void *param) {
   else //Init With HardReset RTC
   {
 		RTC_init(FALSE);		//HardReset RTC
-		if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
+		if(USER_BUTTON_PRESSED)
 		{
-			LED1_Off();
+			LED_R_Off();
 			WAIT1_Waitms(3000);
 			if(APP_WaitIfButtonPressed3s()) //Format SPIF
 			{
@@ -445,7 +443,7 @@ static void APP_init_task(void *param) {
 				AppDataFile_Init();
 				AppDataFile_CreateFile();
 			}
-			LED1_Off();
+			LED_R_Off();
 			WAIT1_Waitms(3000);
 		}
 		else
@@ -479,9 +477,9 @@ void APP_CloseSampleFile(void)
 void APP_Run(void) {
 
 	//EmercencyBreak: If LowPower went wrong...
-	while(DebugWaitOnStartPin_GetVal())
+	while(USER_BUTTON_PRESSED)
 	{
-		LED1_Neg();
+		LED_R_Neg();
 		WAIT1_Waitms(50);
 	}
 

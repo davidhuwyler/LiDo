@@ -13,7 +13,7 @@
 <booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.doSecondReset" value="true"/>
 <booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.doStartGdbServer" value="true"/>
 <booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.enableFlashBreakpoints" value="true"/>
-<booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.enableSemihosting" value="false"/>
+<booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.enableSemihosting" value="true"/>
 <booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.enableSemihostingIoclientGdbClient" value="false"/>
 <booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.enableSemihostingIoclientTelnet" value="true"/>
 <booleanAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.enableSwo" value="false"/>
@@ -25,18 +25,18 @@
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerConnectionAddress" value=""/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerDebugInterface" value="swd"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerDeviceEndianness" value="little"/>
-<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerDeviceName" value="MK22FN512xxx12"/>
+<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerDeviceName" value="MK22DX256xxx5"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerDeviceSpeed" value="1000"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerExecutable" value="${jlink_path}/${jlink_gdbserver}"/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerGdbPortNumber" value="2331"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerLog" value=""/>
-<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerOther" value="-s -rtos GDBServer/RTOSPlugin_FreeRTOS"/>
+<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerOther" value="-singlerun -strict -timeout 0"/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerSwoPortNumber" value="2332"/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.gdbServerTelnetPortNumber" value="2333"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.interfaceSpeed" value="auto"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.otherInitCommands" value=""/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.otherRunCommands" value=""/>
-<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.secondResetType" value="2"/>
+<stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.secondResetType" value=""/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.swoEnableTargetCpuFreq" value="0"/>
 <stringAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.swoEnableTargetPortMask" value="0x1"/>
 <intAttribute key="ilg.gnuarmeclipse.debug.gdbjtag.jlink.swoEnableTargetSwoFreq" value="0"/>
@@ -62,12 +62,12 @@
 <booleanAttribute key="org.eclipse.cdt.dsf.gdb.UPDATE_THREADLIST_ON_SUSPEND" value="false"/>
 <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="2"/>
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_REGISTER_GROUPS" value=""/>
-<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug/tinyK22_Demo.elf"/>
-<stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="tinyK22_Demo"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug/LiDo_CustomPCB.elf"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="LiDo_CustomPCB"/>
 <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="false"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value=""/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/tinyK22_Demo"/>
+<listEntry value="/LiDo_CustomPCB"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="4"/>

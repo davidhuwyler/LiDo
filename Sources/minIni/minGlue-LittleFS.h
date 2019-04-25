@@ -18,7 +18,7 @@
   #pragma MESSAGE DISABLE C5909 /* Assignment in condition */
 #endif
 
-#define INI_BUFFERSIZE  256       				 /* maximum line length, maximum path length */
+#define INI_BUFFERSIZE  100       				 /* maximum line length, maximum path length */
 
 /* You must set _USE_STRFUNC to 1 or 2 in the include file ff.h (or tff.h)
  * to enable the "string functions" fgets() and fputs().

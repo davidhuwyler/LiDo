@@ -27,10 +27,6 @@
 #include "PIN_SPIF_RESET.h"
 #include "PIN_SPIF_WP.h"
 
-#include "b19_pin23.h"
-#include "c8_pin24.h"
-#include "c9_pin25.h"
-
 #define SPIF_SPI_CMD_READ_DATA 0x13			//4Byte address normal read
 #define SPIF_SPI_CMD_PROGRAM_PAGE 0x12		//4Byte address
 
@@ -166,10 +162,6 @@ uint8_t SPIF_ReleaseFromDeepPowerDown()
 
 uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 {
-	  c9_pin25_SetVal();
-
-//	  word  nofSentBytes;
-
 	  if(!spifIsAwake)
 	  {
 		  SPIF_ReleaseFromDeepPowerDown();
@@ -190,8 +182,6 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 	    SPI_WRITE_READ(0, &buf[i]);
 	  }
 	  SPIF_CS_DISABLE();
-
-	  c9_pin25_ClrVal();
 	  return ERR_OK;
 }
 
@@ -217,8 +207,6 @@ uint8_t SPIF_EraseAll(void)
 
 uint8_t SPIF_EraseSector4K(uint32_t address)
 {
-	c8_pin24_SetVal();
-
 	  if(!spifIsAwake)
 	  {
 		  SPIF_ReleaseFromDeepPowerDown();
@@ -237,8 +225,6 @@ uint8_t SPIF_EraseSector4K(uint32_t address)
 	  SPI_WRITE(address>>8);
 	  SPI_WRITE(address);
 	  SPIF_CS_DISABLE();
-
-	  c8_pin24_ClrVal();
 	  return ERR_OK;
 }
 
@@ -297,10 +283,6 @@ uint8_t SPIF_EraseBlock64K(uint32_t address)
  */
 uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 {
-	  b19_pin23_SetVal();
-
-//	  word  nofSentBytes;
-
 	  if(!spifIsAwake)
 	  {
 		  SPIF_ReleaseFromDeepPowerDown();
@@ -328,8 +310,6 @@ uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 
 
 	  SPIF_CS_DISABLE();
-
-	  b19_pin23_ClrVal();
 	  return ERR_OK;
 }
 

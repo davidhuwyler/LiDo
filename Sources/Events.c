@@ -1,16 +1,16 @@
 /* ###################################################################
 **     Filename    : Events.c
-**     Project     : tinyK22_Demo
-**     Processor   : MK22FN512VLH12
+**     Project     : LiDo_CustomPCB
+**     Processor   : MK22DX256VLF5
 **     Component   : Events
 **     Version     : Driver 01.00
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2017-12-07, 07:33, # CodeGen: 0
+**     Date/Time   : 2019-04-24, 17:21, # CodeGen: 0
 **     Abstract    :
 **         This is user's event module.
 **         Put your event handler code here.
 **     Contents    :
-**         Cpu_OnNMI - void Cpu_OnNMI(void);
+**         Cpu_OnNMIINT - void Cpu_OnNMIINT(void);
 **
 ** ###################################################################*/
 /*!
@@ -28,8 +28,6 @@
 
 #include "Cpu.h"
 #include "Events.h"
-#include "Init_Config.h"
-#include "PDD_Includes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,17 +35,12 @@ extern "C" {
 
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
-#include "Application.h"
-#include "LowPower.h"
-#include "UI.h"
-#include "LightSensor.h"
-#include "LED1.h"
 
 /*
 ** ===================================================================
-**     Event       :  Cpu_OnNMI (module Events)
+**     Event       :  Cpu_OnNMIINT (module Events)
 **
-**     Component   :  Cpu [MK22FN512DC12]
+**     Component   :  Cpu [MK22DN512MC5]
 */
 /*!
 **     @brief
@@ -56,7 +49,7 @@ extern "C" {
 **         interrupt] property is set to 'Enabled'.
 */
 /* ===================================================================*/
-void Cpu_OnNMI(void)
+void Cpu_OnNMIINT(void)
 {
   /* Write your code here ... */
 }
@@ -91,30 +84,6 @@ void FRTOS1_vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 
 /*
 ** ===================================================================
-**     Event       :  FRTOS1_vApplicationMallocFailedHook (module Events)
-**
-**     Component   :  FRTOS1 [FreeRTOS]
-**     Description :
-**         If enabled, the RTOS will call this hook in case memory
-**         allocation failed.
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-void FRTOS1_vApplicationMallocFailedHook(void)
-{
-  /* Called if a call to pvPortMalloc() fails because there is insufficient
-     free memory available in the FreeRTOS heap.  pvPortMalloc() is called
-     internally by FreeRTOS API functions that create tasks, queues, software
-     timers, and semaphores.  The size of the FreeRTOS heap is set by the
-     configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
-  taskDISABLE_INTERRUPTS();
-  /* Write your code here ... */
-  for(;;) {}
-}
-
-/*
-** ===================================================================
 **     Event       :  FRTOS1_vApplicationTickHook (module Events)
 **
 **     Component   :  FRTOS1 [FreeRTOS]
@@ -128,7 +97,6 @@ void FRTOS1_vApplicationMallocFailedHook(void)
 void FRTOS1_vApplicationTickHook(void)
 {
   /* Called for every RTOS tick. */
- TmDt1_AddTick();
   /* Write your code here ... */
 }
 
@@ -153,6 +121,30 @@ void FRTOS1_vApplicationIdleHook(void)
 
 /*
 ** ===================================================================
+**     Event       :  FRTOS1_vApplicationMallocFailedHook (module Events)
+**
+**     Component   :  FRTOS1 [FreeRTOS]
+**     Description :
+**         If enabled, the RTOS will call this hook in case memory
+**         allocation failed.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void FRTOS1_vApplicationMallocFailedHook(void)
+{
+  /* Called if a call to pvPortMalloc() fails because there is insufficient
+     free memory available in the FreeRTOS heap.  pvPortMalloc() is called
+     internally by FreeRTOS API functions that create tasks, queues, software
+     timers, and semaphores.  The size of the FreeRTOS heap is set by the
+     configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
+  taskDISABLE_INTERRUPTS();
+  /* Write your code here ... */
+  for(;;) {}
+}
+
+/*
+** ===================================================================
 **     Event       :  FRTOS1_vOnPreSleepProcessing (module Events)
 **
 **     Component   :  FRTOS1 [FreeRTOS]
@@ -169,9 +161,7 @@ void FRTOS1_vApplicationIdleHook(void)
 void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks)
 {
   (void)expectedIdleTicks; /* not used */
-
-
-#if 0
+#if 1
   /* example for Kinetis (enable SetOperationMode() in CPU component): */
   // Cpu_SetOperationMode(DOM_WAIT, NULL, NULL); /* Processor Expert way to get into WAIT mode */
   /* or to wait for interrupt: */
@@ -184,47 +174,9 @@ void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks)
 #elif 0
   /* example for ColdFire V2: */
    __asm("stop #0x2000"); */
-
-#elif 1
-   LowPower_EnterLowpowerMode();
 #else
   #error "you *must* enter low power mode (wait for interrupt) here!"
 #endif
-  /* Write your code here ... */
-}
-
-/*
-** ===================================================================
-**     Event       :  ExtInt_UI_BTN_OnInterrupt (module Events)
-**
-**     Component   :  ExtInt_UI_BTN [ExtInt]
-**     Description :
-**         This event is called when an active signal edge/level has
-**         occurred.
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-void ExtInt_UI_BTN_OnInterrupt(void)
-{
-	UI_ButtonCounter();
-}
-
-/*
-** ===================================================================
-**     Event       :  ExtInt_LI_DONE_OnInterrupt (module Events)
-**
-**     Component   :  ExtInt_LI_DONE [ExtInt]
-**     Description :
-**         This event is called when an active signal edge/level has
-**         occurred.
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-void ExtInt_LI_DONE_OnInterrupt(void)
-{
-	APP_resumeSampleTaskFromISR();
   /* Write your code here ... */
 }
 

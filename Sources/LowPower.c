@@ -9,9 +9,7 @@
  */
 #include "LowPower.h"
 #include "Cpu.h"
-#include "LLWU.h"
-#include "LLWU_PDD.h"
-#include "LED1.h"
+#include "LED_R.h"
 #include "WAIT1.h"
 #include "CLS1.h"
 #include "Application.h"
@@ -36,8 +34,8 @@ void LowPower_EnterLowpowerMode(void)
 		  SMC_PMCTRL |=  SMC_PMCTRL_STOPM(0x3); //Set the STOPM field to 0b011 for LLS mode
 
 		  //Choose LLS2 or LLS3 :
-		  SMC_STOPCTRL &=  ~SMC_STOPCTRL_LLSM_MASK;
-		  SMC_STOPCTRL |=  SMC_STOPCTRL_LLSM(3); // LLS3=3, LLS2=2
+		  //SMC_STOPCTRL &=  ~SMC_STOPCTRL_LLSM_MASK;
+		  //SMC_STOPCTRL |=  SMC_STOPCTRL_LLSM(3); // LLS3=3, LLS2=2
 
 		  volatile unsigned int dummyread;		// wait for write to complete to SMC before stopping core
 		  dummyread = SMC_PMCTRL;				// AN4503 p.26
@@ -100,7 +98,7 @@ void LLWU_ISR(void)
 	 {
 		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
 		 //Trigger ExtInt behavour, because the actual Interrupt is Disables in StopMode:
-		 ExtInt_UI_BTN_OnInterrupt();
+		 UI_ButtonPressed_ISR();
 	 }
 
 	 //Clear interrupt Flag: Wakeup Source was LightSensor Interrupt
@@ -108,7 +106,7 @@ void LLWU_ISR(void)
 	 {
 		 LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
 		 //Trigger ExtInt behavior, because the actual Interrupt is Disables in StopMode:
-		 ExtInt_LI_DONE_OnInterrupt();
+		 LightSensor_Done_ISR();
 	 }
 
 	volatile unsigned int dummyread; //To make Sure, the Wakeup flag is cleared

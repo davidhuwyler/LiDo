@@ -14,10 +14,11 @@
 #define UI_LED_SHELL_INDICATOR_TOGGLE_DELAY_MS 200
 #define UI_LED_MODE_INDICATOR_DURATION_MS 300
 
-//Called by the EXT Button interrupt
-void UI_ButtonCounter(void);
+
 void UI_Init(void);
 void UI_StopShellIndicator(void);
+
+void UI_ButtonPressed_ISR(void);
 
 
 #endif /* SOURCES_UI_H_ */

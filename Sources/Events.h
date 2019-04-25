@@ -1,16 +1,16 @@
 /* ###################################################################
 **     Filename    : Events.h
-**     Project     : tinyK22_Demo
-**     Processor   : MK22FN512VLH12
+**     Project     : LiDo_CustomPCB
+**     Processor   : MK22DX256VLF5
 **     Component   : Events
 **     Version     : Driver 01.00
 **     Compiler    : GNU C Compiler
-**     Date/Time   : 2017-12-07, 07:33, # CodeGen: 0
+**     Date/Time   : 2019-04-24, 17:21, # CodeGen: 0
 **     Abstract    :
 **         This is user's event module.
 **         Put your event handler code here.
 **     Contents    :
-**         Cpu_OnNMI - void Cpu_OnNMI(void);
+**         Cpu_OnNMIINT - void Cpu_OnNMIINT(void);
 **
 ** ###################################################################*/
 /*!
@@ -33,65 +33,49 @@
 #include "PE_Error.h"
 #include "PE_Const.h"
 #include "IO_Map.h"
-#include "Pins1.h"
 #include "FRTOS1.h"
-#include "MCUC1.h"
+#include "TmDt1.h"
 #include "UTIL1.h"
-#include "LED1.h"
+#include "CLS1.h"
+#include "MCUC1.h"
+#include "LED_R.h"
 #include "LEDpin1.h"
 #include "BitIoLdd1.h"
 #include "WAIT1.h"
-#include "CLS1.h"
-#include "RTT1.h"
-#include "SDEPpendingAlertsBuffer.h"
-#include "WDog1.h"
-#include "WatchDogLdd1.h"
-#include "INT_RTC.h"
-#include "b19_pin23.h"
-#include "BitIoLdd3.h"
-#include "c8_pin24.h"
-#include "BitIoLdd4.h"
-#include "c9_pin25.h"
-#include "BitIoLdd11.h"
 #include "XF1.h"
 #include "CS1.h"
 #include "KIN1.h"
-#include "SYS1.h"
+#include "RTC1.h"
+#include "HF1.h"
+#include "AS1.h"
+#include "ASerialLdd1.h"
+#include "WDog1.h"
+#include "WatchDogLdd1.h"
+#include "INT_RTC.h"
 #include "GI2C1.h"
 #include "CI2C1.h"
-#include "LightSensResetPin.h"
+#include "TMOUT1.h"
+#include "PIN_SPIF_PWR.h"
 #include "BitIoLdd2.h"
-#include "LightSenseInterruptPin.h"
+#include "PIN_SPIF_RESET.h"
+#include "BitIoLdd3.h"
+#include "PIN_SPIF_CS.h"
+#include "BitIoLdd4.h"
+#include "PIN_SPIF_WP.h"
 #include "BitIoLdd5.h"
+#include "SM1.h"
+#include "SMasterLdd1.h"
 #include "USB1.h"
 #include "CDC1.h"
 #include "Tx1.h"
 #include "Rx1.h"
-#include "TMOUT1.h"
-#include "RTC1.h"
-#include "TmDt1.h"
-#include "DebugWaitOnStartPin.h"
-#include "BitIoLdd6.h"
-#include "ExtInt_LI_DONE.h"
-#include "ExtIntLdd2.h"
-#include "ExtInt_UI_BTN.h"
-#include "ExtIntLdd3.h"
-#include "PIN_SPIF_PWR.h"
-#include "BitIoLdd7.h"
-#include "PIN_SPIF_RESET.h"
-#include "BitIoLdd8.h"
-#include "PIN_SPIF_CS.h"
-#include "BitIoLdd9.h"
-#include "PIN_SPIF_WP.h"
-#include "BitIoLdd10.h"
-#include "SM1.h"
-#include "SMasterLdd1.h"
-#include "HF1.h"
-#include "AS1.h"
-#include "ASerialLdd1.h"
+#include "USB0.h"
 #include "SDEPtoShellBuf.h"
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
+#include "SDEPpendingAlertsBuffer.h"
+#include "PTB.h"
+#include "PTC.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -99,9 +83,9 @@ extern "C" {
 
 /*
 ** ===================================================================
-**     Event       :  Cpu_OnNMI (module Events)
+**     Event       :  Cpu_OnNMIINT (module Events)
 **
-**     Component   :  Cpu [MK22FN512DC12]
+**     Component   :  Cpu [MK22DN512MC5]
 */
 /*!
 **     @brief
@@ -110,7 +94,7 @@ extern "C" {
 **         interrupt] property is set to 'Enabled'.
 */
 /* ===================================================================*/
-void Cpu_OnNMI(void);
+void Cpu_OnNMIINT(void);
 
 
 void FRTOS1_vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName);
@@ -126,20 +110,6 @@ void FRTOS1_vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 **         NAME            - DESCRIPTION
 **         pxTask          - Task handle
 **       * pcTaskName      - Pointer to task name
-**     Returns     : Nothing
-** ===================================================================
-*/
-
-void FRTOS1_vApplicationMallocFailedHook(void);
-/*
-** ===================================================================
-**     Event       :  FRTOS1_vApplicationMallocFailedHook (module Events)
-**
-**     Component   :  FRTOS1 [FreeRTOS]
-**     Description :
-**         If enabled, the RTOS will call this hook in case memory
-**         allocation failed.
-**     Parameters  : None
 **     Returns     : Nothing
 ** ===================================================================
 */
@@ -172,6 +142,20 @@ void FRTOS1_vApplicationIdleHook(void);
 ** ===================================================================
 */
 
+void FRTOS1_vApplicationMallocFailedHook(void);
+/*
+** ===================================================================
+**     Event       :  FRTOS1_vApplicationMallocFailedHook (module Events)
+**
+**     Component   :  FRTOS1 [FreeRTOS]
+**     Description :
+**         If enabled, the RTOS will call this hook in case memory
+**         allocation failed.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
 void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks);
 /*
 ** ===================================================================
@@ -185,34 +169,6 @@ void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks);
 **         NAME            - DESCRIPTION
 **         expectedIdleTicks - expected idle
 **                           time, in ticks
-**     Returns     : Nothing
-** ===================================================================
-*/
-
-void ExtInt_UI_BTN_OnInterrupt(void);
-/*
-** ===================================================================
-**     Event       :  ExtInt_UI_BTN_OnInterrupt (module Events)
-**
-**     Component   :  ExtInt_UI_BTN [ExtInt]
-**     Description :
-**         This event is called when an active signal edge/level has
-**         occurred.
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-
-void ExtInt_LI_DONE_OnInterrupt(void);
-/*
-** ===================================================================
-**     Event       :  ExtInt_LI_DONE_OnInterrupt (module Events)
-**
-**     Component   :  ExtInt_LI_DONE [ExtInt]
-**     Description :
-**         This event is called when an active signal edge/level has
-**         occurred.
-**     Parameters  : None
 **     Returns     : Nothing
 ** ===================================================================
 */

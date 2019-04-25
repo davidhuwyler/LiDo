@@ -7,15 +7,12 @@
  *  Driver for the AS7264N LightSensor via I2C
  */
 #include "LightSensor.h"
-#include "LightSensResetPin.h"
-#include "LightSenseInterruptPin.h"
-#include "LED1.h"
+#include "LED_R.h"
 #include "FRTOS1.h"
 #include "GI2C1.h"
 #include "WAIT1.h"
 #include "CLS1.h"
 #include "CS1.h"
-#include "ExtInt_LI_DONE.h"
 #include "Application.h"
 
 #define LIGHTSENSOR_I2C_ADDRESS 0x49
@@ -47,7 +44,7 @@
 #define LIGHTSENSOR_I2C_REGISTER_CHANNEL_X_DATA_L 0xEE
 #define LIGHTSENSOR_I2C_REGISTER_CHANNEL_X_DATA_H 0xEF
 
-static volatile bool interruptMeasurementDoneFromSensor = FALSE;
+static volatile bool allowLightSensToWakeUp = FALSE;
 static volatile uint8_t gain = 0, intTime = 0, waitTime = 0;
 
 void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime)
@@ -72,9 +69,9 @@ void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint
 void LightSensor_init(void)
 {
 	//Reset Sensor
-	LightSensResetPin_ClrVal();
-	WAIT1_Waitms(50);
-	LightSensResetPin_SetVal();
+//	LightSensResetPin_ClrVal();
+//	WAIT1_Waitms(50);
+//	LightSensResetPin_SetVal();
 	WAIT1_Waitms(1);
 
 	uint8_t i2cData;
@@ -98,7 +95,7 @@ void LightSensor_init(void)
 	{
 		for(;;)//IIC Error
 		{
-			LED1_Neg();
+			LED_R_Neg();
 			WAIT1_Waitms(50);
 		}
 	}
@@ -122,11 +119,6 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	uint8_t i2cData;
 	uint8_t res = ERR_OK;
 	uint8_t localGain = 0x3, localIntTime = 0xF0, localWaitTime = 0xF0;
-
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	interruptMeasurementDoneFromSensor = FALSE;
-	CS1_ExitCritical();
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_PWR_MODE , 0x00);			//Disable Lowpower Mode
 	//WAIT1_Waitus(50);
@@ -154,15 +146,20 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x00);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 
-	ExtInt_LI_DONE_Enable();
-
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	allowLightSensToWakeUp = TRUE;
+	CS1_ExitCritical();
 
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-	ExtInt_LI_DONE_Disable();
+
+	CS1_EnterCritical();
+	allowLightSensToWakeUp = FALSE;
+	CS1_ExitCritical();
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)
@@ -189,15 +186,20 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	//Bank1
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x80);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 
-	ExtInt_LI_DONE_Enable();
-
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
 
+	CS1_EnterCritical();
+	allowLightSensToWakeUp = TRUE;
+	CS1_ExitCritical();
+
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-	ExtInt_LI_DONE_Disable();
+
+	CS1_EnterCritical();
+	allowLightSensToWakeUp = FALSE;
+	CS1_ExitCritical();
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)
@@ -300,4 +302,19 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
 	return PrintBank1(io);
   }
   return res;
+}
+
+void LightSensor_Done_ISR(void)
+{
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	if(allowLightSensToWakeUp)
+	{
+		CS1_ExitCritical();
+		APP_resumeSampleTaskFromISR();
+	}
+	else
+	{
+		CS1_ExitCritical();
+	}
 }

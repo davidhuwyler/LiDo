@@ -9,7 +9,7 @@
  */
 #include "AccelSensor.h"
 #include "GI2C1.h"
-#include "LED1.h"
+#include "LED_R.h"
 #include "WAIT1.h"
 
 #define ACCEL_SENS_I2C_ADDRESS 0x19
@@ -42,7 +42,7 @@ void AccelSensor_init(void)
 	{
 		for(;;)//IIC Error
 		{
-			LED1_Neg();
+			LED_R_Neg();
 			WAIT1_Waitms(50);
 		}
 	}

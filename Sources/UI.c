@@ -15,10 +15,9 @@
 #include "UI.h"
 #include "FRTOS1.h"
 #include "CLS1.h"
-#include "ExtInt_UI_BTN.h"
 #include "Application.h"
 #include "AppDataFile.h"
-#include "LED1.h"
+#include "LED_R.h"
 #include "Shell.h"
 
 
@@ -28,6 +27,7 @@ static xTimerHandle uiButtonDebounceTimer;
 static xTimerHandle uiLEDtoggleTimer;
 static xTimerHandle uiLEDmodeIndicatorTimer;
 
+static bool uiInitDone = FALSE;
 static bool ongoingButtonPress = FALSE;
 static uint8_t buttonCnt = 0;
 static uint8_t localNofBtnConfirmBlinks = 0;
@@ -35,7 +35,7 @@ static uint8_t localNofBtnConfirmBlinks = 0;
 
 static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks)
 {
-	LED1_On();
+	LED_R_On();
 	localNofBtnConfirmBlinks = nofBtnConfirmBlinks;
 	if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,400,0) != pdPASS){for(;;);}
 	if(xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { for(;;);}
@@ -71,7 +71,7 @@ static void UI_Button_5pressDetected(void)
 }
 
 
-void UI_ButtonCounter(void)
+static void UI_ButtonCounter(void)
 {
 	static TickType_t lastButtonPressTimeStamp;
 	if(!ongoingButtonPress)
@@ -120,7 +120,8 @@ static void vTimerCallback_ButtonMultiPressTimer(xTimerHandle pxTimer)
 
 static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 {
-	if(ExtInt_UI_BTN_GetVal() == FALSE) // --> Button is still Pressed
+
+	if(USER_BUTTON_PRESSED)
 	{
 		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS)
 		{
@@ -140,21 +141,21 @@ static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 
 static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
 {
-	LED1_Neg();
+	LED_R_Neg();
 }
 
 static void vTimerCallback_LED_ModeIndicator(xTimerHandle pxTimer)
 {
 	uint16_t timerDelayMS = 0;
-	if(LED1_Get())
+	if(LED_R_Get())
 	{
 		localNofBtnConfirmBlinks--;
-		LED1_Off();
+		LED_R_Off();
 		timerDelayMS = 200;
 	}
 	else
 	{
-		LED1_On();
+		LED_R_On();
 		timerDelayMS = 400;
 	}
 
@@ -170,7 +171,7 @@ void UI_StopShellIndicator(void)
 	 {
 	    for(;;); /* failure?!? */
 	 }
-	 LED1_Off();
+	 LED_R_Off();
 }
 
 
@@ -212,8 +213,25 @@ void UI_Init(void)
 
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
-	ExtInt_UI_BTN_Enable();
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	uiInitDone = TRUE;
+	CS1_ExitCritical();
+}
 
+void UI_ButtonPressed_ISR(void)
+{
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
+	if(uiInitDone)
+	{
+		CS1_ExitCritical();
+		UI_ButtonCounter();
+	}
+	else
+	{
+		CS1_ExitCritical();
+	}
 }
 
 
