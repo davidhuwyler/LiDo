@@ -13,29 +13,32 @@
  *      http://www.ganssle.com/debouncing.htm
  */
 #include "UI.h"
+#include "PTC.h"
+#include "PORT_PDD.h"
 #include "FRTOS1.h"
 #include "CLS1.h"
 #include "Application.h"
 #include "AppDataFile.h"
 #include "LED_R.h"
+#include "LED_G.h"
+#include "LED_B.h"
 #include "Shell.h"
 
 
 static xTimerHandle uiButtonMultiPressTimer;
 static xTimerHandle uiButtonDebounceTimer;
-
 static xTimerHandle uiLEDtoggleTimer;
 static xTimerHandle uiLEDmodeIndicatorTimer;
+static xTimerHandle uiLEDpulseIndicatorTimer;
 
 static bool uiInitDone = FALSE;
 static bool ongoingButtonPress = FALSE;
 static uint8_t buttonCnt = 0;
 static uint8_t localNofBtnConfirmBlinks = 0;
 
-
 static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks)
 {
-	LED_R_On();
+	LED_G_On();
 	localNofBtnConfirmBlinks = nofBtnConfirmBlinks;
 	if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,400,0) != pdPASS){for(;;);}
 	if(xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { for(;;);}
@@ -141,21 +144,21 @@ static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 
 static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
 {
-	LED_R_Neg();
+	LED_B_Neg();
 }
 
 static void vTimerCallback_LED_ModeIndicator(xTimerHandle pxTimer)
 {
 	uint16_t timerDelayMS = 0;
-	if(LED_R_Get())
+	if(LED_G_Get())
 	{
 		localNofBtnConfirmBlinks--;
-		LED_R_Off();
+		LED_G_Off();
 		timerDelayMS = 200;
 	}
 	else
 	{
-		LED_R_On();
+		LED_G_On();
 		timerDelayMS = 400;
 	}
 
@@ -171,9 +174,52 @@ void UI_StopShellIndicator(void)
 	 {
 	    for(;;); /* failure?!? */
 	 }
-	 LED_R_Off();
+	 LED_B_Off();
 }
 
+
+static void vTimerCallback_LEDpulse(xTimerHandle pxTimer)
+{
+	LED_R_Off();LED_G_Off();LED_B_Off();
+}
+
+void UI_LEDpulse(UI_LEDs_t color)
+{
+	switch(color)
+	{
+	case LED_R:
+		LED_R_On();
+		break;
+
+	case LED_G:
+		LED_G_On();
+		break;
+
+	case LED_B:
+		LED_B_On();
+		break;
+
+	case LED_Y:
+		LED_R_On();
+		LED_G_On();
+		break;
+
+	case LED_C:
+		LED_B_On();
+		LED_G_On();
+		break;
+
+	case LED_V:
+		LED_B_On();
+		LED_R_On();
+		break;
+	}
+
+	if (xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS)
+	{
+	   for(;;); /* failure?!? */
+	}
+}
 
 void UI_Init(void)
 {
@@ -183,7 +229,6 @@ void UI_Init(void)
 										 pdFALSE, /* auto reload */
 										 (void*)0, /* timer ID */
 										 vTimerCallback_ButtonMultiPressTimer); /* callback */
-
 	if (uiButtonMultiPressTimer==NULL) { for(;;); /* failure! */}
 
 	uiButtonDebounceTimer = xTimerCreate( "tmrUiBtnDeb", /* name */
@@ -191,7 +236,6 @@ void UI_Init(void)
 										 pdFALSE, /* auto reload */
 										 (void*)1, /* timer ID */
 										 vTimerCallback_ButtonDebounceTimer); /* callback */
-
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
 	uiLEDtoggleTimer = xTimerCreate( "tmrUiLEDtoggle", /* name */
@@ -199,18 +243,20 @@ void UI_Init(void)
 										 pdTRUE, /* auto reload */
 										 (void*)2, /* timer ID */
 										 vTimerCallback_LED_ShellInicator); /* callback */
-
-	 if (xTimerStart(uiLEDtoggleTimer, 0)!=pdPASS)
-	 {
-	    for(;;); /* failure?!? */
-	 }
+	 if (xTimerStart(uiLEDtoggleTimer, 0)!=pdPASS) {  for(;;); /* failure?!? */ }
 
 	 uiLEDmodeIndicatorTimer = xTimerCreate( "tmrUiLEDmodeInd", /* name */
 										 pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS), /* period/time */
 										 pdFALSE, /* auto reload */
 										 (void*)3, /* timer ID */
 										 vTimerCallback_LED_ModeIndicator); /* callback */
+	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
+	uiLEDpulseIndicatorTimer = xTimerCreate( "tmrUiLEDpulse", /* name */
+										 pdMS_TO_TICKS(UI_LED_PULSE_INDICATOR_DURATION_MS), /* period/time */
+										 pdFALSE, /* auto reload */
+										 (void*)4, /* timer ID */
+										 vTimerCallback_LEDpulse); /* callback */
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
 	CS1_CriticalVariable();
@@ -221,6 +267,7 @@ void UI_Init(void)
 
 void UI_ButtonPressed_ISR(void)
 {
+	PORT_PDD_ClearInterruptFlags(PTC_PORT_DEVICE,1U<<1);
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
 	if(uiInitDone)

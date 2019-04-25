@@ -28,19 +28,24 @@ void LowPower_EnterLowpowerMode(void)
 
 		  //OSC_CR &= ~OSC_CR_EREFSTEN_MASK; // Disable Ext. Clock in StopMode
 
-		  SMC_PMPROT = SMC_PMPROT_ALLS_MASK;	//Allow LLS (LowLeakageStop) Datasheet p355
-		  SMC_PMCTRL &= ~SMC_PMCTRL_STOPM_MASK;
-		  SMC_PMCTRL &= ~SMC_PMCTRL_RUNM(0x3);
-		  SMC_PMCTRL |=  SMC_PMCTRL_STOPM(0x3); //Set the STOPM field to 0b011 for LLS mode
+//		  SMC_PMPROT = SMC_PMPROT_ALLS_MASK;	//Allow LLS (LowLeakageStop) Datasheet p355
+//		  SMC_PMCTRL &= ~SMC_PMCTRL_STOPM_MASK;
+//		  SMC_PMCTRL &= ~SMC_PMCTRL_RUNM(0x3);
+//		  SMC_PMCTRL |=  SMC_PMCTRL_STOPM(0x3); //Set the STOPM field to 0b011 for LLS mode
 
 		  //Choose LLS2 or LLS3 :
+		  //SMC_
+
 		  //SMC_STOPCTRL &=  ~SMC_STOPCTRL_LLSM_MASK;
 		  //SMC_STOPCTRL |=  SMC_STOPCTRL_LLSM(3); // LLS3=3, LLS2=2
 
-		  volatile unsigned int dummyread;		// wait for write to complete to SMC before stopping core
-		  dummyread = SMC_PMCTRL;				// AN4503 p.26
-		  SCB_SCR |= SCB_SCR_SLEEPDEEP_MASK;	// Set the SLEEPDEEP bit to enable deep sleep mode
-		  __asm volatile("wfi");				// start entry into low-power mode
+//		  volatile unsigned int dummyread;		// wait for write to complete to SMC before stopping core
+//		  dummyread = SMC_PMCTRL;				// AN4503 p.26
+//		  SCB_SCR |= SCB_SCR_SLEEPDEEP_MASK;	// Set the SLEEPDEEP bit to enable deep sleep mode
+//		  __asm volatile("wfi");				// start entry into low-power mode
+
+
+		  Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
 	}
 	else
 	{
@@ -55,7 +60,7 @@ void LowPower_EnableStopMode(void)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
-	stopModeAllowed = TRUE;
+	//stopModeAllowed = TRUE;
 	CS1_ExitCritical();
 }
 
@@ -77,6 +82,12 @@ bool LowPower_StopModeIsEnabled(void)
 	return temp;
 }
 
+void LowPower_init(void)
+{
+	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x01); //Enable PTB0 (LightSensor) as WakeUpSource
+	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x01); //Enable PTC1 (UserButton) as WakeUpSouce
+}
+
 void LLWU_ISR(void)
 {
 	 //NXP Application notes to LowPower: AN4470 & AN4503
@@ -94,18 +105,18 @@ void LLWU_ISR(void)
 	 }
 
 	 //Clear interrupt Flag: Wakeup Source was UserButton
-	 else if (LLWU_F2 & LLWU_F2_WUF11_MASK)//Reset Interrupt Flag Datasheet p393
+	 else if (LLWU_F1 & LLWU_F1_WUF6_MASK)//Reset Interrupt Flag Datasheet p300
 	 {
-		 LLWU_F2 |= LLWU_F2_WUF11_MASK; //Clear WakeUpInt Flag
+		 LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
 		 //Trigger ExtInt behavour, because the actual Interrupt is Disables in StopMode:
 		 UI_ButtonPressed_ISR();
 	 }
 
 	 //Clear interrupt Flag: Wakeup Source was LightSensor Interrupt
-	 else if (LLWU_F2 & LLWU_F2_WUF12_MASK)//Reset Interrupt Flag Datasheet p393
+	 else if (LLWU_F1 & LLWU_F1_WUF5_MASK)//Reset Interrupt Flag Datasheet p393
 	 {
-		 LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
-		 //Trigger ExtInt behavior, because the actual Interrupt is Disables in StopMode:
+		 LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
+		 //Trigger ExtInt behavior, because the actual Interrupt is Disabled in StopMode:
 		 LightSensor_Done_ISR();
 	 }
 

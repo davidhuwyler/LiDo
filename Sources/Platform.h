@@ -13,7 +13,7 @@
 
 
 //Inputs
-#define USER_BUTTON_PRESSED !(GPIOB_PDIR & 0x1)
+#define USER_BUTTON_PRESSED ((GPIOC_PDIR & 0x2)>>1)
 
 
 // Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping

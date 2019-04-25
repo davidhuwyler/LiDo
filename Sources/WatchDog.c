@@ -15,6 +15,8 @@
 #include "SDEP.h"
 #include "WDog1.h"
 #include "LowPower.h"
+#include "PIN_SENSOR_PWR.h"
+#include "PIN_SPIF_PWR.h"
 
 #define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 15000   // 10'000 --> to WDT reset --> WatchDog_WriteToLidoSampleFile
 
@@ -41,7 +43,7 @@ static void WatchDog_Task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
   static bool feedTheDog = TRUE;
-  int i;
+  volatile int i;
 
   for(;;)
   {
@@ -59,15 +61,22 @@ static void WatchDog_Task(void *param) {
 					(xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].maxKickIntervallLimit)	//FeedDog intervall ran out?
 				{
 					feedTheDog = FALSE; // --> WatchDog Source ran out... Reset!
+
+					//Debug
+					CLS1_SendNum32s(1,CLS1_GetStdio()->stdOut);
+
 					CS1_ExitCritical();
 					break;
 				}
 
-				//Check ComutationTime
+				//Check ComputationTime
 				if(watchDogKickSources[i].compTimeMeasurementRunning)
 				{ //If measurement Runns, only check upper Boundary
 					if((xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].uppwerCompTimeLimit )
 					{
+						//Debug
+						CLS1_SendNum32s(2,CLS1_GetStdio()->stdOut);
+
 						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
 						CS1_ExitCritical();
 						break;
@@ -78,6 +87,10 @@ static void WatchDog_Task(void *param) {
 					 if(watchDogKickSources[i].measuredCompTime < watchDogKickSources[i].lowerCompTimeLimit || //ComputationTime of the Source in boundary?
 							watchDogKickSources[i].measuredCompTime > watchDogKickSources[i].uppwerCompTimeLimit )
 					{
+							//Debug
+							CLS1_SendNum32s(2,CLS1_GetStdio()->stdOut);
+
+
 						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
 						CS1_ExitCritical();
 						break;
@@ -97,8 +110,13 @@ static void WatchDog_Task(void *param) {
 		{
 			//TODO Power Off SPIF und Sensoren
 			WDog1_Clear();
+			PIN_SENSOR_PWR_SetVal(); //LowActive!
 
 			//Send SDEP Alarm and Log Watchdog Reset:
+
+			//Debug
+			CLS1_SendNum32s(i,CLS1_GetStdio()->stdOut);
+
 			switch(i)
 			{
 				case WatchDog_OpenCloseLidoSampleFile :
@@ -121,6 +139,7 @@ static void WatchDog_Task(void *param) {
 					break;
 			}
 
+			PIN_SPIF_PWR_SetVal();
 			vTaskDelay(pdMS_TO_TICKS(100)); //Let the Shell print out the Alert message...
 			//KIN1_SoftwareReset();
 			for(;;);
@@ -167,7 +186,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_TakeLidoSample].isSingleCheckWatchdogSouce				= TRUE;
 	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 50;
-	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 200;
+	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 5000;
 	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						= watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						= 0;
 	watchDogKickSources[WatchDog_TakeLidoSample].sourceIsActive 						= FALSE;
@@ -185,11 +204,11 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_MeasureTaskRunns].isSingleCheckWatchdogSouce			= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1300;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1800;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 1800;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 1800;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 3000;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 3000;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].timeStampLastKick 					= 0;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;

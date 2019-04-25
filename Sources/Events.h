@@ -76,6 +76,22 @@
 #include "SDEPpendingAlertsBuffer.h"
 #include "PTB.h"
 #include "PTC.h"
+#include "PIN_SENSOR_PWR.h"
+#include "BitIoLdd6.h"
+#include "LED_G.h"
+#include "LEDpin2.h"
+#include "BitIoLdd7.h"
+#include "LED_B.h"
+#include "LEDpin3.h"
+#include "BitIoLdd8.h"
+#include "PIN_POWER_ON.h"
+#include "BitIoLdd9.h"
+#include "PIN_EN_U_MEAS.h"
+#include "BitIoLdd10.h"
+#include "AI_PWR_0_5x_U_BAT.h"
+#include "AdcLdd1.h"
+#include "PIN_CHARGE_STATE.h"
+#include "BitIoLdd11.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -172,6 +188,58 @@ void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks);
 **     Returns     : Nothing
 ** ===================================================================
 */
+
+void AI_PWR_0_5x_U_BAT_OnEnd(void);
+/*
+** ===================================================================
+**     Event       :  AI_PWR_0_5x_U_BAT_OnEnd (module Events)
+**
+**     Component   :  AI_PWR_0_5x_U_BAT [ADC]
+**     Description :
+**         This event is called after the measurement (which consists
+**         of <1 or more conversions>) is/are finished.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void AI_PWR_0_5x_U_BAT_OnCalibrationEnd(void);
+/*
+** ===================================================================
+**     Event       :  AI_PWR_0_5x_U_BAT_OnCalibrationEnd (module Events)
+**
+**     Component   :  AI_PWR_0_5x_U_BAT [ADC]
+**     Description :
+**         This event is called when the calibration has been finished.
+**         User should check if the calibration pass or fail by
+**         Calibration status method./nThis event is enabled only if
+**         the <Interrupt service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+/*
+** ===================================================================
+**     Event       :  Cpu_OnLLSWakeUpINT (module Events)
+**
+**     Component   :  Cpu [MK22DX256LF5]
+*/
+/*!
+**     @brief
+**         This event is called when Low Leakage WakeUp interrupt
+**         occurs. LLWU flags indicating source of the wakeup can be
+**         obtained by calling the [GetLLSWakeUpFlags] method. Flags
+**         indicating the external pin wakeup source are automatically
+**         cleared after this event is executed. It is responsibility
+**         of user to clear flags corresponding to internal modules.
+**         This event is automatically enabled when [LLWU interrupt
+**         request] is enabled.
+*/
+/* ===================================================================*/
+void Cpu_OnLLSWakeUpINT(void);
 
 /* END Events */
 

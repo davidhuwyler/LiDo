@@ -7,6 +7,8 @@
  *  Driver for the AS7264N LightSensor via I2C
  */
 #include "LightSensor.h"
+#include "PTB.h"
+#include "PORT_PDD.h"
 #include "LED_R.h"
 #include "FRTOS1.h"
 #include "GI2C1.h"
@@ -14,6 +16,7 @@
 #include "CLS1.h"
 #include "CS1.h"
 #include "Application.h"
+#include "PIN_SENSOR_PWR.h"
 
 #define LIGHTSENSOR_I2C_ADDRESS 0x49
 #define LIGHTSENSOR_I2C_REGISTER_DEV_ID 0x10
@@ -68,6 +71,9 @@ void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint
 
 void LightSensor_init(void)
 {
+	//PowerSensors
+	PIN_SENSOR_PWR_ClrVal(); //LowActive
+
 	//Reset Sensor
 //	LightSensResetPin_ClrVal();
 //	WAIT1_Waitms(50);
@@ -306,6 +312,7 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
 
 void LightSensor_Done_ISR(void)
 {
+	PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,1U);
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
 	if(allowLightSensToWakeUp)

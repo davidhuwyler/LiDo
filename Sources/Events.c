@@ -35,7 +35,7 @@ extern "C" {
 
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
-
+#include "LowPower.h"
 /*
 ** ===================================================================
 **     Event       :  Cpu_OnNMIINT (module Events)
@@ -97,6 +97,7 @@ void FRTOS1_vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 void FRTOS1_vApplicationTickHook(void)
 {
   /* Called for every RTOS tick. */
+	TmDt1_AddTick();
   /* Write your code here ... */
 }
 
@@ -160,24 +161,70 @@ void FRTOS1_vApplicationMallocFailedHook(void)
 */
 void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks)
 {
-  (void)expectedIdleTicks; /* not used */
-#if 1
-  /* example for Kinetis (enable SetOperationMode() in CPU component): */
-  // Cpu_SetOperationMode(DOM_WAIT, NULL, NULL); /* Processor Expert way to get into WAIT mode */
-  /* or to wait for interrupt: */
-    __asm volatile("dsb");
-    __asm volatile("wfi");
-    __asm volatile("isb");
-#elif 0
-  /* example for S08/S12/ColdFire V1 (enable SetWaitMode() in CPU): */
-  Cpu_SetWaitMode();
-#elif 0
-  /* example for ColdFire V2: */
-   __asm("stop #0x2000"); */
-#else
-  #error "you *must* enter low power mode (wait for interrupt) here!"
-#endif
+	(void)expectedIdleTicks; /* not used */
+	LowPower_EnterLowpowerMode();
+}
+
+/*
+** ===================================================================
+**     Event       :  AI_PWR_0_5x_U_BAT_OnEnd (module Events)
+**
+**     Component   :  AI_PWR_0_5x_U_BAT [ADC]
+**     Description :
+**         This event is called after the measurement (which consists
+**         of <1 or more conversions>) is/are finished.
+**         The event is available only when the <Interrupt
+**         service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void AI_PWR_0_5x_U_BAT_OnEnd(void)
+{
   /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  AI_PWR_0_5x_U_BAT_OnCalibrationEnd (module Events)
+**
+**     Component   :  AI_PWR_0_5x_U_BAT [ADC]
+**     Description :
+**         This event is called when the calibration has been finished.
+**         User should check if the calibration pass or fail by
+**         Calibration status method./nThis event is enabled only if
+**         the <Interrupt service/event> property is enabled.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void AI_PWR_0_5x_U_BAT_OnCalibrationEnd(void)
+{
+  /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  Cpu_OnLLSWakeUpINT (module Events)
+**
+**     Component   :  Cpu [MK22DX256LF5]
+*/
+/*!
+**     @brief
+**         This event is called when Low Leakage WakeUp interrupt
+**         occurs. LLWU flags indicating source of the wakeup can be
+**         obtained by calling the [GetLLSWakeUpFlags] method. Flags
+**         indicating the external pin wakeup source are automatically
+**         cleared after this event is executed. It is responsibility
+**         of user to clear flags corresponding to internal modules.
+**         This event is automatically enabled when [LLWU interrupt
+**         request] is enabled.
+*/
+/* ===================================================================*/
+void Cpu_OnLLSWakeUpINT(void)
+{
+  /* Write your code here ... */
+	LLWU_ISR();
 }
 
 /* END Events */

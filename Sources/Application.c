@@ -8,6 +8,7 @@
 #include "Application.h"
 #include "FRTOS1.h"
 #include "LED_R.h"
+#include "LED_G.h"
 #include "WAIT1.h"
 #include "KIN1.h"
 #include "LightSensor.h"
@@ -24,6 +25,9 @@
 #include "WatchDog.h"
 #include "SPIF.h"
 #include "WDog1.h"
+#include "PowerManagement.h"
+#include "PIN_POWER_ON.h"
+#include "LowPower.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 static TaskHandle_t sampletaskHandle;
@@ -204,7 +208,20 @@ void APP_resumeSampleTaskFromISR(void)
 
 void APP_suspendSampleTask(void)
 {
-	vTaskSuspend(sampletaskHandle);
+	if(sampletaskHandle!=NULL)
+	{
+		vTaskSuspend(sampletaskHandle);
+	}
+	else
+	{
+		//Error
+		for(;;)
+		{
+			LED_R_Neg();
+			WAIT1_Waitms(50);
+		}
+	}
+
 }
 
 static void APP_sample_task(void *param) {
@@ -219,7 +236,7 @@ static void APP_sample_task(void *param) {
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
-		  LED_R_Neg();
+		  UI_LEDpulse(LED_V);
 		  RTC_getTimeUnixFormat(&unixTScurrentSample);
 		  if(APP_getCurrentSample(&sample,unixTScurrentSample) != ERR_OK)
 		  {
@@ -357,7 +374,7 @@ void APP_init(void)
     	for(;;){} /* error! probably out of memory */
     }
 
-	if (xTaskCreate(APP_sample_task, "sampleTask", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
+	if (xTaskCreate(APP_sample_task, "sampleTask", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
@@ -369,7 +386,7 @@ void APP_init(void)
 	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
 	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
 
-	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
+	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
@@ -400,8 +417,9 @@ static bool APP_WaitIfButtonPressed3s(void)
 
 static void APP_init_task(void *param) {
   (void)param;
-  bool createAppData = FALSE;
-
+  LED_G_On();
+  WAIT1_Waitms(1000);
+  LED_G_Off();
   if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
   {
 		SDEP_Init();
@@ -410,6 +428,7 @@ static void APP_init_task(void *param) {
 		FS_Init();
 		AppDataFile_Init();
 		SHELL_Init();
+		LowPower_init();
 
 		//Init LightSensor Params from AppDataFileS
 		uint8_t headerBuf[5];
@@ -427,8 +446,8 @@ static void APP_init_task(void *param) {
 		WatchDog_Init();
 		RTC_init(TRUE);
 		UI_Init();
+		PowerManagement_init();
 		APP_init();
-
   }
   else //Init With HardReset RTC
   {
@@ -444,7 +463,6 @@ static void APP_init_task(void *param) {
 				AppDataFile_CreateFile();
 			}
 			LED_R_Off();
-			WAIT1_Waitms(3000);
 		}
 		else
 		{
@@ -475,15 +493,17 @@ void APP_CloseSampleFile(void)
 }
 
 void APP_Run(void) {
+	//PowerON
+	PIN_POWER_ON_SetVal();
 
 	//EmercencyBreak: If LowPower went wrong...
-	while(USER_BUTTON_PRESSED)
-	{
-		LED_R_Neg();
-		WAIT1_Waitms(50);
-	}
+//	while(USER_BUTTON_PRESSED)
+//	{
+//		LED_R_Neg();
+//		WAIT1_Waitms(50);
+//	}
 
-	if (xTaskCreate(APP_init_task, "Init", 5000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}

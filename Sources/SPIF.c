@@ -627,7 +627,7 @@ uint8_t SPIF_Init(void)
 	  spifAccessMutex = xSemaphoreCreateRecursiveMutex();
 	  xSemaphoreGiveRecursive(spifAccessMutex);
 	  uint8_t buf[SPIF_ID_BUF_SIZE];
-	  PIN_SPIF_PWR_SetVal();   //Power the Chip
+	  PIN_SPIF_PWR_ClrVal();   //LowActive... --> Power the Chip
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!
 	  PIN_SPIF_WP_SetVal();	   //LowActive... --> Enable Write!
 
