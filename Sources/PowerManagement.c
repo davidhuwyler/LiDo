@@ -14,10 +14,9 @@
 #include "SDEP.h"
 #include "UI.h"
 
-#define POWER_MANAGEMENT_LIPO_WARNING 31774 // = 3.2V --> ADCval = U / 2 * ( 65535 / 3.3V )
-#define POWER_MANAGEMENT_LIPO_WARNING 31774 // = 3.2V --> ADCval = U / 2 * ( 65535 / 3.3V )
+#define POWER_MANAGEMENT_LIPO_WARNING 34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF 29789  // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
-#define POWER_MANAGEMENT_LIPO_WARNING_HYS 35746 // = 3.6V --> ADCval = U / 2 * ( 65535 / 3.3V )
+#define POWER_MANAGEMENT_LIPO_WARNING_HYS 36739 // = 3.7V --> ADCval = U / 2 * ( 65535 / 3.3V )
 
 static bool waringLogged = FALSE;
 

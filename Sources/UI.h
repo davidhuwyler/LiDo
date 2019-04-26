@@ -23,7 +23,7 @@ typedef enum
 
 #define UI_LED_SHELL_INDICATOR_TOGGLE_DELAY_MS 200
 #define UI_LED_MODE_INDICATOR_DURATION_MS 300
-#define UI_LED_PULSE_INDICATOR_DURATION_MS 2
+#define UI_LED_PULSE_INDICATOR_DURATION_MS 1
 
 void UI_Init(void);
 void UI_StopShellIndicator(void);
