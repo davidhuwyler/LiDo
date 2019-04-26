@@ -15,7 +15,8 @@ typedef enum
 	LED_B,
 	LED_Y,
 	LED_V,
-	LED_C
+	LED_C,
+	LED_W
 } UI_LEDs_t;
 
 #define UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS 1000

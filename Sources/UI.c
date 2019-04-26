@@ -213,6 +213,12 @@ void UI_LEDpulse(UI_LEDs_t color)
 		LED_B_On();
 		LED_R_On();
 		break;
+
+	case LED_W:
+		LED_B_On();
+		LED_G_On();
+		LED_R_On();
+		break;
 	}
 
 	if (xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS)
