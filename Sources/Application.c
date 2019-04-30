@@ -192,6 +192,8 @@ static bool APP_newHour(void)
 
 void APP_resumeSampleTaskFromISR(void)
 {
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	BaseType_t xYieldRequired;
 	if(sampletaskHandle!=NULL)
 	{
@@ -201,6 +203,7 @@ void APP_resumeSampleTaskFromISR(void)
 	        portYIELD_FROM_ISR(pdTRUE);
 	    }
 	}
+    CS1_ExitCritical();
 }
 
 void APP_suspendSampleTask(void)
@@ -230,28 +233,27 @@ static void APP_sample_task(void *param) {
   xSemaphoreGiveRecursive(sampleMutex);
   for(;;)
   {
-	  UI_LEDpulse(LED_V);
-	  //WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
-//	  if(AppDataFile_GetSamplingEnabled())
-//	  {
-//		  UI_LEDpulse(LED_V);
-//		  RTC_getTimeUnixFormat(&unixTScurrentSample);
-//		  if(APP_getCurrentSample(&sample,unixTScurrentSample) != ERR_OK)
-//		  {
-//			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
-//		  }
-//
-//	      if( xQueueSendToBack( lidoSamplesToWrite,  ( void * ) &sample, pdMS_TO_TICKS(500)) != pdPASS )
-//	      {
-//	    	  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
-//	      }
-//	  }
-	  //WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
+	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
+	  if(AppDataFile_GetSamplingEnabled())
+	  {
+		  UI_LEDpulse(LED_V);
+		  RTC_getTimeUnixFormat(&unixTScurrentSample);
+		  if(APP_getCurrentSample(&sample,unixTScurrentSample) != ERR_OK)
+		  {
+			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+		  }
+
+	      if( xQueueSendToBack( lidoSamplesToWrite,  ( void * ) &sample, pdMS_TO_TICKS(500)) != pdPASS )
+	      {
+	    	  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+	      }
+	  }
+	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 
 	  //Debug
-	  //vTaskDelay(1000);
+	  vTaskDelay(1000);
 
-	  APP_suspendSampleTask();
+	  //APP_suspendSampleTask();
   } /* for */
 }
 
@@ -382,11 +384,12 @@ void APP_init(void)
 	}
 
 	//Init the RTC alarm Interrupt:
-	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
-	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
-	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
-	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
-	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
+	//Debug
+//	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
+//	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
+//	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
+//	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
+//	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
 
 	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
 	{
@@ -665,30 +668,25 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 
 void RTC_ALARM_ISR(void)
 {
-//	if(RTC_SR & RTC_SR_TIF_MASK)/* Timer invalid (Vbat POR or RTC SW reset)? */
-//	{
-//		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
-//		RTC_TPR = 0x00U;			 /* Reset prescaler */
-//		RTC_TSR = 0x02UL;			 /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
-//	}
-//	else if(RTC_SR & RTC_SR_TOF_MASK)
-//	{
-//		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
-//		RTC_TPR = 0x00U;			 /* Reset prescaler */
-//		RTC_TSR = 0x02UL;			 /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
-//	}
-//	else /* Alarm interrupt */
-//	{
-//		uint8_t sampleIntervall;
-//		AppDataFile_GetSampleIntervall(&sampleIntervall);
-//		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
-//		APP_resumeSampleTaskFromISR();
-//	}
-
-	uint8_t sampleIntervall;
-	AppDataFile_GetSampleIntervall(&sampleIntervall);
-	RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
-	APP_resumeSampleTaskFromISR();
+	if(RTC_SR & RTC_SR_TIF_MASK)/* Timer invalid (Vbat POR or RTC SW reset)? */
+	{
+		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
+		RTC_TPR = 0x00U;			 /* Reset prescaler */
+		RTC_TSR = 0x02UL;			 /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
+	}
+	else if(RTC_SR & RTC_SR_TOF_MASK)
+	{
+		RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
+		RTC_TPR = 0x00U;			 /* Reset prescaler */
+		RTC_TSR = 0x02UL;			 /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
+	}
+	else /* Alarm interrupt */
+	{
+		uint8_t sampleIntervall;
+		AppDataFile_GetSampleIntervall(&sampleIntervall);
+		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
+		APP_resumeSampleTaskFromISR();
+	}
 
 	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
 	     exception return operation might vector to incorrect interrupt */

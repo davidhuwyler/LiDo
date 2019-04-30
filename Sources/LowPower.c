@@ -25,10 +25,11 @@ static bool stopModeAllowed = FALSE;
 
 void LowPower_EnterLowpowerMode(void)
 {
-	taskENTER_CRITICAL();
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	if(stopModeAllowed)
 	{
-		  taskEXIT_CRITICAL();
+		  CS1_ExitCritical();
 
 		  //OSC_CR &= ~OSC_CR_EREFSTEN_MASK; // Disable Ext. Clock in StopMode
 
@@ -53,7 +54,7 @@ void LowPower_EnterLowpowerMode(void)
 	}
 	else
 	{
-		taskEXIT_CRITICAL();
+		CS1_ExitCritical();
 	    __asm volatile("dsb");
 	    __asm volatile("wfi");
 	    __asm volatile("isb");
@@ -62,31 +63,34 @@ void LowPower_EnterLowpowerMode(void)
 
 void LowPower_EnableStopMode(void)
 {
-	taskENTER_CRITICAL();
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	stopModeAllowed = TRUE;
-	taskEXIT_CRITICAL();
+	CS1_ExitCritical();
 }
 
 void LowPower_DisableStopMode(void)
 {
-	taskENTER_CRITICAL();
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	stopModeAllowed = FALSE;
-	taskEXIT_CRITICAL();
+	CS1_ExitCritical();
 }
 
 bool LowPower_StopModeIsEnabled(void)
 {
 	bool temp;
-	taskENTER_CRITICAL();
+	CS1_CriticalVariable();
+	CS1_EnterCritical();
 	temp = stopModeAllowed;
-	taskEXIT_CRITICAL();
+	CS1_ExitCritical();
 	return temp;
 }
 
 void LowPower_init(void)
 {
-	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
-	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
+//	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
+//	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
 }
 
 void LLWU_ISR(void)
@@ -94,34 +98,33 @@ void LLWU_ISR(void)
 	uint32_t wakeUpFlags;
 	wakeUpFlags = Cpu_GetLLSWakeUpFlags();
 
+	//LED_G_Neg();
 	if (wakeUpFlags&LLWU_INT_MODULE0)  /* LPTMR */
-	{
+	{   LED_G_Neg();
+
 	    LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
 	}
 
-//	if (wakeUpFlags&LLWU_INT_MODULE5)  /* RTC Alarm */
-//	{
-//		RTC_ALARM_ISR();
-//	}
-
-		 if (LLWU_F3 & LLWU_F3_MWUF5_MASK)//Reset Interrupt Flag Datasheet p393
-		 {
-			 //LLWU_F3 |= LLWU_F3_MWUF5_MASK; //Clear WakeUpInt Flag
-			 RTC_ALARM_ISR();
-			 UI_LEDpulse(LED_W);
-		 }
-
-
-	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
+	if (wakeUpFlags&LLWU_INT_MODULE5)  /* RTC Alarm */
 	{
-		//LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
-		LightSensor_Done_ISR();
+		LED_R_Neg();
+
+		RTC_ALARM_ISR();
 	}
+
+
+//
+//	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
+//	{
+//		LED_G_Neg();
+//		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
+//		LightSensor_Done_ISR();
+//	}
 //
 //	if (wakeUpFlags&LLWU_EXT_PIN6)  /* PTC1 = UserButton */
 //	{
-//		//LED_B_Neg();
-//		//LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
+//		LED_B_Neg();
+//		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
 //		UI_ButtonPressed_ISR();
 //	}
 
@@ -170,5 +173,5 @@ void LLWU_ISR(void)
 
 	  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
 	     exception return operation might vector to incorrect interrupt */
-//	__DSB();
+	__DSB();
 }
