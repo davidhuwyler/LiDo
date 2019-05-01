@@ -25,11 +25,13 @@ const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2] =
 		{"SAMPLE_ENABLE","0"},			//Sample enable defines if the LiDo is sampling (1 = sampling)
 		{"LIGHTSENS_GAIN","3"},			//Gain of the LightSensor (0=1x; 1=3.7x; 2=16x; 3=64x;)
 		{"LIGHTSENS_INTT","240"},		//LightSensor IntegrationTime  (256 - value) * 2.8ms
-		{"LIGHTSENS_WTIM","240"}		//LightSensor Time between Conversions: (256 - value) * 2.8ms
+		{"LIGHTSENS_WTIM","240"},		//LightSensor Time between Conversions: (256 - value) * 2.8ms
+		{"AUTOGAIN_ENABLE","0"}			//Enables (1) or disables(0) the LightsensorAutogain Algorithm
 };
 
 static bool localSamplingEnabled = FALSE;
 static uint8_t localSampleIntervall = 1;
+static bool loacalAutoGainEnabled = FALSE;
 
 static void AppDataFile_UpdateRAMvariables()
 {
@@ -45,6 +47,11 @@ static void AppDataFile_UpdateRAMvariables()
 	p = buf;
 	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], (uint8_t*)p ,25);
 	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&localSamplingEnabled);
+
+	//Update local loacalAutoGainEnabled
+	p = buf;
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[8][0], (uint8_t*)p ,25);
+	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&loacalAutoGainEnabled);
 }
 
 uint8_t AppDataFile_Init(void)
@@ -83,6 +90,11 @@ uint8_t AppDataFile_SetSampleIntervall(uint8_t sampleIntervall)
 bool AppDataFile_GetSamplingEnabled(void)
 {
 	return localSamplingEnabled;
+}
+
+bool AppDataFile_GetAutoGainEnabled(void)
+{
+	return loacalAutoGainEnabled;
 }
 
 void AppDataFile_SetSamplingEnables(bool samplingEnabled)
