@@ -12,8 +12,6 @@
 #include "LowPower.h"
 #include "Cpu.h"
 #include "LED_R.h"
-#include "LED_G.h" //Debug
-#include "LED_B.h" //Debug
 #include "WAIT1.h"
 #include "CLS1.h"
 #include "Application.h"
@@ -22,6 +20,11 @@
 #include "LPTMR_PDD.h"
 
 static bool stopModeAllowed = FALSE;
+static unsigned char ucMCG_C1;
+
+#define CLOCK_DIV 2
+#define CLOCK_MUL 24
+#define MCG_C6_VDIV0_LOWEST 24
 
 void LowPower_EnterLowpowerMode(void)
 {
@@ -30,6 +33,8 @@ void LowPower_EnterLowpowerMode(void)
 	if(stopModeAllowed)
 	{
 		  CS1_ExitCritical();
+
+		  ucMCG_C1 = MCG_C1;
 
 		  //OSC_CR &= ~OSC_CR_EREFSTEN_MASK; // Disable Ext. Clock in StopMode
 
@@ -89,49 +94,46 @@ bool LowPower_StopModeIsEnabled(void)
 
 void LowPower_init(void)
 {
-//	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
-//	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
+	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
+	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
 }
 
 void LLWU_ISR(void)
 {
+
+	//Switch to PLL and wait for it to fully start up
+	//https://community.nxp.com/thread/458972
+    MCG_C5 = ((CLOCK_DIV - 1) | MCG_C5_PLLSTEN0_MASK); // move from state FEE to state PBE (or FBE) PLL remains enabled in normal stop modes
+    MCG_C6 = ((CLOCK_MUL - MCG_C6_VDIV0_LOWEST) | MCG_C6_PLLS_MASK);
+    while ((MCG_S & MCG_S_PLLST_MASK) == 0) {}   // loop until the PLLS clock source becomes valid
+    while ((MCG_S & MCG_S_LOCK0_MASK) == 0) {}    // loop until PLL locks
+    MCG_C1 = ucMCG_C1;                      // finally move from PBE to PEE mode - switch to PLL clock (the original settings are returned)
+    while ((MCG_S & MCG_S_CLKST_MASK) != MCG_S_CLKST(11)) {} // loop until the PLL clock is selected
+
 	uint32_t wakeUpFlags;
 	wakeUpFlags = Cpu_GetLLSWakeUpFlags();
 
-	//LED_G_Neg();
 	if (wakeUpFlags&LLWU_INT_MODULE0)  /* LPTMR */
-	{   LED_G_Neg();
-
+	{
 	    LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
 	}
 
 	if (wakeUpFlags&LLWU_INT_MODULE5)  /* RTC Alarm */
 	{
-		LED_R_Neg();
-
 		RTC_ALARM_ISR();
 	}
 
+	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
+	{
+		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
+		LightSensor_Done_ISR();
+	}
 
-//
-//	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
-//	{
-//		LED_G_Neg();
-//		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
-//		LightSensor_Done_ISR();
-//	}
-//
-//	if (wakeUpFlags&LLWU_EXT_PIN6)  /* PTC1 = UserButton */
-//	{
-//		LED_B_Neg();
-//		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
-//		UI_ButtonPressed_ISR();
-//	}
-
-
-
-
-
+	if (wakeUpFlags&LLWU_EXT_PIN6)  /* PTC1 = UserButton */
+	{
+		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
+		UI_ButtonPressed_ISR();
+	}
 
 //	 //NXP Application notes to LowPower: AN4470 & AN4503
 //	 //Clear interrupt Flag: Wakeup Source was LowPowerTimer

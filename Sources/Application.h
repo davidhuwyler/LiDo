@@ -19,6 +19,8 @@
 typedef struct
 {
 	int32_t  unixTimeStamp;
+	uint8_t	 lightIntTime;
+	uint8_t	 lightGain;
 	uint16_t lightChannelX;
 	uint16_t lightChannelY;
 	uint16_t lightChannelZ;
