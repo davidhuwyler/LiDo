@@ -384,12 +384,11 @@ void APP_init(void)
 	}
 
 	//Init the RTC alarm Interrupt:
-	//Debug
-//	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
-//	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
-//	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
-//	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
-//	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
+	RTC_CR  |= RTC_CR_SUP_MASK; 	//Write to RTC Registers enabled
+	RTC_IER |= RTC_IER_TAIE_MASK; 	//Enable RTC Alarm Interrupt
+	RTC_IER |= RTC_IER_TOIE_MASK;	//Enable RTC Overflow Interrupt
+	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
+	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
 
 	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
 	{

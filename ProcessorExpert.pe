@@ -3,7 +3,7 @@
   <Header>
     <Name>LiDo_CustomPCB</Name>
     <SavedBy>dave</SavedBy>
-    <ModificationStamp>48</ModificationStamp>
+    <ModificationStamp>50</ModificationStamp>
     <Date>2019-04-24</Date>
     <IDE>Eclipse IDE</IDE>
     <PEversion>1.12.2.RT7_b1550-0615</PEversion>
@@ -29,7 +29,7 @@
     <UseExistingModules>true</UseExistingModules>
     <RenamePeripheries>false</RenamePeripheries>
     <Autodependency>true</Autodependency>
-    <ProjectCompNumb>112</ProjectCompNumb>
+    <ProjectCompNumb>113</ProjectCompNumb>
     <DelUnusedPreviouslyGenFiles>true</DelUnusedPreviouslyGenFiles>
     <GeneratedCodeFrozen>false</GeneratedCodeFrozen>
     <AssignInitComponentNameToPrph>true</AssignInitComponentNameToPrph>
@@ -22623,7 +22623,7 @@
       </ItemState>
       <ItemState>
         <ItemSymbol>CounterTickPeriod</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
+        <ReadOnly>true</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
         <Value>10</Value>
@@ -22634,14 +22634,14 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Value>false</Value>
+        <Value>true</Value>
         <Expanded>true</Expanded>
       </ItemState>
       <ItemState>
         <ItemSymbol>RTOS</ItemSymbol>
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
-        <Value />
+        <Value>FRTOS1</Value>
       </ItemState>
     </Properties>
     <Methods>
@@ -49625,7 +49625,7 @@
                     <ReadOnly>false</ReadOnly>
                     <UserReadOnly>false</UserReadOnly>
                     <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-                    <Value>64</Value>
+                    <Value>1024</Value>
                     <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
                     <Base>DEC</Base>
                   </ItemState>
@@ -50260,7 +50260,7 @@
               <ReadOnly>false</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
               <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-              <Value>10</Value>
+              <Value>2</Value>
               <Base>DEC</Base>
             </ItemState>
             <ItemState>
@@ -50674,7 +50674,7 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Value>64</Value>
+        <Value>1024</Value>
         <Base>DEC</Base>
       </ItemState>
       <ItemState>

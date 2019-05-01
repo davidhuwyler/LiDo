@@ -89,8 +89,8 @@ bool LowPower_StopModeIsEnabled(void)
 
 void LowPower_init(void)
 {
-//	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
-//	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
+	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
+	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
 }
 
 void LLWU_ISR(void)
@@ -98,35 +98,28 @@ void LLWU_ISR(void)
 	uint32_t wakeUpFlags;
 	wakeUpFlags = Cpu_GetLLSWakeUpFlags();
 
-	//LED_G_Neg();
+	LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
 	if (wakeUpFlags&LLWU_INT_MODULE0)  /* LPTMR */
-	{   LED_G_Neg();
+	{
 
-	    LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
 	}
 
 	if (wakeUpFlags&LLWU_INT_MODULE5)  /* RTC Alarm */
 	{
-		LED_R_Neg();
-
 		RTC_ALARM_ISR();
 	}
 
+	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
+	{
+		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
+		LightSensor_Done_ISR();
+	}
 
-//
-//	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
-//	{
-//		LED_G_Neg();
-//		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
-//		LightSensor_Done_ISR();
-//	}
-//
-//	if (wakeUpFlags&LLWU_EXT_PIN6)  /* PTC1 = UserButton */
-//	{
-//		LED_B_Neg();
-//		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
-//		UI_ButtonPressed_ISR();
-//	}
+	if (wakeUpFlags&LLWU_EXT_PIN6)  /* PTC1 = UserButton */
+	{
+		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
+		UI_ButtonPressed_ISR();
+	}
 
 
 

@@ -98,6 +98,7 @@ void FRTOS1_vApplicationTickHook(void)
 {
   /* Called for every RTOS tick. */
 	TmDt1_AddTick();
+	TMOUT1_AddTick();
   /* Write your code here ... */
 }
 
@@ -118,6 +119,7 @@ void FRTOS1_vApplicationIdleHook(void)
   /* Called whenever the RTOS is idle (from the IDLE task).
      Here would be a good place to put the CPU into low power mode. */
   /* Write your code here ... */
+	LowPower_EnterLowpowerMode();
 }
 
 /*
