@@ -185,7 +185,7 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].sourceForceDisabled				= FALSE;
 
 	watchDogKickSources[WatchDog_TakeLidoSample].isSingleCheckWatchdogSouce				= TRUE;
-	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 50;
+	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 0;
 	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 5000;
 	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						= watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						= 0;
@@ -204,7 +204,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_MeasureTaskRunns].isSingleCheckWatchdogSouce			= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1800;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 3000;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 3000;

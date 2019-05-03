@@ -26,7 +26,6 @@
 #include "USB1.h"
 #include "CDC1.h"
 #include "ErrorLogFile.h"
-#include "LED_R.h"
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -102,7 +101,6 @@ static void SHELL_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  //SPIF_ReleaseFromDeepPowerDown();
 	  CS1_CriticalVariable();
 	  CS1_EnterCritical();
 
@@ -124,11 +122,13 @@ static void SHELL_task(void *param) {
 	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
 	  SDEPio_HandleShellCMDs();
 	  SDEP_SendPendingAlert();
-	  if(SDEPio_HandleFileCMDs(0) == ERR_RXEMPTY)
-	  {
-		  //SPIF_GoIntoDeepPowerDown();
-		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
-	  }
+	  while(SDEPio_HandleFileCMDs(0) != ERR_RXEMPTY){}
+
+//	  if(SDEPio_HandleFileCMDs(0) == ERR_RXEMPTY) //Only Wait if there is no file to transfer
+//	  {
+//		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+//	  }
+	  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
   } /* for */
 }
 

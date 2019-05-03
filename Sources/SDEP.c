@@ -13,6 +13,7 @@
 #include "Shell.h"
 #include "SDEPpendingAlertsBuffer.h"
 #include "ErrorLogFile.h"
+#include "PowerManagement.h"
 
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
@@ -42,6 +43,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 
 	int32_t sint32Param;
 	uint8_t uint8param;
+	uint16_t uint16Param;
 	liDoSample_t sample;
 	CLS1_ConstStdIOTypePtr io;
 
@@ -194,6 +196,15 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		}
 		answer.payload[0] = (uint8_t)  sint32Param;
 		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+	case SDEP_CMDID_GET_VOLTAGE:
+		uint16Param =  PowerManagement_getBatteryVoltage();
+		RTC_getTimeUnixFormat(&sint32Param);
+		answer.payload[0] = (uint8_t) (uint16Param>>8);
+		answer.payload[1] = (uint8_t) (uint16Param);
+		answer.payloadSize = 2;
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 

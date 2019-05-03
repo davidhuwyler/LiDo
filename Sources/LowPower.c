@@ -94,8 +94,8 @@ bool LowPower_StopModeIsEnabled(void)
 
 void LowPower_init(void)
 {
-	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
-	LLWU_PE2 |= (uint8_t)LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
+	LLWU_PE2 |= LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
+	LLWU_PE2 |= LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
 }
 
 void LLWU_ISR(void)

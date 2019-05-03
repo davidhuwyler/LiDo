@@ -28,11 +28,16 @@
 #include "PowerManagement.h"
 #include "PIN_POWER_ON.h"
 #include "LowPower.h"
+#include "SYS1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 static TaskHandle_t sampletaskHandle;
 static SemaphoreHandle_t sampleMutex;
 static SemaphoreHandle_t fileAccessMutex;
+
+//Workaround Resuming not working:
+static SemaphoreHandle_t waitForRTCmutex;
+
 static QueueHandle_t lidoSamplesToWrite;
 static lfs_file_t sampleFile;
 
@@ -197,11 +202,17 @@ void APP_resumeSampleTaskFromISR(void)
 	BaseType_t xYieldRequired;
 	if(sampletaskHandle!=NULL)
 	{
-	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
-	    if( xYieldRequired == pdTRUE )
-	    {
-	        portYIELD_FROM_ISR(pdTRUE);
-	    }
+
+// TODO Resuming does not work
+//	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
+//	    if( xYieldRequired == pdTRUE )
+//	    {
+//	        portYIELD_FROM_ISR(pdTRUE);
+//	    }
+//Workaround Resuming not working:
+	xSemaphoreGiveRecursive(waitForRTCmutex);
+
+
 	}
     CS1_ExitCritical();
 }
@@ -227,12 +238,23 @@ void APP_suspendSampleTask(void)
 static void APP_sample_task(void *param) {
   (void)param;
   liDoSample_t sample;
+  TickType_t xLastWakeTime;
   static int32_t unixTSlastSample;
   int32_t unixTScurrentSample;
   sampleMutex = xSemaphoreCreateRecursiveMutex();
+
+  uint8_t sampleIntervall;
+
+  if( sampleMutex == NULL )
+  {
+      for(;;); //Error...
+  }
   xSemaphoreGiveRecursive(sampleMutex);
   for(;;)
   {
+	  xLastWakeTime = xTaskGetTickCount();
+
+	  SYS1_Print("SampleTaskStart");
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
@@ -250,10 +272,13 @@ static void APP_sample_task(void *param) {
 	  }
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 
-	  //Debug
-	  vTaskDelay(1000);
-
+	  //Workaround Resuming not working:
 	  //APP_suspendSampleTask();
+	  AppDataFile_GetSampleIntervall(&sampleIntervall);
+	  SYS1_Print("StartDelayUntil");
+	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((sampleIntervall*1000)-50));
+	  SYS1_Print("StopDelayUntil");
+	  xSemaphoreTakeRecursive(waitForRTCmutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
   } /* for */
 }
 
@@ -352,7 +377,6 @@ static void APP_writeLidoFile_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  //SPIF_ReleaseFromDeepPowerDown();
 	  APP_softwareResetIfRequested();
 	  APP_toggleEnableSamplingIfRequested();
 
@@ -362,20 +386,27 @@ static void APP_writeLidoFile_task(void *param) {
 	  APP_openFileIfNeeded();
 	  APP_writeQueuedSamplesToFile();
 
-	  //SPIF_GoIntoDeepPowerDown();
-
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
   } /* for */
 }
 
 void APP_init(void)
 {
+	PIN_POWER_ON_SetVal();
 	//Init the SampleQueue, SampleTask and the WriteLidoFile Task
 	//The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
 	lidoSamplesToWrite = xQueueCreate( 16, sizeof( liDoSample_t ) );
     if( lidoSamplesToWrite == NULL )
     {
     	for(;;){} /* error! probably out of memory */
+    }
+
+
+    //Workaround Resuming not working:
+    waitForRTCmutex = xSemaphoreCreateRecursiveMutex();
+    if( waitForRTCmutex == NULL )
+    {
+        for(;;); //Error...
     }
 
 	if (xTaskCreate(APP_sample_task, "sampleTask", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
@@ -421,10 +452,11 @@ static bool APP_WaitIfButtonPressed3s(void)
 
 static void APP_init_task(void *param) {
   (void)param;
+  PIN_POWER_ON_SetVal();
   LED_G_On();
   WAIT1_Waitms(1000);
   LED_G_Off();
-  if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
+  if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
 		SDEP_Init();
 		LightSensor_init();
@@ -448,14 +480,21 @@ static void APP_init_task(void *param) {
 		LightSensor_setParams(gain,intTime,waitTime);
 
 		WatchDog_Init();
-		RTC_init(TRUE);
+	  	if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
+	  	{
+	  		RTC_init(FALSE);		//HardReset RTC
+	  	}
+	  	else
+	  	{
+			RTC_init(TRUE);
+	  	}
+
 		UI_Init();
 		PowerManagement_init();
 		APP_init();
   }
   else //Init With HardReset RTC
   {
-		RTC_init(FALSE);		//HardReset RTC
 		if(USER_BUTTON_PRESSED)
 		{
 			LED_R_Off();
@@ -556,9 +595,9 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		return ERR_FAILED;
 	}
 
-	CLS1_SendStr("\r\n",io->stdErr);
-	CLS1_SendStr(samplePrintLine,io->stdErr);
-	CLS1_SendStr("\r\n",io->stdErr);
+	CLS1_SendStr("\r\n",io->stdOut);
+	CLS1_SendStr(samplePrintLine,io->stdOut);
+	CLS1_SendStr("\r\n",io->stdOut);
 
 	//Read + Print Samples
 	while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&

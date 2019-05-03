@@ -100,6 +100,10 @@
             <description></description>
             <sequence value="h[10] h[08] h[00] h[00] h[36]" />
         </SequenceItem>
+        <SequenceItem name="GetVoltage">
+            <description></description>
+            <sequence value="h[10] h[0D] h[00] h[00] h[F6]" />
+        </SequenceItem>
         <SequenceItem name="Remove File (bench.txt)">
             <description></description>
             <sequence value="h[10] h[02] h[01] h[09] h[62] h[65] h[6E] h[63] h[68] h[2E] h[74] h[78] h[74] h[35]" />

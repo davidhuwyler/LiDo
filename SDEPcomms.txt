@@ -79,6 +79,9 @@ SDEP GetEnableSampling
 SDEP GetSampleIntervall
 10 07 00 00 71	
 
+SDEP GetVoltage
+10 0D 00 00 F6	
+
 SDEP GetRTC
 10 08 00 00 36	  
 

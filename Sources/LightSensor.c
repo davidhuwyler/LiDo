@@ -17,6 +17,7 @@
 #include "CS1.h"
 #include "Application.h"
 #include "PIN_SENSOR_PWR.h"
+#include "UI.h"
 
 #define LIGHTSENSOR_I2C_ADDRESS 0x49
 #define LIGHTSENSOR_I2C_REGISTER_DEV_ID 0x10
@@ -50,6 +51,9 @@
 static volatile bool allowLightSensToWakeUp = FALSE;
 static volatile uint8_t gain = 0, intTime = 0, waitTime = 0;
 
+//Workaround Resuming not working:
+static SemaphoreHandle_t waitForLightSensMutex;
+
 void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime)
 {
 	if(gain > 3)
@@ -71,6 +75,13 @@ void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint
 
 void LightSensor_init(void)
 {
+    //Workaround Resuming not working:
+	waitForLightSensMutex = xSemaphoreCreateRecursiveMutex();
+    if( waitForLightSensMutex == NULL )
+    {
+        for(;;); //Error...
+    }
+
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive
 
@@ -156,16 +167,20 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
+
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = TRUE;
 	CS1_ExitCritical();
 
-	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	//Workaround Resuming not working:
+	//APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	xSemaphoreTakeRecursive(waitForLightSensMutex,pdMS_TO_TICKS(2000));
 
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = FALSE;
 	CS1_ExitCritical();
+
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)
@@ -196,12 +211,13 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
-
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = TRUE;
 	CS1_ExitCritical();
 
-	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	//Workaround Resuming not working:
+	//APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	xSemaphoreTakeRecursive(waitForLightSensMutex,pdMS_TO_TICKS(2000));
 
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = FALSE;
@@ -318,7 +334,10 @@ void LightSensor_Done_ISR(void)
 	if(allowLightSensToWakeUp)
 	{
 		CS1_ExitCritical();
-		APP_resumeSampleTaskFromISR();
+		//APP_resumeSampleTaskFromISR();
+		//Workaround Resuming not working:
+		xSemaphoreGiveRecursive(waitForLightSensMutex);
+
 	}
 	else
 	{

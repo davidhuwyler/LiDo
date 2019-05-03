@@ -154,6 +154,7 @@ static int32_t LiGain_GetBiggestDeviation(liDoSample_t* sample)
 uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_t* newGainParam)
 {
 	int32_t deviation;
+	uint8_t err = ERR_OK;
 	deviation = LiGain_GetBiggestDeviation(lastSample);
 	if(deviation <= LIGAIN_SENSVALUE_HYSTERESYS) //Lightsensorvalues in hysteresys --> No adjustment
 	{
@@ -163,9 +164,9 @@ uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_
 	else //Lightsensorvalues out of  hysteresys --> adjustment needed!
 	{
 		uint32_t oldGainFactor,newGainFactor;
-		LiGain_GetGainFactor(lastSample->lightIntTime, lastSample->lightGain,&oldGainFactor);
+		err = LiGain_GetGainFactor(lastSample->lightIntTime, lastSample->lightGain,&oldGainFactor);
 		newGainFactor = (oldGainFactor * LIGAIN_SENSVALUE_TARGETVALUE) / ( LIGAIN_SENSVALUE_TARGETVALUE + deviation);
-		LiGain_GetLightSensParams(newIntTimeParam, newGainParam,newGainFactor);
+		err = LiGain_GetLightSensParams(newIntTimeParam, newGainParam,newGainFactor);
 	}
-	return ERR_OK;
+	return err;
 }
