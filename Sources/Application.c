@@ -28,6 +28,7 @@
 #include "PowerManagement.h"
 #include "PIN_POWER_ON.h"
 #include "LowPower.h"
+#include "LightAutoGain.h"
 #include "SYS1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
@@ -36,7 +37,7 @@ static SemaphoreHandle_t sampleMutex;
 static SemaphoreHandle_t fileAccessMutex;
 
 //Workaround Resuming not working:
-static SemaphoreHandle_t waitForRTCmutex;
+static volatile bool rtcAlarmReceived = FALSE;
 
 static QueueHandle_t lidoSamplesToWrite;
 static lfs_file_t sampleFile;
@@ -125,6 +126,11 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp)
 	  {
 		  WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
 		  sample->unixTimeStamp = unixTimestamp;
+
+		  uint8_t lightGain, lightIntTime, lightWaitTime;
+		  LightSensor_getParams(&lightGain,&lightIntTime,&lightWaitTime);
+		  sample->lightGain = lightGain;
+		  sample->lightIntTime = lightIntTime;
 		  if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlert(SDEP_ALERT_LIGHTSENS_ERROR);
@@ -159,6 +165,13 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp)
 		  crc8_liDoSample(sample);
 		  WatchDog_StopComputationTime(WatchDog_TakeLidoSample);
 		  xSemaphoreGiveRecursive(sampleMutex);
+
+		  if(AppDataFile_GetAutoGainEnabled())
+		  {
+			  uint8_t lightSensorIntTime, lightSensorGain;
+			  LiGain_Compute(sample,&lightSensorIntTime,&lightSensorGain);
+			  LightSensor_setParams(lightSensorGain,lightSensorIntTime,lightSensorIntTime);
+		  }
 		  return ERR_OK;
 	  }
 	  else
@@ -210,9 +223,7 @@ void APP_resumeSampleTaskFromISR(void)
 //	        portYIELD_FROM_ISR(pdTRUE);
 //	    }
 //Workaround Resuming not working:
-	xSemaphoreGiveRecursive(waitForRTCmutex);
-
-
+		rtcAlarmReceived = TRUE;
 	}
     CS1_ExitCritical();
 }
@@ -253,8 +264,6 @@ static void APP_sample_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-
-	  SYS1_Print("SampleTaskStart");
 	  WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
@@ -275,10 +284,9 @@ static void APP_sample_task(void *param) {
 	  //Workaround Resuming not working:
 	  //APP_suspendSampleTask();
 	  AppDataFile_GetSampleIntervall(&sampleIntervall);
-	  SYS1_Print("StartDelayUntil");
 	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((sampleIntervall*1000)-50));
-	  SYS1_Print("StopDelayUntil");
-	  xSemaphoreTakeRecursive(waitForRTCmutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
+	  while(!rtcAlarmReceived){	vTaskDelay(pdMS_TO_TICKS(5));}
+
   } /* for */
 }
 
@@ -401,14 +409,6 @@ void APP_init(void)
     	for(;;){} /* error! probably out of memory */
     }
 
-
-    //Workaround Resuming not working:
-    waitForRTCmutex = xSemaphoreCreateRecursiveMutex();
-    if( waitForRTCmutex == NULL )
-    {
-        for(;;); //Error...
-    }
-
 	if (xTaskCreate(APP_sample_task, "sampleTask", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
@@ -459,26 +459,12 @@ static void APP_init_task(void *param) {
   if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
 		SDEP_Init();
-		LightSensor_init();
-		AccelSensor_init();
 		FS_Init();
 		AppDataFile_Init();
 		SHELL_Init();
 		LowPower_init();
-
-		//Init LightSensor Params from AppDataFileS
-		uint8_t headerBuf[5];
-		const unsigned char *p;
-		p = headerBuf;
-		uint8_t gain = 0, intTime = 0, waitTime = 0;
-		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], (uint8_t*)p ,25); //Read LightSens Gain
-		UTIL1_ScanDecimal8uNumber(&p, &gain);
-		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], (uint8_t*)p ,25); //Read LightSens IntegrationTime
-		UTIL1_ScanDecimal8uNumber(&p, &intTime);
-		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
-		UTIL1_ScanDecimal8uNumber(&p, &waitTime);
-		LightSensor_setParams(gain,intTime,waitTime);
-
+		LightSensor_init();
+		AccelSensor_init();
 		WatchDog_Init();
 	  	if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
 	  	{
@@ -501,6 +487,7 @@ static void APP_init_task(void *param) {
 			WAIT1_Waitms(3000);
 			if(APP_WaitIfButtonPressed3s()) //Format SPIF
 			{
+				RTC_init(FALSE);		//HardReset RTC
 				FS_FormatInit();	//Format FS after 9s ButtonPress
 				AppDataFile_Init();
 				AppDataFile_CreateFile();
@@ -625,36 +612,41 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 		UTIL1_chcat(samplePrintLine, 120, ':');
 		UTIL1_strcatNum16sFormatted(samplePrintLine, 120, time.Sec, '0', 2);
 
+		UTIL1_strcat(samplePrintLine,120," P: G");
+		UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[4]);
+		UTIL1_strcat(samplePrintLine,120," I");
+		UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[5]);
+
 		UTIL1_strcat(samplePrintLine,120," L: x");
-		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[4] | sampleBuf[5]<<8));
-		UTIL1_strcat(samplePrintLine,120," y");
 		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[6] | sampleBuf[7]<<8));
-		UTIL1_strcat(samplePrintLine,120," z");
+		UTIL1_strcat(samplePrintLine,120," y");
 		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[8] | sampleBuf[9]<<8));
-		UTIL1_strcat(samplePrintLine,120," ir");
+		UTIL1_strcat(samplePrintLine,120," z");
 		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[10] | sampleBuf[11]<<8));
-		UTIL1_strcat(samplePrintLine,120," b");
+		UTIL1_strcat(samplePrintLine,120," ir");
 		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[12] | sampleBuf[13]<<8));
 		UTIL1_strcat(samplePrintLine,120," b");
 		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[14] | sampleBuf[15]<<8));
+		UTIL1_strcat(samplePrintLine,120," b");
+		UTIL1_strcatNum16u(samplePrintLine, 120,(uint16_t)(sampleBuf[16] | sampleBuf[17]<<8));
 
 		UTIL1_strcat(samplePrintLine,120," A: x");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[16]);
-		UTIL1_strcat(samplePrintLine,120," y");
-		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[17]);
-		UTIL1_strcat(samplePrintLine,120," z");
 		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[18]);
+		UTIL1_strcat(samplePrintLine,120," y");
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[19]);
+		UTIL1_strcat(samplePrintLine,120," z");
+		UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[20]);
 
-		if(sampleBuf[19] & 0x80 )  //MarkerPresent!
+		if(sampleBuf[21] & 0x80 )  //MarkerPresent!
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
-			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19] & ~0x80);
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[21] & ~0x80);
 			UTIL1_strcat(samplePrintLine,120," M: true");
 		}
 		else
 		{
 			UTIL1_strcat(samplePrintLine,120," T: ");
-			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[19]);
+			UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[21]);
 			UTIL1_strcat(samplePrintLine,120," M: false");
 		}
 

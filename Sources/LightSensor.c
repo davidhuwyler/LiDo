@@ -18,6 +18,7 @@
 #include "Application.h"
 #include "PIN_SENSOR_PWR.h"
 #include "UI.h"
+#include "AppDataFile.h"
 
 #define LIGHTSENSOR_I2C_ADDRESS 0x49
 #define LIGHTSENSOR_I2C_REGISTER_DEV_ID 0x10
@@ -71,6 +72,15 @@ void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint
 	taskEXIT_CRITICAL();
 }
 
+void LightSensor_getParams(uint8_t* paramGain, uint8_t* paramIntegrationTime, uint8_t* paramWaitTime)
+{
+	taskENTER_CRITICAL();
+	*paramGain = gain;
+	*paramIntegrationTime = intTime;
+	*paramWaitTime = waitTime;
+	taskEXIT_CRITICAL();
+}
+
 
 
 void LightSensor_init(void)
@@ -116,6 +126,19 @@ void LightSensor_init(void)
 			WAIT1_Waitms(50);
 		}
 	}
+
+	//Init LightSensor Params from AppDataFileS
+	uint8_t headerBuf[5];
+	const unsigned char *p;
+	p = headerBuf;
+	uint8_t gain = 0, intTime = 0, waitTime = 0;
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], (uint8_t*)p ,25); //Read LightSens Gain
+	UTIL1_ScanDecimal8uNumber(&p, &gain);
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], (uint8_t*)p ,25); //Read LightSens IntegrationTime
+	UTIL1_ScanDecimal8uNumber(&p, &intTime);
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
+	UTIL1_ScanDecimal8uNumber(&p, &waitTime);
+	LightSensor_setParams(gain,intTime,waitTime);
 }
 
 
@@ -175,7 +198,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 
 	//Workaround Resuming not working:
 	//APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-	xSemaphoreTakeRecursive(waitForLightSensMutex,pdMS_TO_TICKS(2000));
+	while(!xSemaphoreTakeRecursive(waitForLightSensMutex,pdMS_TO_TICKS(0))){	vTaskDelay(pdMS_TO_TICKS(5));}
 
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = FALSE;
@@ -217,7 +240,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 
 	//Workaround Resuming not working:
 	//APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-	xSemaphoreTakeRecursive(waitForLightSensMutex,pdMS_TO_TICKS(2000));
+	while(!xSemaphoreTakeRecursive(waitForLightSensMutex,0)){vTaskDelay(pdMS_TO_TICKS(5));}
 
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = FALSE;

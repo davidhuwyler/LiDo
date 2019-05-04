@@ -11,7 +11,6 @@
  */
 #include "LowPower.h"
 #include "Cpu.h"
-#include "LED_R.h"
 #include "WAIT1.h"
 #include "CLS1.h"
 #include "Application.h"

@@ -15,7 +15,7 @@
 
 #define LIDO_FILE_HEADER "LiDo Sample File V1.0"
 
-#define LIDO_SAMPLE_SIZE 21
+#define LIDO_SAMPLE_SIZE 23
 typedef struct
 {
 	int32_t  unixTimeStamp;

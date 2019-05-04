@@ -14,6 +14,8 @@
 #define LIGAIN_SENSVALUE_TARGETVALUE 0x7FFF // = 0xFFFF/2
 #define LIGAIN_SENSVALUE_HYSTERESYS  0x3FFF // = 0xFFFF/4
 
+#define LIGAIN_MIN_ALLOWED_INTTIME_PARAM 180
+
 static int32_t LiGain_abs (int32_t i,bool* isNegative)
 {
 	if(i<0)
@@ -120,26 +122,26 @@ static int32_t LiGain_GetBiggestDeviation(liDoSample_t* sample)
 		isNegative = tempIsNegative;
 	}
 
-	tempDeviation = LiGain_abs(sample->lightChannelIR-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-	if(tempDeviation>deviation)
-	{
-		deviation = tempDeviation;
-		isNegative = tempIsNegative;
-	}
-
-	tempDeviation = LiGain_abs(sample->lightChannelB440-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-	if(tempDeviation>deviation)
-	{
-		deviation = tempDeviation;
-		isNegative = tempIsNegative;
-	}
-
-	tempDeviation = LiGain_abs(sample->lightChannelB490-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-	if(tempDeviation>deviation)
-	{
-		deviation = tempDeviation;
-		isNegative = tempIsNegative;
-	}
+//	tempDeviation = LiGain_abs(sample->lightChannelIR-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
+//	if(tempDeviation>deviation)
+//	{
+//		deviation = tempDeviation;
+//		isNegative = tempIsNegative;
+//	}
+//
+//	tempDeviation = LiGain_abs(sample->lightChannelB440-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
+//	if(tempDeviation>deviation)
+//	{
+//		deviation = tempDeviation;
+//		isNegative = tempIsNegative;
+//	}
+//
+//	tempDeviation = LiGain_abs(sample->lightChannelB490-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
+//	if(tempDeviation>deviation)
+//	{
+//		deviation = tempDeviation;
+//		isNegative = tempIsNegative;
+//	}
 
 	if(isNegative)
 	{
@@ -156,7 +158,7 @@ uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_
 	int32_t deviation;
 	uint8_t err = ERR_OK;
 	deviation = LiGain_GetBiggestDeviation(lastSample);
-	if(deviation <= LIGAIN_SENSVALUE_HYSTERESYS) //Lightsensorvalues in hysteresys --> No adjustment
+	if(deviation >= LIGAIN_SENSVALUE_HYSTERESYS) //Lightsensorvalues in hysteresys --> No adjustment
 	{
 		*newIntTimeParam = lastSample->lightIntTime;
 		*newGainParam = lastSample->lightGain;
@@ -167,6 +169,11 @@ uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_
 		err = LiGain_GetGainFactor(lastSample->lightIntTime, lastSample->lightGain,&oldGainFactor);
 		newGainFactor = (oldGainFactor * LIGAIN_SENSVALUE_TARGETVALUE) / ( LIGAIN_SENSVALUE_TARGETVALUE + deviation);
 		err = LiGain_GetLightSensParams(newIntTimeParam, newGainParam,newGainFactor);
+
+		if(*newIntTimeParam<LIGAIN_MIN_ALLOWED_INTTIME_PARAM)
+		{
+			*newIntTimeParam = LIGAIN_MIN_ALLOWED_INTTIME_PARAM;
+		}
 	}
 	return err;
 }

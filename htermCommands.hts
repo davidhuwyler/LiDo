@@ -160,5 +160,17 @@
             <description></description>
             <sequence value="h[10] h[17] h[00] h[01] h[F0] h[FC]" />
         </SequenceItem>
+        <SequenceItem name="LightSensor GetEnableAutoGain">
+            <description></description>
+            <sequence value="h[10] h[0C] h[00] h[00] h[9D]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetEnableAutoGain (true)">
+            <description></description>
+            <sequence value="h[10] h[18] h[00] h[01] h[01] h[F7]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetEnableAutoGain (false)">
+            <description></description>
+            <sequence value="h[10] h[18] h[00] h[01] h[00] h[F0]" />
+        </SequenceItem>
     </ItemList>
 </HtermSequenceFile>

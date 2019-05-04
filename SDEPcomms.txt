@@ -93,6 +93,15 @@ SDEP CloseConnection
 
 -----LightSensor Commands-----
 
+SDEP GetEnableAutoGain
+10 0C 00 00 9D
+
+SDEP SetEnableAutoGain (true)
+10 18 00 01 01 F7
+
+SDEP SetEnableAutoGain (false)
+10 18 00 01 00 F0
+
 SDEP GetLightSensorGain
 10 09 00 00 5D
 
