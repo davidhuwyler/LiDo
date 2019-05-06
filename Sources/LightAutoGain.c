@@ -99,49 +99,11 @@ static uint8_t LiGain_GetLightSensParams(uint8_t* intTimeParam, uint8_t* gainPar
 }
 
 //Returns the biggest deviation from the targetvalue from the Lightsensorvalues
-static int32_t LiGain_GetBiggestDeviation(liDoSample_t* sample)
+static int32_t LiGain_GetYdeviation(liDoSample_t* sample)
 {
 	int32_t deviation;
-	int32_t tempDeviation;
 	bool isNegative = FALSE;
-	bool tempIsNegative = FALSE;
-
-	deviation = LiGain_abs(sample->lightChannelX-LIGAIN_SENSVALUE_TARGETVALUE,&isNegative);
-
-	tempDeviation = LiGain_abs(sample->lightChannelY-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-	if(tempDeviation>deviation)
-	{
-		deviation = tempDeviation;
-		isNegative = tempIsNegative;
-	}
-
-	tempDeviation = LiGain_abs(sample->lightChannelZ-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-	if(tempDeviation>deviation)
-	{
-		deviation = tempDeviation;
-		isNegative = tempIsNegative;
-	}
-
-//	tempDeviation = LiGain_abs(sample->lightChannelIR-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-//	if(tempDeviation>deviation)
-//	{
-//		deviation = tempDeviation;
-//		isNegative = tempIsNegative;
-//	}
-//
-//	tempDeviation = LiGain_abs(sample->lightChannelB440-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-//	if(tempDeviation>deviation)
-//	{
-//		deviation = tempDeviation;
-//		isNegative = tempIsNegative;
-//	}
-//
-//	tempDeviation = LiGain_abs(sample->lightChannelB490-LIGAIN_SENSVALUE_TARGETVALUE,&tempIsNegative);
-//	if(tempDeviation>deviation)
-//	{
-//		deviation = tempDeviation;
-//		isNegative = tempIsNegative;
-//	}
+	deviation = LiGain_abs(sample->lightChannelY-LIGAIN_SENSVALUE_TARGETVALUE,&isNegative);
 
 	if(isNegative)
 	{
@@ -156,14 +118,19 @@ static int32_t LiGain_GetBiggestDeviation(liDoSample_t* sample)
 uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_t* newGainParam)
 {
 	int32_t deviation;
+	bool temp;
 	uint8_t err = ERR_OK;
-	deviation = LiGain_GetBiggestDeviation(lastSample);
-	if(deviation >= LIGAIN_SENSVALUE_HYSTERESYS) //Lightsensorvalues in hysteresys --> No adjustment
+	deviation = LiGain_GetYdeviation(lastSample);
+
+	//Y Value is in hysteresys --> No adjustment:
+	if(LiGain_abs(deviation,&temp) <= LIGAIN_SENSVALUE_HYSTERESYS)
 	{
 		*newIntTimeParam = lastSample->lightIntTime;
 		*newGainParam = lastSample->lightGain;
 	}
-	else //Lightsensorvalues out of  hysteresys --> adjustment needed!
+
+	 //Lightsensorvalues out of  hysteresys --> adjustment needed!
+	else
 	{
 		uint32_t oldGainFactor,newGainFactor;
 		err = LiGain_GetGainFactor(lastSample->lightIntTime, lastSample->lightGain,&oldGainFactor);

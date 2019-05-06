@@ -29,7 +29,6 @@
 #include "PIN_POWER_ON.h"
 #include "LowPower.h"
 #include "LightAutoGain.h"
-#include "SYS1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 static TaskHandle_t sampletaskHandle;

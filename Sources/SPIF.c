@@ -175,12 +175,10 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 	  SPI_WRITE(address>>8);
 	  SPI_WRITE(address);
 
-
-//	  SM1_SendBlock(buf,bufSize, &nofSentBytes); //Results in HardFault
-
 	  for(int i=0;i<bufSize;i++) {
 	    SPI_WRITE_READ(0, &buf[i]);
 	  }
+
 	  SPIF_CS_DISABLE();
 	  return ERR_OK;
 }

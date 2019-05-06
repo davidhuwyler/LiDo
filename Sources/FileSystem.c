@@ -31,6 +31,8 @@ static SemaphoreHandle_t fileSystemAccessMutex;
 #define FILESYSTEM_LOOKAHEAD_SIZE 256 //128
 #define FILESYSTEM_CACHE_SIZE 256
 
+
+
 static int block_device_read(const struct lfs_config *c, lfs_block_t block,	lfs_off_t off, void *buffer, lfs_size_t size)
 {
 	uint8_t res;
@@ -631,38 +633,31 @@ uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
 /*
  * Used to read out data from Files for SDEP communication
  */
-uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofBytes, CLS1_ConstStdIOType *io)
+uint8_t FS_ReadFile(lfs_file_t* file, bool readFromBeginning, size_t nofBytes, CLS1_ConstStdIOType *io)
 {
-	static lfs_file_t file;
 	static int32_t filePos;
 	size_t fileSize;
-	uint8_t buf[200];
+	uint8_t buf[1024];
 
-	if( nofBytes > 200)
+	if( nofBytes > 1024)
 	{
-		nofBytes = 200;
+		nofBytes = 1024;
 	}
 
 	if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
 	{
-		if (lfs_file_open(&FS_lfs, &file, filePath, LFS_O_RDONLY) < 0)
-		{
-			xSemaphoreGiveRecursive(fileSystemAccessMutex);
-			return ERR_FAILED;
-		}
-
 		if(readFromBeginning)
 		{
-			lfs_file_rewind(&FS_lfs,&file);
+			lfs_file_rewind(&FS_lfs,file);
 			filePos = 0;
 		}
 		else
 		{
-			lfs_file_seek(&FS_lfs,&file, filePos,LFS_SEEK_SET);
+			lfs_file_seek(&FS_lfs,file, filePos,LFS_SEEK_SET);
 		}
 
-		fileSize = lfs_file_size(&FS_lfs, &file);
-		filePos = lfs_file_tell(&FS_lfs, &file);
+		fileSize = lfs_file_size(&FS_lfs, file);
+		filePos = lfs_file_tell(&FS_lfs, file);
 		fileSize = fileSize - filePos;
 
 		if (fileSize < 0)
@@ -673,11 +668,10 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 
 		if(fileSize > nofBytes)
 		{
-			if (lfs_file_read(&FS_lfs, &file, buf, nofBytes) < 0)
+			if (lfs_file_read(&FS_lfs, file, buf, nofBytes) < 0)
 			{
 				return ERR_FAILED;
 			}
-			lfs_file_close(&FS_lfs, &file);
 			CLS1_SendData(buf,nofBytes,io->stdErr);
 			filePos = filePos + nofBytes;
 			xSemaphoreGiveRecursive(fileSystemAccessMutex);
@@ -685,11 +679,10 @@ uint8_t FS_ReadFile(const char *filePath, bool readFromBeginning, size_t nofByte
 		}
 		else
 		{
-			if (lfs_file_read(&FS_lfs, &file, buf, fileSize) < 0)
+			if (lfs_file_read(&FS_lfs, file, buf, fileSize) < 0)
 			{
 				return ERR_FAILED;
 			}
-			lfs_file_close(&FS_lfs, &file);
 			CLS1_SendData(buf,fileSize,io->stdErr);
 			filePos = filePos + fileSize;
 			xSemaphoreGiveRecursive(fileSystemAccessMutex);

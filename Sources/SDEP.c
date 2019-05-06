@@ -117,12 +117,12 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 	case SDEP_CMDID_GET_FILE:
 	{
 		SDEPio_getSDEPfileIO(&io);
-		SDEPio_SetReadFileCMD(command->payload);
-		if(FS_ReadFile(command->payload,TRUE,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) == ERR_FAILED)
-		{
-			break;
-		}
-		return ERR_OK;
+		return SDEPio_SetReadFileCMD(command->payload);
+//		if(FS_ReadFile(command->payload,TRUE,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) == ERR_FAILED)
+//		{
+//			break;
+//		}
+//		return ERR_OK;
 	}
 
 	case SDEP_CMDID_GET_SAMPLE_INT:

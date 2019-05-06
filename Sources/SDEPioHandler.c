@@ -14,7 +14,6 @@
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
 
-
 static CLS1_ConstStdIOTypePtr Std_io;
 static CLS1_ConstStdIOType SDEP_ShellioNonPtr =
 {
@@ -36,8 +35,8 @@ static CLS1_ConstStdIOTypePtr SDEP_Fileio = &SDEP_FileioNonPtr;
 
 static bool newSDEPshellMessage = FALSE;
 
-#define SDEP_FILE_PATH_BUF_SIZE 60
-static uint8_t filePathBuf[SDEP_FILE_PATH_BUF_SIZE];
+lfs_file_t openFile;
+
 static bool fileToRead = FALSE;
 
 uint8_t SDEPio_HandleShellCMDs(void)
@@ -75,8 +74,8 @@ uint8_t SDEPio_HandleShellCMDs(void)
 
 uint8_t SDEPio_SetReadFileCMD(uint8_t* filename)
 {
-	UTIL1_strcpy(filePathBuf,SDEP_FILE_PATH_BUF_SIZE,filename);
 	fileToRead = TRUE;
+	return FS_openFile(&openFile,filename);
 }
 
 uint8_t SDEPio_HandleFileCMDs(uint16_t cmdId)
@@ -84,6 +83,8 @@ uint8_t SDEPio_HandleFileCMDs(uint16_t cmdId)
 	static uint16_t ongoingCmdId = 0;
 	static SDEPmessage_t message;
 	static uint8_t outputBuf[SDEP_MESSAGE_MAX_PAYLOAD_BYTES];
+	//static uint8_t outputBuf[1024];
+	static bool nextFileAccessFromBeginning = TRUE;
 
 	if(cmdId != 0)
 	{
@@ -98,16 +99,40 @@ uint8_t SDEPio_HandleFileCMDs(uint16_t cmdId)
 	{
 		CLS1_ConstStdIOTypePtr io;
 		SDEPio_getSDEPfileIO(&io);
-		if(FS_ReadFile(filePathBuf,FALSE,SDEP_MESSAGE_MAX_PAYLOAD_BYTES +1,io) != ERR_OK)
+		if(FS_ReadFile(&openFile,nextFileAccessFromBeginning,1024,io) != ERR_OK)
 		{
 			fileToRead = FALSE;
+			FS_closeFile(&openFile);
+			nextFileAccessFromBeginning = TRUE;
+		}
+		else
+		{
+			nextFileAccessFromBeginning = FALSE;
 		}
 		cmdId = SDEP_CMDID_GET_FILE;
 		message.cmdId = SDEP_CMDID_GET_FILE;
 	}
 
+	if(FileToSDEPBuf_NofElements() >= 1024)
+	{
+		while(FileToSDEPBuf_NofElements()>SDEP_MESSAGE_MAX_PAYLOAD_BYTES)
+		{
+			message.payload = outputBuf;
+			uint8_t ch;
+			message.payloadSize = SDEP_MESSAGE_MAX_PAYLOAD_BYTES | SDEP_PAYLOADBYTE_MORE_DATA_BIT;
+			for(int i = 0 ; i < SDEP_MESSAGE_MAX_PAYLOAD_BYTES ; i++)
+			{
+				FileToSDEPBuf_Get(message.payload+i);
+			}
+			ongoingCmdId = cmdId;
+			message.type = SDEP_TYPEBYTE_RESPONSE;
+			SDEP_SendMessage(&message);
+		}
+	}
+
 	if(FileToSDEPBuf_NofElements())
 	{
+
 		message.payload = outputBuf;
 		uint8_t ch;
 		if(FileToSDEPBuf_NofElements()>SDEP_MESSAGE_MAX_PAYLOAD_BYTES)
