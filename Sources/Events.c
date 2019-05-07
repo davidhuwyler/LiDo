@@ -119,7 +119,9 @@ void FRTOS1_vApplicationIdleHook(void)
   /* Called whenever the RTOS is idle (from the IDLE task).
      Here would be a good place to put the CPU into low power mode. */
   /* Write your code here ... */
+#if !configUSE_TICKLESS_IDLE
 	LowPower_EnterLowpowerMode();
+#endif
 }
 
 /*

@@ -35,9 +35,6 @@ static TaskHandle_t sampletaskHandle;
 static SemaphoreHandle_t sampleMutex;
 static SemaphoreHandle_t fileAccessMutex;
 
-//Workaround Resuming not working:
-static volatile bool rtcAlarmReceived = FALSE;
-
 static QueueHandle_t lidoSamplesToWrite;
 static lfs_file_t sampleFile;
 
@@ -214,15 +211,11 @@ void APP_resumeSampleTaskFromISR(void)
 	BaseType_t xYieldRequired;
 	if(sampletaskHandle!=NULL)
 	{
-
-// TODO Resuming does not work
-//	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
-//	    if( xYieldRequired == pdTRUE )
-//	    {
-//	        portYIELD_FROM_ISR(pdTRUE);
-//	    }
-//Workaround Resuming not working:
-		rtcAlarmReceived = TRUE;
+	    xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
+	    if( xYieldRequired == pdTRUE )
+	    {
+	        portYIELD_FROM_ISR(pdTRUE);
+	    }
 	}
     CS1_ExitCritical();
 }
@@ -252,14 +245,12 @@ static void APP_sample_task(void *param) {
   static int32_t unixTSlastSample;
   int32_t unixTScurrentSample;
   sampleMutex = xSemaphoreCreateRecursiveMutex();
-
-  uint8_t sampleIntervall;
-
   if( sampleMutex == NULL )
   {
       for(;;); //Error...
   }
   xSemaphoreGiveRecursive(sampleMutex);
+
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
@@ -280,12 +271,7 @@ static void APP_sample_task(void *param) {
 	  }
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 
-	  //Workaround Resuming not working:
-	  //APP_suspendSampleTask();
-	  AppDataFile_GetSampleIntervall(&sampleIntervall);
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS((sampleIntervall*1000)-50));
-	  while(!rtcAlarmReceived){	vTaskDelay(pdMS_TO_TICKS(5));}
-
+	  APP_suspendSampleTask();
   } /* for */
 }
 

@@ -129,7 +129,7 @@ uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_
 		*newGainParam = lastSample->lightGain;
 	}
 
-	 //Lightsensorvalues out of  hysteresys --> adjustment needed!
+	//Lightsensorvalues out of  hysteresys --> adjustment needed!
 	else
 	{
 		uint32_t oldGainFactor,newGainFactor;

@@ -95,10 +95,6 @@ void LightSensor_init(void)
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive
 
-	//Reset Sensor
-//	LightSensResetPin_ClrVal();
-//	WAIT1_Waitms(50);
-//	LightSensResetPin_SetVal();
 	WAIT1_Waitms(1);
 
 	uint8_t i2cData;
@@ -196,9 +192,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	allowLightSensToWakeUp = TRUE;
 	CS1_ExitCritical();
 
-	//Workaround Resuming not working:
-	//APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-	while(!xSemaphoreTakeRecursive(waitForLightSensMutex,pdMS_TO_TICKS(0))){	vTaskDelay(pdMS_TO_TICKS(5));}
+	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
 
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = FALSE;
@@ -238,9 +232,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	allowLightSensToWakeUp = TRUE;
 	CS1_ExitCritical();
 
-	//Workaround Resuming not working:
-	//APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-	while(!xSemaphoreTakeRecursive(waitForLightSensMutex,0)){vTaskDelay(pdMS_TO_TICKS(5));}
+	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
 
 	CS1_EnterCritical();
 	allowLightSensToWakeUp = FALSE;
@@ -357,10 +349,7 @@ void LightSensor_Done_ISR(void)
 	if(allowLightSensToWakeUp)
 	{
 		CS1_ExitCritical();
-		//APP_resumeSampleTaskFromISR();
-		//Workaround Resuming not working:
-		xSemaphoreGiveRecursive(waitForLightSensMutex);
-
+		APP_resumeSampleTaskFromISR();
 	}
 	else
 	{
