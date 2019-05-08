@@ -19,6 +19,9 @@
 uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
 
 #define SPIF_ID_BUF_SIZE  (3)
+
+void SPIF_SPI_BlockReceived(void);
+
 uint8_t SPIF_ReadID(uint8_t *buf, size_t bufSize);
 
 uint8_t SPIF5_ReadStatus(uint8_t *status);

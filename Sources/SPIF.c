@@ -52,28 +52,47 @@
 #define SPIF_SPI_DEV_ID1_MEM_TYPE 0x20
 #define SPIF_SPI_DEV_ID2_MEM_DENS 0x1A
 
-static LDD_TDeviceData* SPIdeviceHandle;
-static LDD_TUserData*  SPIuserDataHandle;
-//static SemaphoreHandle_t spifAccessMutex;
+#define SPI_DUMMY_BUF_SIZE 256
+static uint8_t SPIdummyBuf[SPI_DUMMY_BUF_SIZE];
 
 /* W25Q128 chip select is LOW active */
 #define SPIF_CS_ENABLE()   PIN_SPIF_CS_ClrVal()
 #define SPIF_CS_DISABLE()  PIN_SPIF_CS_SetVal()
 
-static uint8_t rxDummy; /* dummy byte if we do not need the result. Needed to read from SPI register. */
-#define SPI_WRITE(write)            \
-   { \
-     while(SM1_SendChar(write)!=ERR_OK) {} \
-     while(SM1_RecvChar(&rxDummy)!=ERR_OK) {} \
-   }
-#define SPI_WRITE_READ(write, readP) \
-   { \
-     while(SM1_SendChar(write)!=ERR_OK) {} \
-     while(SM1_RecvChar(readP)!=ERR_OK) {} \
-   }
+//------------------------------------------------------
 
-volatile static bool spifIsAwake = TRUE;
+static volatile bool SPI_DataReceivedFlag = FALSE;
 
+void SPI_WRITE(unsigned char write) {
+  unsigned char dummy;
+
+  SPI_DataReceivedFlag = FALSE;
+  (void)SM1_ReceiveBlock(SM1_DeviceData, &dummy, sizeof(dummy));
+  (void)SM1_SendBlock(SM1_DeviceData, &write, sizeof(write));
+  while(!SPI_DataReceivedFlag){}
+}
+
+static void SPI_WRITE_READ(unsigned char write, unsigned char *readP) {
+  SPI_DataReceivedFlag = FALSE;
+  (void)SM1_ReceiveBlock(SM1_DeviceData, readP, 1);
+  (void)SM1_SendBlock(SM1_DeviceData, &write, 1);
+  while(!SPI_DataReceivedFlag){}
+}
+
+static void SPI_WRITE_READ_BLOCK(unsigned char *writeP, unsigned char *readP, uint16_t size) {
+  SPI_DataReceivedFlag = FALSE;
+  (void)SM1_ReceiveBlock(SM1_DeviceData, readP, size);
+  (void)SM1_SendBlock(SM1_DeviceData, writeP, size);
+  while(!SPI_DataReceivedFlag){}
+}
+
+//Is called by the SPI ISR
+void SPIF_SPI_BlockReceived(void)
+{
+  SPI_DataReceivedFlag = TRUE;
+}
+
+//------------------------------------------------------------
 uint8_t SPIF_ReadStatus(uint8_t *status)
 {
 	  SPIF_CS_ENABLE();
@@ -98,75 +117,8 @@ void SPIF_WaitIfBusy(void)
 	  }
 }
 
-////After Entering DeepPowerDown it takes 10us to take effect
-////Experimental...
-//uint8_t SPIF_GoIntoDeepPowerDown(void)
-//{
-//	  if(xSemaphoreTakeRecursive(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && spifIsAwake)
-//	  {
-//		  spifIsAwake = FALSE;
-//		  SPIF_WaitIfBusy();
-//		  SPIF_CS_ENABLE();
-//		  SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
-//		  SPIF_CS_DISABLE();
-//		  xSemaphoreGiveRecursive(spifAccessMutex);
-//		  return ERR_OK;
-//	  }
-//	  else if(!spifIsAwake)
-//	  {
-//		  xSemaphoreGiveRecursive(spifAccessMutex);
-//	  }
-//	  return ERR_FAILED;
-//}
-//
-////Experimental...
-//uint8_t SPIF_ReleaseFromDeepPowerDown_noWait()
-//{
-//	  if(xSemaphoreTakeRecursive(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
-//	  {
-//		  spifIsAwake = TRUE;
-//		  SPIF_CS_ENABLE();
-//		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
-//		  SPIF_CS_DISABLE();
-//		  //It takes 30 us to wake from DeepPowerDown no access to the SPIF is allowed!
-//		  xSemaphoreGiveRecursive(spifAccessMutex);
-//		  return ERR_OK;
-//	  }
-//	  else if(spifIsAwake)
-//	  {
-//		  xSemaphoreGiveRecursive(spifAccessMutex);
-//	  }
-//	  return ERR_FAILED;
-//
-//}
-//
-////Experimental...
-//uint8_t SPIF_ReleaseFromDeepPowerDown()
-//{
-//	  if(xSemaphoreTakeRecursive(spifAccessMutex,pdMS_TO_TICKS(500)) == pdTRUE && !spifIsAwake)
-//	  {
-//		  spifIsAwake = TRUE;
-//		  SPIF_CS_ENABLE();
-//		  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
-//		  SPIF_CS_DISABLE();
-//		  WAIT1_Waitus(30);	//It takes 30 us to wake from DeepPowerDown
-//		  xSemaphoreGiveRecursive(spifAccessMutex);
-//		  return ERR_OK;
-//	  }
-//	  else if(spifIsAwake)
-//	  {
-//		  xSemaphoreGiveRecursive(spifAccessMutex);
-//	  }
-//	  return ERR_FAILED;
-//}
-
 uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 {
-//	  if(!spifIsAwake)
-//	  {
-//		  SPIF_ReleaseFromDeepPowerDown();
-//	  }
-
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_READ_DATA);
@@ -175,9 +127,7 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 	  SPI_WRITE(address>>8);
 	  SPI_WRITE(address);
 
-	  for(int i=0;i<bufSize;i++) {
-	    SPI_WRITE_READ(0, &buf[i]);
-	  }
+	  SPI_WRITE_READ_BLOCK(SPIdummyBuf,buf,bufSize);
 
 	  SPIF_CS_DISABLE();
 	  return ERR_OK;
@@ -185,11 +135,6 @@ uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 
 uint8_t SPIF_EraseAll(void)
 {
-//	  if(!spifIsAwake)
-//	  {
-//		  SPIF_ReleaseFromDeepPowerDown();
-//	  }
-
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -202,14 +147,8 @@ uint8_t SPIF_EraseAll(void)
 	  return ERR_OK;
 }
 
-
 uint8_t SPIF_EraseSector4K(uint32_t address)
 {
-//	  if(!spifIsAwake)
-//	  {
-//		  SPIF_ReleaseFromDeepPowerDown();
-//	  }
-
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -228,11 +167,6 @@ uint8_t SPIF_EraseSector4K(uint32_t address)
 
 uint8_t SPIF_EraseBlock32K(uint32_t address)
 {
-//	  if(!spifIsAwake)
-//	  {
-//		  SPIF_ReleaseFromDeepPowerDown();
-//	  }
-
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -251,11 +185,6 @@ uint8_t SPIF_EraseBlock32K(uint32_t address)
 
 uint8_t SPIF_EraseBlock64K(uint32_t address)
 {
-//	  if(!spifIsAwake)
-//	  {
-//		  SPIF_ReleaseFromDeepPowerDown();
-//	  }
-
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -281,11 +210,6 @@ uint8_t SPIF_EraseBlock64K(uint32_t address)
  */
 uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 {
-//	  if(!spifIsAwake)
-//	  {
-//		  SPIF_ReleaseFromDeepPowerDown();
-//	  }
-
 	  SPIF_WaitIfBusy();
 	  SPIF_CS_ENABLE();
 	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
@@ -298,14 +222,7 @@ uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
 	  SPI_WRITE(address>>8);
 	  SPI_WRITE(address);
 
-//	  SM1_SendBlock(data,dataSize, &nofSentBytes); //Results in HardFault
-
-	  while(dataSize>0) {
-	    SPI_WRITE(*data);
-	    dataSize--;
-	    data++;
-	  }
-
+	  SPI_WRITE_READ_BLOCK((uint8_t *)data,SPIdummyBuf,dataSize);
 
 	  SPIF_CS_DISABLE();
 	  return ERR_OK;
@@ -622,15 +539,13 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 
 uint8_t SPIF_Init(void)
 {
-	  //spifAccessMutex = xSemaphoreCreateRecursiveMutex();
-	  //xSemaphoreGiveRecursive(spifAccessMutex);
 	  uint8_t buf[SPIF_ID_BUF_SIZE];
 	  PIN_SPIF_PWR_ClrVal();   //LowActive... --> Power the Chip
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!
 	  PIN_SPIF_WP_SetVal();	   //LowActive... --> Enable Write!
 
 	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_ENABLE_4BYTE_ADD)
+	  SPI_WRITE(SPIF_SPI_CMD_ENABLE_4BYTE_ADD);
 	  SPIF_CS_DISABLE();
 
 	  return SPIF_ReadID(buf, sizeof(buf)); /* check ID */
