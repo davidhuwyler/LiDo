@@ -17,6 +17,7 @@ typedef enum
 	WatchDog_TakeLidoSample,
 	WatchDog_ToggleEnableSampling,
 	WatchDog_MeasureTaskRunns,
+	WatchDog_LiDoInit,
 	WatchDog_NOF_KickSources
 }WatchDog_KickSource_e;
 

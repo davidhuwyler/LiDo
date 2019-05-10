@@ -34,8 +34,6 @@ static bool shellDisablingIsInitiated = FALSE;
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
-  CLS1_ParseCommand,
-  KIN1_ParseCommand,
   LightSensor_ParseCommand,
   AccelSensor_ParseCommand,
   RTC_ParseCommand,
@@ -134,6 +132,10 @@ static void SHELL_task(void *param) {
 
 void SHELL_Init(void) {
   CLS1_DefaultShellBuffer[0] = '\0';
+
+  PORTB_PCR16 |= 0x3;  //Enable Pullup UART RX
+  PORTB_PCR17 |= 0x3;  //Enable Pullup UART TX
+
   if (xTaskCreate(SHELL_task, "Shell", 3000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
   {
 	  for(;;){} /* error! probably out of memory */

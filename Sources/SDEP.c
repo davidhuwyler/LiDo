@@ -14,6 +14,7 @@
 #include "SDEPpendingAlertsBuffer.h"
 #include "ErrorLogFile.h"
 #include "PowerManagement.h"
+#include "UI.h"
 
 LDD_TDeviceData* CRCdeviceDataHandle;
 LDD_TUserData *  CRCuserDataHandle;
@@ -320,10 +321,12 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		UTIL1_ScanDecimal8uNumber(&p, &uint8param);
 		if(!(uint8param >= 1 && uint8param <= 100 )) {err = ERR_FAILED;}//Check Sampleintervall
 
-		//Check the Battery State TODO
+		//Check the Battery State
+		uint16Param = PowerManagement_getBatteryVoltage();
+		if(!(uint16Param >= 2978 && uint16Param <= 4200 )) {err = ERR_FAILED;}//Check Battery Voltagerange
 
 		//If all OK, Turn on The RGB LED for the User to check...
-		//TODO RGB Led
+		UI_LEDpulse(LED_W);
 
 		if(err == ERR_OK)
 		{

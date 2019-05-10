@@ -443,6 +443,8 @@ static void APP_init_task(void *param) {
   LED_G_Off();
   if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
+		WatchDog_Init();
+		WatchDog_StartComputationTime(WatchDog_LiDoInit);
 		SDEP_Init();
 		FS_Init();
 		AppDataFile_Init();
@@ -450,7 +452,7 @@ static void APP_init_task(void *param) {
 		LowPower_init();
 		LightSensor_init();
 		AccelSensor_init();
-		WatchDog_Init();
+
 	  	if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
 	  	{
 	  		RTC_init(FALSE);		//HardReset RTC
@@ -463,6 +465,7 @@ static void APP_init_task(void *param) {
 		UI_Init();
 		PowerManagement_init();
 		APP_init();
+		WatchDog_StopComputationTime(WatchDog_LiDoInit);
   }
   else //Init With HardReset RTC
   {

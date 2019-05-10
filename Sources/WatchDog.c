@@ -18,7 +18,7 @@
 #include "PIN_SENSOR_PWR.h"
 #include "PIN_SPIF_PWR.h"
 
-#define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 15000   // 10'000 --> to WDT reset --> WatchDog_WriteToLidoSampleFile
+#define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 5000
 
 typedef struct
 {
@@ -150,7 +150,17 @@ static void WatchDog_Task(void *param) {
 void WatchDog_Init(void)
 {
 	WDog1_Enable();
+	WDog1_Clear();
 	//initial Dog feed...
+	watchDogKickSources[WatchDog_LiDoInit].isSingleCheckWatchdogSouce					= TRUE;
+	watchDogKickSources[WatchDog_LiDoInit].lowerCompTimeLimit 							= 0;
+	watchDogKickSources[WatchDog_LiDoInit].uppwerCompTimeLimit 							= 2000;
+	watchDogKickSources[WatchDog_LiDoInit].measuredCompTime 							= watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
+	watchDogKickSources[WatchDog_LiDoInit].timeStampLastKick 							= 0;
+	watchDogKickSources[WatchDog_LiDoInit].sourceIsActive 								= FALSE;
+	watchDogKickSources[WatchDog_LiDoInit].requestForDeactivation						= FALSE;
+	watchDogKickSources[WatchDog_LiDoInit].sourceForceDisabled							= FALSE;
+
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].isSingleCheckWatchdogSouce	= TRUE;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 0;
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
@@ -171,7 +181,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_TakeLidoSample].isSingleCheckWatchdogSouce				= TRUE;
 	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 5000;
+	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 1000;
 	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						= watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						= 0;
 	watchDogKickSources[WatchDog_TakeLidoSample].sourceIsActive 						= FALSE;
@@ -189,11 +199,11 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_MeasureTaskRunns].isSingleCheckWatchdogSouce			= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 3000;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1000;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 5000;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 5000;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 2000;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 2000;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].timeStampLastKick 					= 0;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
