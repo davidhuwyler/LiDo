@@ -36,6 +36,7 @@ extern "C" {
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
 #include "LowPower.h"
+#include "SPIF.h"
 /*
 ** ===================================================================
 **     Event       :  Cpu_OnNMIINT (module Events)

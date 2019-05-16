@@ -16,14 +16,15 @@
 
 #define POWER_MANAGEMENT_LIPO_WARNING 34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF 29789  // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
-#define POWER_MANAGEMENT_LIPO_WARNING_HYS 36739 // = 3.7V --> ADCval = U / 2 * ( 65535 / 3.3V )
 
-static bool waringLogged = FALSE;
+#define POWER_MANAGEMENT_LIPO_OFFSET 1250
 
 static void PowerManagement_task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
-  uint16_t adcValue,oldAdcValue;
+  uint16_t adcValue = 0x0000;
+  uint16_t oldAdcValue =  36000; // = 3.7V
+
   for(;;)
   {
 	  PIN_EN_U_MEAS_SetVal();
@@ -33,6 +34,8 @@ static void PowerManagement_task(void *param) {
 	  PIN_EN_U_MEAS_ClrVal();
 	  AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
 
+	  adcValue = adcValue + POWER_MANAGEMENT_LIPO_OFFSET;
+
 	  if(PIN_CHARGE_STATE_GetVal())
 	  {
 		  UI_LEDpulse(LED_G);
@@ -41,17 +44,6 @@ static void PowerManagement_task(void *param) {
 	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_WARNING && adcValue < POWER_MANAGEMENT_LIPO_WARNING)
 	  {
 		  UI_LEDpulse(LED_R);
-
-		  if(!waringLogged)
-		  {
-			  SDEP_InitiateNewAlert(SDEP_ALERT_LOW_BATTERY);
-			  waringLogged = TRUE;
-		  }
-	  }
-
-	  if(oldAdcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS && adcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS)
-	  {
-		  waringLogged = FALSE;
 	  }
 
 	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_CUTOFF && adcValue < POWER_MANAGEMENT_LIPO_CUTOFF)
@@ -69,11 +61,11 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 {
 	uint16_t adcValue;
 	PIN_EN_U_MEAS_SetVal();
-	WAIT1_Waitus(10);
+	WAIT1_Waitus(100);
 	AI_PWR_0_5x_U_BAT_Measure(TRUE);
 	PIN_EN_U_MEAS_ClrVal();
 	AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
-	return adcValue/10;
+	return (adcValue+POWER_MANAGEMENT_LIPO_OFFSET)/10;
 }
 
 void PowerManagement_init(void)

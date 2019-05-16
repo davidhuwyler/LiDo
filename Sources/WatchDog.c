@@ -20,6 +20,8 @@
 
 #define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 5000
 
+static TaskHandle_t watchDogTaskHandle;
+
 typedef struct
 {
 	bool		isSingleCheckWatchdogSouce;		//If true, the WatchdogSource needs to be activated every Check and KickIntervall is not checked
@@ -99,7 +101,7 @@ static void WatchDog_Task(void *param) {
 		{
 			//TODO Power Off SPIF und Sensoren
 			WDog1_Clear();
-			PIN_SENSOR_PWR_SetVal(); //LowActive!
+			PIN_SENSOR_PWR_SetVal(); //PowerOff Sensors
 
 			//Send SDEP Alarm and Log Watchdog Reset:
 			switch(i)
@@ -124,9 +126,7 @@ static void WatchDog_Task(void *param) {
 					break;
 			}
 
-			PIN_SPIF_PWR_SetVal();
-			vTaskDelay(pdMS_TO_TICKS(100)); //Let the Shell print out the Alert message...
-			//KIN1_SoftwareReset();
+			PIN_SPIF_PWR_SetVal(); //PowerOff SPIF
 			for(;;);
 		}
 		else
@@ -136,15 +136,23 @@ static void WatchDog_Task(void *param) {
 
 		if(LowPower_StopModeIsEnabled())
 		{
-			uint8_t sampleIntervall_s;
-			AppDataFile_GetSampleIntervall(&sampleIntervall_s);
-			vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(sampleIntervall_s*WATCHDOG_TASK_DELAY));
+			vTaskSuspend(watchDogTaskHandle);
 		}
 		else
 		{
 			vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(WATCHDOG_TASK_DELAY));
 		}
   } /* for */
+}
+
+
+//Only in StopMode Needed
+void WatchDog_ResumeTask(void)
+{
+	if(LowPower_StopModeIsEnabled() && watchDogTaskHandle!=NULL)
+	{
+		vTaskResume( watchDogTaskHandle );
+	}
 }
 
 void WatchDog_Init(void)
@@ -154,7 +162,7 @@ void WatchDog_Init(void)
 	//initial Dog feed...
 	watchDogKickSources[WatchDog_LiDoInit].isSingleCheckWatchdogSouce					= TRUE;
 	watchDogKickSources[WatchDog_LiDoInit].lowerCompTimeLimit 							= 0;
-	watchDogKickSources[WatchDog_LiDoInit].uppwerCompTimeLimit 							= 2000;
+	watchDogKickSources[WatchDog_LiDoInit].uppwerCompTimeLimit 							= 5000;
 	watchDogKickSources[WatchDog_LiDoInit].measuredCompTime 							= watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_LiDoInit].timeStampLastKick 							= 0;
 	watchDogKickSources[WatchDog_LiDoInit].sourceIsActive 								= FALSE;
@@ -181,7 +189,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_TakeLidoSample].isSingleCheckWatchdogSouce				= TRUE;
 	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 1000;
+	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 1500;
 	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						= watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						= 0;
 	watchDogKickSources[WatchDog_TakeLidoSample].sourceIsActive 						= FALSE;
@@ -209,7 +217,7 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceForceDisabled					= FALSE;
 
-	if (xTaskCreate(WatchDog_Task, "WatchDog", 1000/sizeof(StackType_t), NULL,  configMAX_PRIORITIES /*tskIDLE_PRIORITY+2*/, NULL) != pdPASS)
+	if (xTaskCreate(WatchDog_Task, "WatchDog", 1000/sizeof(StackType_t), NULL,  configMAX_PRIORITIES /*tskIDLE_PRIORITY+2*/, &watchDogTaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}

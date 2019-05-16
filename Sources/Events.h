@@ -66,6 +66,8 @@
 #include "PIN_SPIF_WP.h"
 #include "BitIoLdd5.h"
 #include "SM1.h"
+#include "PIN_POWER_REG_POWER_SAVE.h"
+#include "BitIoLdd12.h"
 #include "USB1.h"
 #include "CDC1.h"
 #include "Tx1.h"

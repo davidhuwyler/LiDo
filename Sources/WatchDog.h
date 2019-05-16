@@ -8,7 +8,7 @@
 #ifndef SOURCES_WATCHDOG_H_
 #define SOURCES_WATCHDOG_H_
 
-#define WATCHDOG_TASK_DELAY 500 //Needs to be smaller than the Watchdogperiode
+#define WATCHDOG_TASK_DELAY 1000 //Needs to be smaller than the Watchdogperiode
 
 typedef enum
 {
@@ -22,6 +22,7 @@ typedef enum
 }WatchDog_KickSource_e;
 
 void WatchDog_Init(void);
+void WatchDog_ResumeTask(void);
 
 void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource);
 void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource);

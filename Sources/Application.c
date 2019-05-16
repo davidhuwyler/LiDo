@@ -29,9 +29,11 @@
 #include "PIN_POWER_ON.h"
 #include "LowPower.h"
 #include "LightAutoGain.h"
+#include "SYS1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 static TaskHandle_t sampletaskHandle;
+static TaskHandle_t writeFileTaskHandle;
 static SemaphoreHandle_t sampleMutex;
 static SemaphoreHandle_t fileAccessMutex;
 
@@ -103,7 +105,6 @@ static void APP_softwareResetIfRequested()
 		{
 			FS_closeFile(&sampleFile);
 		}
-		//TODO deinit Stuff...
 		KIN1_SoftwareReset();
 	}
 	else
@@ -235,7 +236,23 @@ void APP_suspendSampleTask(void)
 			WAIT1_Waitms(50);
 		}
 	}
+}
 
+void APP_suspendWriteFileTask(void)
+{
+	if(writeFileTaskHandle!=NULL)
+	{
+		vTaskSuspend(writeFileTaskHandle);
+	}
+	else
+	{
+		//Error
+		for(;;)
+		{
+			LED_R_Neg();
+			WAIT1_Waitms(50);
+		}
+	}
 }
 
 static void APP_sample_task(void *param) {
@@ -271,6 +288,8 @@ static void APP_sample_task(void *param) {
 	  }
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 
+	  WatchDog_ResumeTask();
+	  vTaskResume(writeFileTaskHandle);
 	  APP_suspendSampleTask();
   } /* for */
 }
@@ -325,7 +344,7 @@ static void APP_writeQueuedSamplesToFile()
 	  {
 
 		  //Write all pending samples to file
-		  while(xQueuePeek(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500)) == pdPASS)
+		  while(xQueuePeek(lidoSamplesToWrite,&sample,0) == pdPASS)
 		  {
 			  WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
 			  if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
@@ -369,17 +388,15 @@ static void APP_writeLidoFile_task(void *param) {
 
   for(;;)
   {
-	  xLastWakeTime = xTaskGetTickCount();
 	  APP_softwareResetIfRequested();
 	  APP_toggleEnableSamplingIfRequested();
-
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
-
 	  APP_makeNewFileIfNeeded();
 	  APP_openFileIfNeeded();
+	  SYS1_Print("goInto");
 	  APP_writeQueuedSamplesToFile();
-
-	  vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(samplingIntervall*1000));
+	  SYS1_Print("Suspend");
+	  APP_suspendWriteFileTask();
   } /* for */
 }
 
@@ -388,7 +405,7 @@ void APP_init(void)
 	PIN_POWER_ON_SetVal();
 	//Init the SampleQueue, SampleTask and the WriteLidoFile Task
 	//The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
-	lidoSamplesToWrite = xQueueCreate( 16, sizeof( liDoSample_t ) );
+	lidoSamplesToWrite = xQueueCreate( 15, sizeof( liDoSample_t ) );
     if( lidoSamplesToWrite == NULL )
     {
     	for(;;){} /* error! probably out of memory */
@@ -406,7 +423,7 @@ void APP_init(void)
 	RTC_IER |= RTC_IER_TIIE_MASK;	//Enable RTC Invalid Interrupt
 	RTC_TAR = RTC_TSR;				//RTC Alarm at RTC Time
 
-	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, NULL) != pdPASS)
+	if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
@@ -455,6 +472,7 @@ static void APP_init_task(void *param) {
 
 	  	if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
 	  	{
+	  		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
 	  		RTC_init(FALSE);		//HardReset RTC
 	  	}
 	  	else

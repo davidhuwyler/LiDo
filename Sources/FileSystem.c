@@ -17,6 +17,7 @@
 #include "Shell.h"
 #include "AppDataFile.h"
 #include "LightSensor.h"
+#include "SYS1.h"
 
 #define FS_FILE_NAME_SIZE  60 /* Length of file name, used in buffers */
 #define FS_ACCESS_MUTEX_WAIT_TIME_MS 5000
