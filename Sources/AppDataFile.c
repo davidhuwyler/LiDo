@@ -8,6 +8,7 @@
 #include "AppDataFile.h"
 #include "minIni/minIni.h"
 #include "UTIL1.h"
+#include "KIN1.h"
 
 #define APPDATA_FILENAME "./appData.ini"
 #define APPDATA_SECTION "AppData"
@@ -19,19 +20,21 @@
 const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2] =
 {
 		{"LIDO_NAME","Lido01"},			//Name
-		{"LIDO_ID","00001"},			//ID
+		{"LIDO_ID","0x00"},//UID of the Controller
 		{"LIDO_VERSION","V0.1"},		//SoftwareVersion
 		{"SAMPLE_INTERVALL","1"},		//Sampleintervall [s]
 		{"SAMPLE_ENABLE","0"},			//Sample enable defines if the LiDo is sampling (1 = sampling)
 		{"LIGHTSENS_GAIN","3"},			//Gain of the LightSensor (0=1x; 1=3.7x; 2=16x; 3=64x;)
 		{"LIGHTSENS_INTT","240"},		//LightSensor IntegrationTime  (256 - value) * 2.8ms
 		{"LIGHTSENS_WTIM","240"},		//LightSensor Time between Conversions: (256 - value) * 2.8ms
-		{"AUTOGAIN_ENABLE","0"}			//Enables (1) or disables(0) the LightsensorAutogain Algorithm
+		{"AUTOGAIN_ENABLE","0"},			//Enables (1) or disables(0) the LightsensorAutogain Algorithm
+		{"SAMPLE_AUTO_OFF","0"}			//Samples only if the accelerometer senses a movement
 };
 
 static bool localSamplingEnabled = FALSE;
 static uint8_t localSampleIntervall = 1;
 static bool loacalAutoGainEnabled = FALSE;
+static bool localSampleAutoOff = FALSE;
 
 static void AppDataFile_UpdateRAMvariables()
 {
@@ -52,6 +55,11 @@ static void AppDataFile_UpdateRAMvariables()
 	p = buf;
 	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[8][0], (uint8_t*)p ,25);
 	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&loacalAutoGainEnabled);
+
+	//Update local localSampleAutoOff
+	p = buf;
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], (uint8_t*)p ,25);
+	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&localSampleAutoOff);
 }
 
 uint8_t AppDataFile_Init(void)
@@ -82,10 +90,6 @@ uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall)
 	}
 }
 
-uint8_t AppDataFile_SetSampleIntervall(uint8_t sampleIntervall)
-{
-	localSampleIntervall = sampleIntervall;
-}
 
 bool AppDataFile_GetSamplingEnabled(void)
 {
@@ -97,9 +101,9 @@ bool AppDataFile_GetAutoGainEnabled(void)
 	return loacalAutoGainEnabled;
 }
 
-void AppDataFile_SetSamplingEnables(bool samplingEnabled)
+bool AppDataFile_GetSampleAutoOff(void)
 {
-	localSamplingEnabled = samplingEnabled;
+	return localSampleAutoOff;
 }
 
 uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
@@ -114,9 +118,28 @@ uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value)
 
 uint8_t AppDataFile_CreateFile(void)
 {
+	KIN1_UID uid;
+	KIN1_UIDGet(&uid);
+
+	uint8_t buf[50];
+
+	UTIL1_strcpy(buf, 35, (unsigned char*)"0x");
+	for(int i=0;i<sizeof(KIN1_UID);i++)
+	{
+	  UTIL1_strcatNum8Hex(buf, 35, uid.id[i]);
+	}
+
 	for(int i = 0 ; i < APPDATA_NOF_KEYS ; i++)
 	{
-		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[i][0],APPDATA_KEYS_AND_DEV_VALUES[i][1]);
+		if(i != 1)
+		{
+			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[i][0],APPDATA_KEYS_AND_DEV_VALUES[i][1]);
+		}
+		else //UID is not const defined
+		{
+			AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[i][0],buf);
+		}
+
 	}
 	return ERR_OK;
 }

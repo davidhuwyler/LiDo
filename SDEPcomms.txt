@@ -92,6 +92,14 @@ SDEP CloseConnection
 10 00 20 00 C9
 
 -----LightSensor Commands-----
+SDEP SetEnableSampleAutoOff(true)
+10 19 00 01 01 E1
+
+SDEP SetEnableSampleAutoOff(false)
+10 19 00 01 00 E6
+
+SDEP GetEnableSampleAutoOff
+10 0E 00 00 4B
 
 SDEP GetEnableAutoGain
 10 0C 00 00 9D

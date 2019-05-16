@@ -172,5 +172,17 @@
             <description></description>
             <sequence value="h[10] h[18] h[00] h[01] h[00] h[F0]" />
         </SequenceItem>
+        <SequenceItem name="LightSensor GetEnableSampleAutoOff">
+            <description></description>
+            <sequence value="h[10] h[0E] h[00] h[00] h[4B]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetEnableSampleAutoOff (true)">
+            <description></description>
+            <sequence value="h[10] h[19] h[00] h[01] h[01] h[E1]" />
+        </SequenceItem>
+        <SequenceItem name="LightSensor SetEnableSampleAutoOff (false)">
+            <description></description>
+            <sequence value="h[10] h[19] h[00] h[01] h[00] h[E6]" />
+        </SequenceItem>
     </ItemList>
 </HtermSequenceFile>

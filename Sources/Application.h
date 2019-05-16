@@ -36,7 +36,7 @@ typedef struct
 
 void APP_Run(void);
 void APP_CloseSampleFile(void);
-uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp);
+uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp,bool forceSample);
 void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);

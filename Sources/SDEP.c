@@ -72,7 +72,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 
 	case SDEP_CMDID_GET_SAMPLE:
 		RTC_getTimeUnixFormat(&sint32Param);
-		APP_getCurrentSample(&sample,sint32Param);
+		APP_getCurrentSample(&sample,sint32Param,TRUE);
 		answer.payload[0] = (uint8_t)sample.unixTimeStamp;
 		answer.payload[1] = (uint8_t)(sample.unixTimeStamp>>8);
 		answer.payload[2] = (uint8_t)(sample.unixTimeStamp>>16);
@@ -211,6 +211,18 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+	case SDEP_CMDID_GET_EN_SAMPLE_AUTO_OFF:
+		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+		if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
+		{
+			break;
+		}
+		answer.payload[0] = (uint8_t)  sint32Param;
+		answer.payloadSize = 1;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
+
 	case SDEP_CMDID_SET_ID:
 		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[1][0],command->payload);
 		answer.payloadSize = 0;
@@ -308,11 +320,24 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+	case SDEP_CMDID_SET_EN_SAMPLE_AUTO_OFF:
+		uint8param = command->payload[0];
+		if(uint8param<0 ||uint8param>1)
+		{
+			break;
+		}
+		UTIL1_Num8uToStr(answer.payload,SDEP_MESSAGE_MAX_PAYLOAD_BYTES,uint8param);
+		AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0],answer.payload);
+		answer.payloadSize = 0;
+		answer.payload =0;
+		SDEP_SendMessage(&answer);
+		return ERR_OK;
+
 	case SDEP_CMDID_SELFTEST:
 		//Check Sensors & IIC
 		sint32Param = 0;
 		p = outputBuf;
-		err = APP_getCurrentSample(&sample,sint32Param);
+		err = APP_getCurrentSample(&sample,sint32Param,TRUE);
 		sample.temp &= ~0x80;  //Delete UserButton marker if there
 		if(!(sample.temp > 0 && sample.temp < 80 )) {err = ERR_FAILED;}
 
