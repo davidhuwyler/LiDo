@@ -44,7 +44,6 @@ uint8_t SPIF_GoIntoDeepPowerDown();
 
 uint8_t SPIF_ReleaseFromDeepPowerDown();
 
-uint8_t SPIF_ReleaseFromDeepPowerDown_noWait();
 
 /*!
  * Program a page with data

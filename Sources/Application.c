@@ -430,6 +430,11 @@ static void APP_writeLidoFile_task(void *param) {
 
   for(;;)
   {
+	  if(LowPower_StopModeIsEnabled())
+	  {
+		  SPIF_ReleaseFromDeepPowerDown();
+	  }
+
 	  APP_softwareResetIfRequested();
 	  APP_toggleEnableSamplingIfRequested();
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
@@ -439,6 +444,11 @@ static void APP_writeLidoFile_task(void *param) {
 	  APP_writeQueuedSamplesToFile();
 	  SYS1_Print("Suspend");
 	  APP_suspendWriteFileTask();
+
+	  if(LowPower_StopModeIsEnabled())
+	  {
+		  SPIF_GoIntoDeepPowerDown();
+	  }
   } /* for */
 }
 

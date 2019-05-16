@@ -117,6 +117,28 @@ void SPIF_WaitIfBusy(void)
 	  }
 }
 
+uint8_t SPIF_GoIntoDeepPowerDown(void)
+{
+
+      SPIF_WaitIfBusy();
+      SPIF_CS_ENABLE();
+      SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
+      SPIF_CS_DISABLE();
+
+      return ERR_OK;
+}
+
+uint8_t SPIF_ReleaseFromDeepPowerDown(void)
+{
+    SPIF_CS_ENABLE();
+    SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
+    SPIF_CS_DISABLE();
+    WAIT1_Waitus(30);    //It takes 30 us to wake from DeepPowerDown
+
+    return ERR_OK;
+}
+
+
 uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
 {
 	  SPIF_WaitIfBusy();
