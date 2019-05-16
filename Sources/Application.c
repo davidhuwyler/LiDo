@@ -289,7 +289,11 @@ static void APP_sample_task(void *param) {
 	  WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
 
 	  WatchDog_ResumeTask();
-	  vTaskResume(writeFileTaskHandle);
+	  if(writeFileTaskHandle != NULL)
+	  {
+		  vTaskResume(writeFileTaskHandle);
+	  }
+	  PowerManagement_ResumeTaskIfNeeded();
 	  APP_suspendSampleTask();
   } /* for */
 }
@@ -720,7 +724,7 @@ void RTC_ALARM_ISR(void)
 	{
 		uint8_t sampleIntervall;
 		AppDataFile_GetSampleIntervall(&sampleIntervall);
-		RTC_TAR = RTC_TSR + sampleIntervall - 1 ; 		//SetNext RTC Alarm
+		RTC_TAR = RTC_TSR + sampleIntervall - 1; 		//SetNext RTC Alarm
 		APP_resumeSampleTaskFromISR();
 	}
 

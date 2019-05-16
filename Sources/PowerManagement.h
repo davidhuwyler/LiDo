@@ -11,6 +11,7 @@
 #include "Platform.h"
 
 void PowerManagement_init(void);
+void PowerManagement_ResumeTaskIfNeeded(void);
 uint16_t PowerManagement_getBatteryVoltage(void);
 
 #endif /* SOURCES_POWERMANAGEMENT_H_ */

@@ -16,24 +16,23 @@
 
 #define POWER_MANAGEMENT_LIPO_WARNING 34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF 29789  // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
-
 #define POWER_MANAGEMENT_LIPO_OFFSET 1250
+
+static TaskHandle_t powerManagementTaskHandle;
 
 static void PowerManagement_task(void *param) {
   (void)param;
-  TickType_t xLastWakeTime;
   uint16_t adcValue = 0x0000;
   uint16_t oldAdcValue =  36000; // = 3.7V
 
   for(;;)
   {
-	  PIN_EN_U_MEAS_SetVal();
-	  vTaskDelay(pdMS_TO_TICKS(1));
-	  AI_PWR_0_5x_U_BAT_Measure(FALSE);
-	  vTaskDelay(pdMS_TO_TICKS(1));
-	  PIN_EN_U_MEAS_ClrVal();
-	  AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
-
+      PIN_EN_U_MEAS_SetVal();
+  	  WAIT1_Waitus(10);
+      AI_PWR_0_5x_U_BAT_Measure(FALSE);
+      WAIT1_Waitus(20);
+      AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
+      PIN_EN_U_MEAS_ClrVal();
 	  adcValue = adcValue + POWER_MANAGEMENT_LIPO_OFFSET;
 
 	  if(PIN_CHARGE_STATE_GetVal())
@@ -52,7 +51,18 @@ static void PowerManagement_task(void *param) {
 	  }
 	  oldAdcValue = adcValue;
 
-	  vTaskDelay(pdMS_TO_TICKS(10000));
+	  vTaskSuspend(powerManagementTaskHandle);
+	  //vTaskDelay(pdMS_TO_TICKS(10000));
+  }
+}
+
+void PowerManagement_ResumeTaskIfNeeded(void)
+{
+  static TickType_t xLastWakeTime = 0;
+  if(xTaskGetTickCount()-xLastWakeTime> 10000 && powerManagementTaskHandle!=NULL)
+  {
+	  xLastWakeTime = xTaskGetTickCount();
+	  vTaskResume( powerManagementTaskHandle );
   }
 }
 
@@ -61,7 +71,7 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 {
 	uint16_t adcValue;
 	PIN_EN_U_MEAS_SetVal();
-	WAIT1_Waitus(100);
+	WAIT1_Waitus(10);
 	AI_PWR_0_5x_U_BAT_Measure(TRUE);
 	PIN_EN_U_MEAS_ClrVal();
 	AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
@@ -70,7 +80,7 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 
 void PowerManagement_init(void)
 {
-	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS)
 	  {
 		  for(;;){} /* error! probably out of memory */
 	  }

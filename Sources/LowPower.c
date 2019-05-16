@@ -27,7 +27,7 @@ static unsigned char ucMCG_C1;
 
 void LowPower_EnterLowpowerMode(void)
 {
-#if 1
+#if 0
     __asm volatile("dsb");
     __asm volatile("wfi");
     __asm volatile("isb");
