@@ -16,7 +16,7 @@
 
 #define POWER_MANAGEMENT_LIPO_WARNING 34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF 29789  // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
-#define POWER_MANAGEMENT_LIPO_OFFSET 1250
+#define POWER_MANAGEMENT_LIPO_OFFSET 650
 
 static TaskHandle_t powerManagementTaskHandle;
 

@@ -34,7 +34,7 @@
 #define MUTEX_WAIT_TIME_MS 2000
 
 #define SAMPLE_THRESHOLD_TEMP 2 //The Temperature has to rise/fall more than this threshold to trigger a sample
-#define SAMPLE_THRESHOLD_ACCEL 5 //The Acceleration has to rise/fall more than this threshold to trigger a sample
+#define SAMPLE_THRESHOLD_ACCEL 2 //The Acceleration has to rise/fall more than this threshold to trigger a sample
 
 static TaskHandle_t sampletaskHandle;
 static TaskHandle_t writeFileTaskHandle;
@@ -145,15 +145,16 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp,bool forc
 		  sample->accelZ = accelAndTemp.zValue;
 
 		  int8_t tempDiff = (int8_t)abs((int8_t)oldAccelAndTemp.temp-(int8_t)accelAndTemp.temp);
-		  int8_t xAccelDiff = (int8_t)oldAccelAndTemp.xValue-(int8_t)accelAndTemp.xValue ;
-		  int8_t yAccelDiff = (int8_t)oldAccelAndTemp.yValue-(int8_t)accelAndTemp.yValue ;
-		  int8_t zAccelDiff = (int8_t)oldAccelAndTemp.zValue-(int8_t)accelAndTemp.zValue ;
+		  int8_t xAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.xValue-(int8_t)accelAndTemp.xValue) ;
+		  int8_t yAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.yValue-(int8_t)accelAndTemp.yValue) ;
+		  int8_t zAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.zValue-(int8_t)accelAndTemp.zValue) ;
 
-		  int accelDiff = (int8_t)(abs(xAccelDiff)+abs(yAccelDiff)+abs(zAccelDiff));
 
 		  if(   forceSample ||
 				tempDiff > SAMPLE_THRESHOLD_TEMP ||
-				accelDiff > SAMPLE_THRESHOLD_ACCEL
+				xAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
+				yAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
+				zAccelDiff > SAMPLE_THRESHOLD_ACCEL
 				)
 		  {
 			  LightSensor_getParams(&lightGain,&lightIntTime,&lightWaitTime);
