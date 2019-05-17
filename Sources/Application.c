@@ -308,9 +308,7 @@ static void APP_sample_task(void *param) {
 	  if(AppDataFile_GetSamplingEnabled())
 	  {
 		  RTC_getTimeUnixFormat(&unixTScurrentSample);
-
 		  sampleError = APP_getCurrentSample(&sample,unixTScurrentSample,!AppDataFile_GetSampleAutoOff());
-
 		  if(sampleError == ERR_FAILED)
 		  {
 			  SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
@@ -440,9 +438,7 @@ static void APP_writeLidoFile_task(void *param) {
 	  AppDataFile_GetSampleIntervall(&samplingIntervall);
 	  APP_makeNewFileIfNeeded();
 	  APP_openFileIfNeeded();
-	  SYS1_Print("goInto");
 	  APP_writeQueuedSamplesToFile();
-	  SYS1_Print("Suspend");
 	  APP_suspendWriteFileTask();
 
 	  if(LowPower_StopModeIsEnabled())
