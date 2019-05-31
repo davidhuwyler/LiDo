@@ -6,6 +6,8 @@
  *
  *  Driver for the AS7264N LightSensor via I2C
  */
+#include "Platform.h"
+#if PL_CONFIG_HAS_LIGHT_SENSOR
 #include "LightSensor.h"
 #include "PTB.h"
 #include "PORT_PDD.h"
@@ -325,3 +327,11 @@ void LightSensor_Done_ISR(void)
 		CS1_ExitCritical();
 	}
 }
+#else /* dummy implementation */
+#include "PORT_PDD.h"
+#include "PTB.h"
+void LightSensor_Done_ISR(void)
+{
+  PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,1U);
+}
+#endif /* PL_CONFIG_HAS_LIGHT_SENSOR */

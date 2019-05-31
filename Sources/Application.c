@@ -5,6 +5,7 @@
  *      Author: Erich Styger
  */
 
+#include "Platform.h"
 #include "Application.h"
 #include "FRTOS1.h"
 #include "LED_R.h"
@@ -120,20 +121,38 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp)
 	  {
 		  WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
 		  sample->unixTimeStamp = unixTimestamp;
+   #if PL_CONFIG_HAS_LIGHT_SENSOR
 		  if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlert(SDEP_ALERT_LIGHTSENS_ERROR);
 		  }
+   #else /* dummy values */
+		  lightB0.nChannelValue = 0;
+      lightB0.xChannelValue = 0;
+      lightB0.yChannelValue = 0;
+      lightB0.zChannelValue = 0;
+      lightB1.nChannelValue = 0;
+      lightB1.xChannelValue = 0;
+      lightB1.yChannelValue = 0;
+      lightB1.zChannelValue = 0;
+   #endif
 		  sample->lightChannelX = lightB1.xChannelValue;
 		  sample->lightChannelY = lightB1.yChannelValue;
 		  sample->lightChannelZ = lightB1.zChannelValue;
 		  sample->lightChannelIR = lightB1.nChannelValue;
 		  sample->lightChannelB440 = lightB0.nChannelValue;
 		  sample->lightChannelB490 = lightB0.zChannelValue;
+    #if PL_CONFIG_HAS_ACCEL_SENSOR
 		  if(AccelSensor_getValues(&accelAndTemp) != ERR_OK)
 		  {
 			  SDEP_InitiateNewAlert(SDEP_ALERT_ACCELSENS_ERROR);
 		  }
+    #else /* dummy values */
+		  accelAndTemp.temp = 0;
+		  accelAndTemp.xValue = 0;
+		  accelAndTemp.yValue = 0;
+		  accelAndTemp.zValue = 0;
+    #endif
 		  sample->accelX = accelAndTemp.xValue;
 		  sample->accelY = accelAndTemp.yValue;
 		  sample->accelZ = accelAndTemp.zValue;
@@ -428,8 +447,12 @@ static void APP_init_task(void *param) {
   if(!APP_WaitIfButtonPressed3s() && !(RCM_SRS0 & RCM_SRS0_POR_MASK)) //Normal init if the UserButton is not pressed and no PowerOn reset
   {
 		SDEP_Init();
+#if PL_CONFIG_HAS_LIGHT_SENSOR
 		LightSensor_init();
+#endif
+#if PL_CONFIG_HAS_ACCEL_SENSOR
 		AccelSensor_init();
+#endif
 		FS_Init();
 		AppDataFile_Init();
 		SHELL_Init();
@@ -446,7 +469,9 @@ static void APP_init_task(void *param) {
 		UTIL1_ScanDecimal8uNumber(&p, &intTime);
 		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
 		UTIL1_ScanDecimal8uNumber(&p, &waitTime);
+#if PL_CONFIG_HAS_LIGHT_SENSOR
 		LightSensor_setParams(gain,intTime,waitTime);
+#endif
 
 		WatchDog_Init();
 		RTC_init(TRUE);

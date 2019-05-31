@@ -37,8 +37,12 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
   CLS1_ParseCommand,
   KIN1_ParseCommand,
+#if PL_CONFIG_HAS_LIGHT_SENSOR
   LightSensor_ParseCommand,
+#endif
+#if PL_CONFIG_HAS_ACCEL_SENSOR
   AccelSensor_ParseCommand,
+#endif
   RTC_ParseCommand,
   TmDt1_ParseCommand,
   SPIF_ParseCommand,

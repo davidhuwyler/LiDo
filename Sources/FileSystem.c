@@ -749,9 +749,9 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 			UTIL1_ScanDecimal8uNumber(&p, &intTime);
 			AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
 			UTIL1_ScanDecimal8uNumber(&p, &waitTime);
-
+    #if PL_CONFIG_HAS_LIGHT_SENSOR
 			LightSensor_setParams(gain,intTime,waitTime);
-
+    #endif
 			UTIL1_strcpy(headerBuf,100,LIDO_FILE_HEADER);
 			UTIL1_strcat(headerBuf,100,"  Lightsensor Params. G: ");
 			UTIL1_strcatNum8u(headerBuf,100,gain);

@@ -11,6 +11,10 @@
 #include "PE_Types.h"
 #include "CPU.h"
 
+/* Sensor configurations */
+
+#define PL_CONFIG_HAS_LIGHT_SENSOR   (1)
+#define PL_CONFIG_HAS_ACCEL_SENSOR   (1)
 
 //Inputs
 #define USER_BUTTON_PRESSED ((GPIOC_PDIR & 0x2)>>1)

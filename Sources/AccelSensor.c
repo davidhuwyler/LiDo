@@ -7,6 +7,8 @@
  *
  *  Driver for the ST LIS2DH Accelerometer via I2C
  */
+#include "Platform.h"
+#if PL_CONFIG_HAS_ACCEL_SENSOR
 #include "AccelSensor.h"
 #include "GI2C1.h"
 #include "LED_R.h"
@@ -117,3 +119,4 @@ uint8_t AccelSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
   }
   return res;
 }
+#endif /* PL_CONFIG_HAS_ACCEL_SENSOR */
