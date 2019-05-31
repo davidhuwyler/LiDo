@@ -49,6 +49,7 @@
 #include "HF1.h"
 #include "AS1.h"
 #include "ASerialLdd1.h"
+#include "RTT1.h"
 #include "WDog1.h"
 #include "WatchDogLdd1.h"
 #include "INT_RTC.h"

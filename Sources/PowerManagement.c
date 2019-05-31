@@ -26,6 +26,7 @@ static void PowerManagement_task(void *param) {
   uint16_t adcValue,oldAdcValue;
   for(;;)
   {
+#if PL_CONFIG_HAS_BAT_ACC
 	  PIN_EN_U_MEAS_SetVal();
 	  vTaskDelay(pdMS_TO_TICKS(1));
 	  AI_PWR_0_5x_U_BAT_Measure(FALSE);
@@ -59,7 +60,7 @@ static void PowerManagement_task(void *param) {
 		  PIN_POWER_ON_ClrVal(); // PowerOff the device
 	  }
 	  oldAdcValue = adcValue;
-
+#endif
 	  vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
@@ -67,6 +68,7 @@ static void PowerManagement_task(void *param) {
 //Return the Battery Voltage in mV
 uint16_t PowerManagement_getBatteryVoltage(void)
 {
+#if PL_CONFIG_HAS_BAT_ACC
 	uint16_t adcValue;
 	PIN_EN_U_MEAS_SetVal();
 	WAIT1_Waitus(10);
@@ -74,11 +76,14 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 	PIN_EN_U_MEAS_ClrVal();
 	AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
 	return adcValue/10;
+#else
+	return 0;
+#endif
 }
 
 void PowerManagement_init(void)
 {
-	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	  {
 		  for(;;){} /* error! probably out of memory */
 	  }

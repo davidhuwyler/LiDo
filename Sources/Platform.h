@@ -13,8 +13,12 @@
 
 /* Sensor configurations */
 
-#define PL_CONFIG_HAS_LIGHT_SENSOR   (1)
-#define PL_CONFIG_HAS_ACCEL_SENSOR   (1)
+#define PL_CONFIG_HAS_LIGHT_SENSOR   (0)
+#define PL_CONFIG_HAS_ACCEL_SENSOR   (0)
+#define PL_CONFIG_HAS_BAT_ACC        (0) /* new board does not have Bat analog pin */
+
+#define PL_CONFIG_HAS_VALID_FILE_SYSTEM (1) /* temporary only */
+#define PL_CONFIG_HAS_WATCHDOG          (0)
 
 //Inputs
 #define USER_BUTTON_PRESSED ((GPIOC_PDIR & 0x2)>>1)

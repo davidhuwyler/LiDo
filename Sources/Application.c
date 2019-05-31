@@ -454,10 +454,13 @@ static void APP_init_task(void *param) {
 		AccelSensor_init();
 #endif
 		FS_Init();
+#if PL_CONFIG_HAS_VALID_FILE_SYSTEM
 		AppDataFile_Init();
+#endif
 		SHELL_Init();
 		LowPower_init();
 
+#if PL_CONFIG_HAS_VALID_FILE_SYSTEM
 		//Init LightSensor Params from AppDataFileS
 		uint8_t headerBuf[5];
 		const unsigned char *p;
@@ -472,8 +475,11 @@ static void APP_init_task(void *param) {
 #if PL_CONFIG_HAS_LIGHT_SENSOR
 		LightSensor_setParams(gain,intTime,waitTime);
 #endif
+#endif /* PL_CONFIG_HAS_VALID_FILE_SYSTEM */
 
+#if PL_CONFIG_HAS_WATCHDOG
 		WatchDog_Init();
+#endif
 		RTC_init(TRUE);
 		UI_Init();
 		PowerManagement_init();
