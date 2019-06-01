@@ -16,9 +16,13 @@
 
 #define POWER_MANAGEMENT_LIPO_WARNING 34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF 29789  // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
+#define POWER_MANAGEMENT_LIPO_WARNING_HYS 36739 // = 3.7V --> ADCval = U / 2 * ( 65535 / 3.3V )
+
 #define POWER_MANAGEMENT_LIPO_OFFSET 650
 
 static TaskHandle_t powerManagementTaskHandle;
+static bool waringLogged = FALSE;
+
 
 static void PowerManagement_task(void *param) {
   (void)param;
@@ -40,10 +44,21 @@ static void PowerManagement_task(void *param) {
 		  UI_LEDpulse(LED_G);
 	  }
 
-	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_WARNING && adcValue < POWER_MANAGEMENT_LIPO_WARNING)
-	  {
-		  UI_LEDpulse(LED_R);
-	  }
+      if(oldAdcValue < POWER_MANAGEMENT_LIPO_WARNING && adcValue < POWER_MANAGEMENT_LIPO_WARNING)
+      {
+          UI_LEDpulse(LED_R);
+
+          if(!waringLogged)
+          {
+              SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_LOW_BATTERY,"Battery is low...");
+              waringLogged = TRUE;
+          }
+      }
+
+      if(oldAdcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS && adcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS)
+      {
+          waringLogged = FALSE;
+      }
 
 	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_CUTOFF && adcValue < POWER_MANAGEMENT_LIPO_CUTOFF)
 	  {
@@ -52,7 +67,6 @@ static void PowerManagement_task(void *param) {
 	  oldAdcValue = adcValue;
 
 	  vTaskSuspend(powerManagementTaskHandle);
-	  //vTaskDelay(pdMS_TO_TICKS(10000));
   }
 }
 
@@ -80,7 +94,7 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 
 void PowerManagement_init(void)
 {
-	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS)
+	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS)
 	  {
 		  for(;;){} /* error! probably out of memory */
 	  }
