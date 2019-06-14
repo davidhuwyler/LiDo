@@ -40,6 +40,7 @@ static bool shellDisablingIsInitiated = FALSE;
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
   CLS1_ParseCommand,
+  FRTOS1_ParseCommand,
   KIN1_ParseCommand,
 #if PL_CONFIG_HAS_LIGHT_SENSOR
   LightSensor_ParseCommand,
