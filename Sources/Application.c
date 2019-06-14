@@ -284,7 +284,7 @@ void APP_suspendSampleTask(void)
     for(;;)
     {
       LED_R_Neg();
-      WAIT1_Waitms(50);
+      vTaskDelay(pdMS_TO_TICKS(50));
     }
   }
 }
@@ -301,7 +301,7 @@ void APP_suspendWriteFileTask(void)
     for(;;)
     {
       LED_R_Neg();
-      WAIT1_Waitms(50);
+      vTaskDelay(pdMS_TO_TICKS(50));
     }
   }
 }
@@ -503,7 +503,7 @@ static bool APP_WaitIfButtonPressed3s(void)
       for(int i = 0 ; i < 30 ; i++)
       {
         WDog1_Clear();
-        WAIT1_Waitms(100);
+        vTaskDelay(pdMS_TO_TICKS(100));
         LED_R_Neg();
         if(!USER_BUTTON_PRESSED)
         {
@@ -523,7 +523,7 @@ static void APP_init_task(void *param) {
   (void)param;
   PIN_POWER_ON_SetVal();
   LED_G_On();
-  WAIT1_Waitms(1000);
+  vTaskDelay(pdMS_TO_TICKS(1000));
   LED_G_Off();
   if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
@@ -561,7 +561,7 @@ static void APP_init_task(void *param) {
     if(USER_BUTTON_PRESSED)
     {
       LED_R_Off();
-      WAIT1_Waitms(3000);
+      vTaskDelay(pdMS_TO_TICKS(3000));
       if(APP_WaitIfButtonPressed3s()) //Format SPIF
       {
         RTC_init(FALSE);    //HardReset RTC
@@ -606,7 +606,7 @@ void APP_Run(void) {
 //  while(USER_BUTTON_PRESSED)
 //  {
 //    LED_R_Neg();
-//    WAIT1_Waitms(50);
+//    vTaskDelay(pdMS_TO_TICKS(50));
 //  }
 
   if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
