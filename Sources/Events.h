@@ -175,7 +175,7 @@ void FRTOS1_vApplicationMallocFailedHook(void);
 ** ===================================================================
 */
 
-void FRTOS1_vOnPreSleepProcessing(portTickType expectedIdleTicks);
+void FRTOS1_vOnPreSleepProcessing(TickType_t expectedIdleTicks);
 /*
 ** ===================================================================
 **     Event       :  FRTOS1_vOnPreSleepProcessing (module Events)
@@ -281,6 +281,20 @@ void SM1_OnBlockSent(LDD_TUserData *UserDataPtr);
 */
 /* ===================================================================*/
 void SM1_OnBlockReceived(LDD_TUserData *UserDataPtr);
+
+void FRTOS1_vOnPostSleepProcessing(TickType_t expectedIdleTicks);
+/*
+** ===================================================================
+**     Description :
+**         Event called after the CPU woke up after low power mode.
+**         This event is optional.
+**     Parameters  :
+**         NAME            - DESCRIPTION
+**         expectedIdleTicks - expected idle
+**                           time, in ticks
+**     Returns     : Nothing
+** ===================================================================
+*/
 
 /* END Events */
 

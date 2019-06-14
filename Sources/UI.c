@@ -25,11 +25,11 @@
 #include "Shell.h"
 
 
-static xTimerHandle uiButtonMultiPressTimer;
-static xTimerHandle uiButtonDebounceTimer;
-static xTimerHandle uiLEDtoggleTimer;
-static xTimerHandle uiLEDmodeIndicatorTimer;
-static xTimerHandle uiLEDpulseIndicatorTimer;
+static TimerHandle_t uiButtonMultiPressTimer;
+static TimerHandle_t uiButtonDebounceTimer;
+static TimerHandle_t uiLEDtoggleTimer;
+static TimerHandle_t uiLEDmodeIndicatorTimer;
+static TimerHandle_t uiLEDpulseIndicatorTimer;
 
 static bool uiInitDone = FALSE;
 static bool ongoingButtonPress = FALSE;
@@ -94,7 +94,7 @@ static void UI_ButtonCounter(void)
 	}
 }
 
-static void vTimerCallback_ButtonMultiPressTimer(xTimerHandle pxTimer)
+static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer)
 {
 	switch(buttonCnt)
 	{
@@ -121,7 +121,7 @@ static void vTimerCallback_ButtonMultiPressTimer(xTimerHandle pxTimer)
 	buttonCnt = 0;
 }
 
-static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
+static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer)
 {
 
 	if(USER_BUTTON_PRESSED)
@@ -142,12 +142,12 @@ static void vTimerCallback_ButtonDebounceTimer(xTimerHandle pxTimer)
 
 }
 
-static void vTimerCallback_LED_ShellInicator(xTimerHandle pxTimer)
+static void vTimerCallback_LED_ShellInicator(TimerHandle_t pxTimer)
 {
 	LED_B_Neg();
 }
 
-static void vTimerCallback_LED_ModeIndicator(xTimerHandle pxTimer)
+static void vTimerCallback_LED_ModeIndicator(TimerHandle_t pxTimer)
 {
 	uint16_t timerDelayMS = 0;
 	if(LED_G_Get())
@@ -178,7 +178,7 @@ void UI_StopShellIndicator(void)
 }
 
 
-static void vTimerCallback_LEDpulse(xTimerHandle pxTimer)
+static void vTimerCallback_LEDpulse(TimerHandle_t pxTimer)
 {
 	LED_R_Off();LED_G_Off();LED_B_Off();
 }
