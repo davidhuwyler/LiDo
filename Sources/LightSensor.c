@@ -97,7 +97,7 @@ void LightSensor_init(void)
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive
 
-	WAIT1_Waitms(1);
+	WAIT1_WaitOSms(1);
 
 	uint8_t i2cData;
 	uint8_t res;
@@ -121,7 +121,7 @@ void LightSensor_init(void)
 		for(;;)//IIC Error
 		{
 			LED_R_Neg();
-			WAIT1_Waitms(50);
+			WAIT1_WaitOSms(50);
 		}
 	}
 
