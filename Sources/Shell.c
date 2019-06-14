@@ -26,6 +26,11 @@
 #include "USB1.h"
 #include "CDC1.h"
 #include "ErrorLogFile.h"
+#include "RTT1.h"
+
+#define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (1)
+#define SHELL_CONFIG_HAS_SHELL_EXTRA_RTT   (1)
+#define SHELL_CONFIG_HAS_SHELL_EXTRA_CDC   (0)
 
 static TaskHandle_t shellTaskHandle;
 static TickType_t shellEnabledTimestamp;
@@ -51,6 +56,115 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   APP_ParseCommand,
   NULL /* sentinel */
 };
+
+typedef struct {
+  CLS1_ConstStdIOType *stdio;
+  unsigned char *buf;
+  size_t bufSize;
+} SHELL_IODesc;
+
+/*--------------------------------------------------------------------------*/
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_UART
+  static bool UART_KeyPressed(void) {
+    return AS1_GetCharsInRxBuf()!=0;
+  }
+
+  static void UART_SendChar(uint8_t ch) {
+    uint8_t res;
+    int timeoutMs = 5;
+
+
+    do {
+      res = AS1_SendChar((uint8_t)ch);  /* Send char */
+      if (res==ERR_TXFULL) {
+        WAIT1_WaitOSms(1);
+      }
+      if(timeoutMs<=0) {
+        break; /* timeout */
+      }
+      timeoutMs -= 1;
+    } while(res==ERR_TXFULL);
+  }
+
+  static void UART_ReceiveChar(uint8_t *p) {
+    if (AS1_RecvChar(p)!=ERR_OK) {
+      *p = '\0';
+    }
+  }
+
+  static CLS1_ConstStdIOType UART_stdio = {
+    .stdIn = UART_ReceiveChar,
+    .stdOut = UART_SendChar,
+    .stdErr = UART_SendChar,
+    .keyPressed = UART_KeyPressed,
+  };
+
+  static uint8_t UART_DefaultShellBuffer[CLS1_DEFAULT_SHELL_BUFFER_SIZE]; /* default buffer which can be used by the application */
+#endif /* SHELL_CONFIG_HAS_SHELL_EXTRA_UART */
+/*--------------------------------------------------------------------------*/
+
+static void SHELL_ReadChar(uint8_t *p) {
+  *p = '\0'; /* default, nothing available */
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_RTT
+  if (RTT1_stdio.keyPressed()) {
+    RTT1_stdio.stdIn(p);
+    return;
+  }
+#endif
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_UART
+  if (UART_stdio.keyPressed()) {
+    UART_stdio.stdIn(p);
+    return;
+  }
+#endif
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_CDC
+  if (CDC1_stdio.keyPressed()) {
+    CDC1_stdio.stdIn(p);
+    return;
+  }
+#endif
+}
+
+
+static void SHELL_SendChar(uint8_t ch) {
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_UART
+  UART_SendChar(ch);
+#endif
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_CDC
+  CDC1_SendChar(ch); /* copy on CDC */
+#endif
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_RTT
+  RTT1_SendChar(ch); /* copy on RTT */
+#endif
+}
+
+/* copy on other I/Os */
+CLS1_ConstStdIOType SHELL_stdio =
+{
+  (CLS1_StdIO_In_FctType)SHELL_ReadChar, /* stdin */
+  (CLS1_StdIO_OutErr_FctType)SHELL_SendChar, /* stdout */
+  (CLS1_StdIO_OutErr_FctType)SHELL_SendChar, /* stderr */
+  CLS1_KeyPressed /* if input is not empty */
+};
+
+CLS1_ConstStdIOType *SHELL_GetStdio(void) {
+  return &SHELL_stdio;
+}
+
+
+static const SHELL_IODesc ios[] =
+{
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_RTT
+  {&RTT1_stdio, RTT1_DefaultShellBuffer, sizeof(RTT1_DefaultShellBuffer)},
+#endif
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_UART
+  {&UART_stdio, UART_DefaultShellBuffer, sizeof(UART_DefaultShellBuffer)},
+#endif
+#if SHELL_CONFIG_HAS_SHELL_EXTRA_CDC
+  {&CDC1_stdio, CDC1_DefaultShellBuffer, sizeof(CDC1_DefaultShellBuffer)},
+#endif
+};
+
 
 static void SHELL_SwitchIOifNeeded(void)
 {
@@ -98,10 +212,16 @@ static void SHELL_Disable(void)
 }
 
 static void SHELL_task(void *param) {
-  (void)param;
   TickType_t xLastWakeTime;
   shellEnabledTimestamp = xTaskGetTickCount();
   unsigned short charsInUARTbuf;
+  int i;
+
+  (void)param;
+  /* initialize buffers */
+  for(i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
+    ios[i].buf[0] = '\0';
+  }
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
@@ -123,7 +243,10 @@ static void SHELL_task(void *param) {
 
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
-	  CLS1_ReadAndParseWithCommandTable(CLS1_DefaultShellBuffer, sizeof(CLS1_DefaultShellBuffer), CLS1_GetStdio(), CmdParserTable);
+    /* process all I/Os */
+    for(i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
+      (void)CLS1_ReadAndParseWithCommandTable(ios[i].buf, ios[i].bufSize, ios[i].stdio, CmdParserTable);
+    }
 	  SDEPio_HandleShellCMDs();
 	  SDEP_SendPendingAlert();
 	  while(SDEPio_HandleFileCMDs(0) != ERR_RXEMPTY){}
@@ -137,7 +260,7 @@ static void SHELL_task(void *param) {
 }
 
 void SHELL_Init(void) {
-  CLS1_DefaultShellBuffer[0] = '\0';
+  CLS1_SetStdio(&SHELL_stdio); /* make sure that Shell is using our custom I/O handler */
 
   PORTB_PCR16 |= 0x3;  //Enable Pullup UART RX
   PORTB_PCR17 |= 0x3;  //Enable Pullup UART TX
