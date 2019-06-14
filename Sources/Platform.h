@@ -13,8 +13,9 @@
 
 /* Sensor configurations */
 
-#define PL_CONFIG_HAS_LIGHT_SENSOR   (1)
-#define PL_CONFIG_HAS_ACCEL_SENSOR   (1)
+#define PL_CONFIG_HAS_LIGHT_SENSOR   (0)
+#define PL_CONFIG_HAS_ACCEL_SENSOR   (0)
+#define PL_CONFIG_HAS_GAUGE_SENSOR   (1) /* LC709203F */
 
 //Inputs
 #define USER_BUTTON_PRESSED ((GPIOC_PDIR & 0x2)>>1)

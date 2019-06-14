@@ -31,6 +31,9 @@
 #include "LowPower.h"
 #include "LightAutoGain.h"
 #include "SYS1.h"
+#if PL_CONFIG_HAS_GAUGE_SENSOR
+  #include "LC709203F.h"
+#endif
 
 #define MUTEX_WAIT_TIME_MS 2000
 
@@ -540,7 +543,9 @@ static void APP_init_task(void *param) {
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     AccelSensor_init();
 #endif
-
+#if PL_CONFIG_HAS_GAUGE_SENSOR
+    LC_Init();
+#endif
       if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
       {
         AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
