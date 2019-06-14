@@ -93,7 +93,7 @@ uint8_t RTC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 	  const uint8_t *p;
 	  int32_t tmp;
 
-	  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "LightSens help")==0)
+	  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "RTC help")==0)
 	  {
 	    CLS1_SendHelpStr((unsigned char*)"RTC", (const unsigned char*)"Group of RTC (RealTimeClock) commands\r\n", io->stdOut);
 	    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
