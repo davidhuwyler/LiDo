@@ -353,7 +353,7 @@ static void APP_sample_task(void *param) {
   } /* for */
 }
 
-static void APP_makeNewFileIfNeeded()
+static void APP_makeNewFileIfNeeded(void)
 {
     xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
     //New Hour: Make new File!
@@ -376,7 +376,7 @@ static void APP_makeNewFileIfNeeded()
     xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
-static void APP_openFileIfNeeded()
+static void APP_openFileIfNeeded(void)
 {
     xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
     if(AppDataFile_GetSamplingEnabled() && !fileIsOpen)
@@ -395,7 +395,7 @@ static void APP_openFileIfNeeded()
     xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
-static void APP_writeQueuedSamplesToFile()
+static void APP_writeQueuedSamplesToFile(void)
 {
     liDoSample_t sample;
     xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
