@@ -36,7 +36,7 @@ static uint8_t localSampleIntervall = 1;
 static bool loacalAutoGainEnabled = FALSE;
 static bool localSampleAutoOff = FALSE;
 
-static void AppDataFile_UpdateRAMvariables()
+static void AppDataFile_UpdateRAMvariables(void)
 {
 	uint8_t buf[25];
 	const unsigned char *p;
