@@ -244,24 +244,6 @@ void AI_PWR_0_5x_U_BAT_OnCalibrationEnd(void);
 /* ===================================================================*/
 void Cpu_OnLLSWakeUpINT(void);
 
-/*
-** ===================================================================
-**     Event       :  SM1_OnBlockSent (module Events)
-**
-**     Component   :  SM1 [SPIMaster_LDD]
-*/
-/*!
-**     @brief
-**         This event is called after the last character from the
-**         output buffer is moved to the transmitter. This event is
-**         available only if the SendBlock method is enabled.
-**     @param
-**         UserDataPtr     - Pointer to the user or
-**                           RTOS specific data. The pointer is passed
-**                           as the parameter of Init method. 
-*/
-/* ===================================================================*/
-void SM1_OnBlockSent(LDD_TUserData *UserDataPtr);
 
 /*
 ** ===================================================================
