@@ -5,11 +5,14 @@
  *      Author: dave
  */
 
+#include "Platform.h"
 #include "PowerManagement.h"
 #include "PIN_POWER_ON.h"
 #include "PIN_EN_U_MEAS.h"
 #include "PIN_CHARGE_STATE.h"
-#include "AI_PWR_0_5x_U_BAT.h"
+#if PL_CONFIG_HAS_BATT_ADC
+  #include "AI_PWR_0_5x_U_BAT.h"
+#endif
 #include "FRTOS1.h"
 #include "SDEP.h"
 #include "UI.h"
@@ -26,17 +29,20 @@ static bool waringLogged = FALSE;
 
 static void PowerManagement_task(void *param) {
   (void)param;
+#if PL_CONFIG_HAS_BATT_ADC
   uint16_t adcValue = 0x0000;
   uint16_t oldAdcValue =  36000; // = 3.7V
+#endif
 
   for(;;)
   {
-      PIN_EN_U_MEAS_SetVal();
-  	  WAIT1_Waitus(10);
-      AI_PWR_0_5x_U_BAT_Measure(FALSE);
-      WAIT1_Waitus(20);
-      AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
-      PIN_EN_U_MEAS_ClrVal();
+#if PL_CONFIG_HAS_BATT_ADC
+    PIN_EN_U_MEAS_SetVal();
+  	WAIT1_Waitus(10);
+    AI_PWR_0_5x_U_BAT_Measure(FALSE);
+    WAIT1_Waitus(20);
+    AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
+    PIN_EN_U_MEAS_ClrVal();
 	  adcValue = adcValue + POWER_MANAGEMENT_LIPO_OFFSET;
 
 	  if(PIN_CHARGE_STATE_GetVal())
@@ -65,6 +71,7 @@ static void PowerManagement_task(void *param) {
 		  PIN_POWER_ON_ClrVal(); // PowerOff the device
 	  }
 	  oldAdcValue = adcValue;
+#endif
 
 	  vTaskSuspend(powerManagementTaskHandle);
   }
@@ -80,6 +87,7 @@ void PowerManagement_ResumeTaskIfNeeded(void)
   }
 }
 
+#if PL_CONFIG_HAS_BATT_ADC
 //Return the Battery Voltage in mV
 uint16_t PowerManagement_getBatteryVoltage(void)
 {
@@ -91,6 +99,7 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 	AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
 	return (adcValue+POWER_MANAGEMENT_LIPO_OFFSET)/10;
 }
+#endif
 
 void PowerManagement_init(void)
 {

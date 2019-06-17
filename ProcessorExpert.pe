@@ -3,7 +3,7 @@
   <Header>
     <Name>LiDo_CustomPCB</Name>
     <SavedBy>dave</SavedBy>
-    <ModificationStamp>85</ModificationStamp>
+    <ModificationStamp>87</ModificationStamp>
     <Date>2019-04-24</Date>
     <IDE>Eclipse IDE</IDE>
     <PEversion>1.12.2.RT7_b1550-0615</PEversion>
@@ -29,7 +29,7 @@
     <UseExistingModules>true</UseExistingModules>
     <RenamePeripheries>false</RenamePeripheries>
     <Autodependency>true</Autodependency>
-    <ProjectCompNumb>128</ProjectCompNumb>
+    <ProjectCompNumb>131</ProjectCompNumb>
     <DelUnusedPreviouslyGenFiles>true</DelUnusedPreviouslyGenFiles>
     <GeneratedCodeFrozen>false</GeneratedCodeFrozen>
     <AssignInitComponentNameToPrph>true</AssignInitComponentNameToPrph>
@@ -6922,8 +6922,8 @@
   </CPU>
   <Configuration>
     <CompNumb>3</CompNumb>
-    <NodeName>FLASH</NodeName>
-    <CnfgEnabled>true</CnfgEnabled>
+    <NodeName>V2_0</NodeName>
+    <CnfgEnabled>false</CnfgEnabled>
     <TargetCPU>5</TargetCPU>
     <ConfigurationComment lines_count="0" />
     <BoolList_FpgaConfig>
@@ -7005,6 +7005,163 @@
       <Value35>true</Value35>
       <ItemId36>89</ItemId36>
       <Value36>true</Value36>
+      <ItemId37>91</ItemId37>
+      <Value37>true</Value37>
+      <ItemId38>105</ItemId38>
+      <Value38>true</Value38>
+      <ItemId39>120</ItemId39>
+      <Value39>true</Value39>
+      <ItemId40>123</ItemId40>
+      <Value40>true</Value40>
+    </BoolList_BeanConfig>
+    <BoolList_TaskConfig>
+      <Count>0</Count>
+    </BoolList_TaskConfig>
+    <BoolList_ProgConfig>
+      <Count>0</Count>
+    </BoolList_ProgConfig>
+    <ItemState>
+      <ItemSymbol>Optimizations</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+      <Expanded>true</Expanded>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>Not_for_MPC512x</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>O_NoRangeChck</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+      <Index>1</Index>
+      <Value>false</Value>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>O_NoEnableTest</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+      <Index>1</Index>
+      <Value>false</Value>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>O_NoSpeedTest</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+      <Index>1</Index>
+      <Value>false</Value>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>O_NoInitRegReset</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+      <Index>1</Index>
+      <Value>false</Value>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>Not_for_MPC5500_MCF</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+    </ItemState>
+    <ItemState>
+      <ItemSymbol>O_PIB_full_Init</ItemSymbol>
+      <ReadOnly>false</ReadOnly>
+      <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+      <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
+      <Index>1</Index>
+      <Value>false</Value>
+    </ItemState>
+  </Configuration>
+  <Configuration>
+    <CompNumb>129</CompNumb>
+    <NodeName>V2_1</NodeName>
+    <CnfgEnabled>true</CnfgEnabled>
+    <TargetCPU>5</TargetCPU>
+    <ConfigurationComment lines_count="0" />
+    <BoolList_FpgaConfig>
+      <Count>0</Count>
+    </BoolList_FpgaConfig>
+    <BoolList_BeanConfig>
+      <Count>41</Count>
+      <ItemId0>5</ItemId0>
+      <Value0>true</Value0>
+      <ItemId1>6</ItemId1>
+      <Value1>true</Value1>
+      <ItemId2>10</ItemId2>
+      <Value2>true</Value2>
+      <ItemId3>11</ItemId3>
+      <Value3>true</Value3>
+      <ItemId4>12</ItemId4>
+      <Value4>true</Value4>
+      <ItemId5>13</ItemId5>
+      <Value5>true</Value5>
+      <ItemId6>14</ItemId6>
+      <Value6>true</Value6>
+      <ItemId7>17</ItemId7>
+      <Value7>true</Value7>
+      <ItemId8>18</ItemId8>
+      <Value8>true</Value8>
+      <ItemId9>19</ItemId9>
+      <Value9>true</Value9>
+      <ItemId10>20</ItemId10>
+      <Value10>true</Value10>
+      <ItemId11>21</ItemId11>
+      <Value11>true</Value11>
+      <ItemId12>22</ItemId12>
+      <Value12>true</Value12>
+      <ItemId13>23</ItemId13>
+      <Value13>true</Value13>
+      <ItemId14>25</ItemId14>
+      <Value14>true</Value14>
+      <ItemId15>26</ItemId15>
+      <Value15>true</Value15>
+      <ItemId16>32</ItemId16>
+      <Value16>true</Value16>
+      <ItemId17>31</ItemId17>
+      <Value17>true</Value17>
+      <ItemId18>74</ItemId18>
+      <Value18>true</Value18>
+      <ItemId19>34</ItemId19>
+      <Value19>true</Value19>
+      <ItemId20>35</ItemId20>
+      <Value20>true</Value20>
+      <ItemId21>40</ItemId21>
+      <Value21>true</Value21>
+      <ItemId22>47</ItemId22>
+      <Value22>true</Value22>
+      <ItemId23>49</ItemId23>
+      <Value23>true</Value23>
+      <ItemId24>51</ItemId24>
+      <Value24>true</Value24>
+      <ItemId25>53</ItemId25>
+      <Value25>true</Value25>
+      <ItemId26>63</ItemId26>
+      <Value26>true</Value26>
+      <ItemId27>64</ItemId27>
+      <Value27>true</Value27>
+      <ItemId28>65</ItemId28>
+      <Value28>true</Value28>
+      <ItemId29>66</ItemId29>
+      <Value29>true</Value29>
+      <ItemId30>71</ItemId30>
+      <Value30>true</Value30>
+      <ItemId31>72</ItemId31>
+      <Value31>true</Value31>
+      <ItemId32>76</ItemId32>
+      <Value32>true</Value32>
+      <ItemId33>79</ItemId33>
+      <Value33>true</Value33>
+      <ItemId34>85</ItemId34>
+      <Value34>true</Value34>
+      <ItemId35>87</ItemId35>
+      <Value35>true</Value35>
+      <ItemId36>89</ItemId36>
+      <Value36>false</Value36>
       <ItemId37>91</ItemId37>
       <Value37>true</Value37>
       <ItemId38>105</ItemId38>
@@ -10681,8 +10838,8 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Index>1</Index>
-        <Value>false</Value>
+        <Index>0</Index>
+        <Value>true</Value>
       </ItemState>
       <ItemState>
         <ItemSymbol>SetDateTimeForInternalRTC</ItemSymbol>
@@ -10730,7 +10887,7 @@
         <ItemSymbol>InitialDate</ItemSymbol>
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
-        <Date>2012-07-22</Date>
+        <Date>2000-01-01</Date>
       </ItemState>
       <ItemState>
         <ItemSymbol>InitInStartup</ItemSymbol>
@@ -10745,8 +10902,8 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Index>0</Index>
-        <EnumSymbVal>InitFromDefaults</EnumSymbVal>
+        <Index>1</Index>
+        <EnumSymbVal>InitFromInternalRTC</EnumSymbVal>
       </ItemState>
       <ItemState>
         <ItemSymbol>SystemGroup</ItemSymbol>
@@ -43062,7 +43219,7 @@
     <BeanType>ADC</BeanType>
     <Name>AI_PWR_0_5x_U_BAT</Name>
     <CompNumb>89</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>AD</IconName>
     <UserFolderName>PowerManagement</UserFolderName>
@@ -43527,7 +43684,7 @@
               <ItemSymbol>_CnvTmg</ItemSymbol>
               <ReadOnly>false</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
-              <Value>init:12.5 µs;prec:5%;RTS:none;clksrc_presc[SpeedMode0]Auto select;extcomp_presc[SpeedMode0]25;clksrc_presc[SpeedMode1]Auto select;clksrc_presc[SpeedMode2]Auto select;clksrc_presc[SpeedMode3]Auto select;clksrc_presc[SpeedMode4]Auto select;clksrc_presc[SpeedMode5]Auto select;clksrc_presc[SpeedMode6]Auto select;clksrc_presc[SpeedMode7]Auto select</Value>
+              <Value>12.5 µs</Value>
               <RuntimeSetting>0</RuntimeSetting>
               <ReqDevPrescHigh>-1</ReqDevPrescHigh>
               <ReqDevPrescLow>-1</ReqDevPrescLow>
@@ -44051,7 +44208,7 @@
             </ItemState>
             <ItemState>
               <ItemSymbol>Deinit</ItemSymbol>
-              <ReadOnly>false</ReadOnly>
+              <ReadOnly>true</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
               <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
               <Index>1</Index>

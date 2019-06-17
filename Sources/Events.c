@@ -98,9 +98,9 @@ void FRTOS1_vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 void FRTOS1_vApplicationTickHook(void)
 {
   /* Called for every RTOS tick. */
+  /* NOTE: if using tickless idle mode, the below needs to be done from a FreeRTOS timer! */
 	TmDt1_AddTick();
 	TMOUT1_AddTick();
-  /* Write your code here ... */
 }
 
 /*
@@ -172,44 +172,6 @@ void FRTOS1_vOnPreSleepProcessing(TickType_t expectedIdleTicks)
 
 /*
 ** ===================================================================
-**     Event       :  AI_PWR_0_5x_U_BAT_OnEnd (module Events)
-**
-**     Component   :  AI_PWR_0_5x_U_BAT [ADC]
-**     Description :
-**         This event is called after the measurement (which consists
-**         of <1 or more conversions>) is/are finished.
-**         The event is available only when the <Interrupt
-**         service/event> property is enabled.
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-void AI_PWR_0_5x_U_BAT_OnEnd(void)
-{
-  /* Write your code here ... */
-}
-
-/*
-** ===================================================================
-**     Event       :  AI_PWR_0_5x_U_BAT_OnCalibrationEnd (module Events)
-**
-**     Component   :  AI_PWR_0_5x_U_BAT [ADC]
-**     Description :
-**         This event is called when the calibration has been finished.
-**         User should check if the calibration pass or fail by
-**         Calibration status method./nThis event is enabled only if
-**         the <Interrupt service/event> property is enabled.
-**     Parameters  : None
-**     Returns     : Nothing
-** ===================================================================
-*/
-void AI_PWR_0_5x_U_BAT_OnCalibrationEnd(void)
-{
-  /* Write your code here ... */
-}
-
-/*
-** ===================================================================
 **     Event       :  Cpu_OnLLSWakeUpINT (module Events)
 **
 **     Component   :  Cpu [MK22DX256LF5]
@@ -228,7 +190,6 @@ void AI_PWR_0_5x_U_BAT_OnCalibrationEnd(void)
 /* ===================================================================*/
 void Cpu_OnLLSWakeUpINT(void)
 {
-  /* Write your code here ... */
 	LLWU_ISR();
 }
 
@@ -251,7 +212,6 @@ void Cpu_OnLLSWakeUpINT(void)
 /* ===================================================================*/
 void SM1_OnBlockReceived(LDD_TUserData *UserDataPtr)
 {
-  /* Write your code here ... */
 	SPIF_SPI_BlockReceived();
 }
 

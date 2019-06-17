@@ -4,6 +4,7 @@
  *  Created on: Mar 4, 2019
  *      Author: dave
  */
+#include "Platform.h"
 #include "SDEP.h"
 #include "CRC8.h"
 #include "SDEPioHandler.h"
@@ -202,6 +203,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
+#if PL_CONFIG_HAS_BATT_ADC
 	case SDEP_CMDID_GET_VOLTAGE:
 		uint16Param =  PowerManagement_getBatteryVoltage();
 		RTC_getTimeUnixFormat(&sint32Param);
@@ -210,6 +212,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		answer.payloadSize = 2;
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
+#endif
 
 	case SDEP_CMDID_GET_EN_SAMPLE_AUTO_OFF:
 		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
@@ -346,9 +349,11 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		UTIL1_ScanDecimal8uNumber(&p, &uint8param);
 		if(!(uint8param >= 1 && uint8param <= 100 )) {err = ERR_FAILED;}//Check Sampleintervall
 
+#if PL_CONFIG_HAS_BATT_ADC
 		//Check the Battery State
 		uint16Param = PowerManagement_getBatteryVoltage();
 		if(!(uint16Param >= 2978 && uint16Param <= 4200 )) {err = ERR_FAILED;}//Check Battery Voltagerange
+#endif
 
 		//If all OK, Turn on The RGB LED for the User to check...
 		UI_LEDpulse(LED_W);

@@ -16,6 +16,9 @@ int LCgetTemp(void);
 int LCgetRSOC(void);
 int LCgetITE(void);
 
+#include "CLS1.h"
+uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+
 void LC_Init(void);
 
 #endif /* SOURCES_LC709203F_H_ */

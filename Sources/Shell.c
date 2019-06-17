@@ -27,6 +27,8 @@
 #include "CDC1.h"
 #include "ErrorLogFile.h"
 #include "RTT1.h"
+#include "LC709203F.h"
+#include "AS1.h"
 
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (1)
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_RTT   (1)
@@ -47,6 +49,9 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 #endif
 #if PL_CONFIG_HAS_ACCEL_SENSOR
   AccelSensor_ParseCommand,
+#endif
+#if PL_CONFIG_HAS_GAUGE_SENSOR
+  LC_ParseCommand,
 #endif
   RTC_ParseCommand,
   TmDt1_ParseCommand,

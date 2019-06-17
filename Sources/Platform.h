@@ -9,13 +9,19 @@
 #define SOURCES_PLATFORM_H_
 
 #include "PE_Types.h"
-#include "CPU.h"
+#include "Cpu.h"
+
+#if defined(PEcfg_V2_1)
+#define PL_BOARD_REV      21  /* V2.1 */
+#elif defined(PEcfg_V2_0)
+#define PL_BOARD_REV      20  /* V2.0 */
+#endif
 
 /* Sensor configurations */
-
 #define PL_CONFIG_HAS_LIGHT_SENSOR   (0)
 #define PL_CONFIG_HAS_ACCEL_SENSOR   (0)
-#define PL_CONFIG_HAS_GAUGE_SENSOR   (1) /* LC709203F */
+#define PL_CONFIG_HAS_GAUGE_SENSOR   (1 && PL_BOARD_REV==21) /* LC709203F on V2.1. Earlier board had an ADC */
+#define PL_CONFIG_HAS_BATT_ADC       (1 && PL_BOARD_REV==20)
 
 //Inputs
 #define USER_BUTTON_PRESSED ((GPIOC_PDIR & 0x2)>>1)

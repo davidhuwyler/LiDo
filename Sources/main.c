@@ -88,8 +88,6 @@
 #include "BitIoLdd9.h"
 #include "PIN_EN_U_MEAS.h"
 #include "BitIoLdd10.h"
-#include "AI_PWR_0_5x_U_BAT.h"
-#include "AdcLdd1.h"
 #include "PIN_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 /* Including shared modules, which are used for whole project */
