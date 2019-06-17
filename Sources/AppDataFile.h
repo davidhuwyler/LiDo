@@ -8,7 +8,7 @@
 #ifndef SOURCES_APPDATAFILE_H_
 #define SOURCES_APPDATAFILE_H_
 
-#include <stdint.h>
+#include "Platform.h"
 #include "FileSystem.h"
 #include "CLS1.h"
 

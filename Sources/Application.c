@@ -126,7 +126,6 @@ int abs (int i)
   return i < 0 ? -i : i;
 }
 
-
 uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp,bool forceSample)
 {
     static AccelAxis_t oldAccelAndTemp;
@@ -549,11 +548,11 @@ static void APP_init_task(void *param) {
       if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
       {
         AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
-        RTC_init(FALSE);    //HardReset RTC
+        RTC_init(FALSE);   /* HardReset RTC */
       }
       else
       {
-      RTC_init(TRUE);
+        RTC_init(TRUE); /* softreset RTC */
       }
 
     UI_Init();

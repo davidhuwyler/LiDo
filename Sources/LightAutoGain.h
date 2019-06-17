@@ -8,10 +8,9 @@
 #ifndef SOURCES_LIGHTAUTOGAIN_H_
 #define SOURCES_LIGHTAUTOGAIN_H_
 
-
 #include "Platform.h"
 #include "Application.h"
 
-uint8_t LiGain_Compute(liDoSample_t* lastSample,uint8_t* newIntTimeParam, uint8_t* newGainParam);
+uint8_t LiGain_Compute(liDoSample_t* lastSample, uint8_t* newIntTimeParam, uint8_t* newGainParam);
 
 #endif /* SOURCES_LIGHTAUTOGAIN_H_ */

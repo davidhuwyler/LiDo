@@ -8,8 +8,7 @@
 #ifndef SOURCES_CRC8_H_
 #define SOURCES_CRC8_H_
 
-#include <stdint.h>
-#include <stddef.h>
+#include "Platform.h"
 #include "Application.h"
 #include "SDEP.h"
 

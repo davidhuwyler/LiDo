@@ -8,9 +8,6 @@
 #ifndef SOURCES_SHELL_H_
 #define SOURCES_SHELL_H_
 
-//#include <stdint.h>
-//#include <stddef.h>
-
 #include "Platform.h"
 #include "CLS1.h"
 

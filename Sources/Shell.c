@@ -12,7 +12,6 @@
 #include "KIN1.h"
 #include "LightSensor.h"
 #include "AccelSensor.h"
-#include "RTC.h"
 #include "LowPower.h"
 #include "SPIF.h"
 #include "UTIL1.h"
@@ -53,7 +52,6 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   LC_ParseCommand,
 #endif
-  RTC_ParseCommand,
   TmDt1_ParseCommand,
   SPIF_ParseCommand,
   FS_ParseCommand,

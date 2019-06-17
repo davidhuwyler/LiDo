@@ -8,8 +8,7 @@
 #ifndef SOURCES_SPIF_H_
 #define SOURCES_SPIF_H_
 
-#include <stdint.h>
-#include <stddef.h>
+#include "Platform.h"
 
 #include "CLS1.h"
 

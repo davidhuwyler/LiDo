@@ -5,6 +5,7 @@
  *      Author: dhuwiler
  */
 
+#include "Platform.h"
 #include "ErrorLogFile.h"
 #include "TmDt1.h"
 #include "FRTOS1.h"

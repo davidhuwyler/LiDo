@@ -9,8 +9,6 @@
 #define SOURCES_FILESYSTEM_H_
 
 #include "Platform.h"
-//#include <stdint.h>
-//#include <stdbool.h>
 #include "CLS1.h"
 #include "littleFS/lfs.h"
 #include "Application.h"
@@ -38,7 +36,7 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file);
 uint8_t FS_getLiDoSampleOutOfFile(lfs_file_t* file,uint8_t* sampleBuf,size_t bufSize,uint8_t* nofReadChars);
 
 //Functions ported from FatFS (Used by MiniIni)
-char* FS_gets ( char* buff,int len, lfs_file_t* fp);
+char* FS_gets (char* buff,int len, lfs_file_t* fp);
 int FS_putc (char c, lfs_file_t* fp);
 int FS_puts (const char* str, lfs_file_t* fp);
 

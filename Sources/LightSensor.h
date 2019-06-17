@@ -10,7 +10,7 @@
 #ifndef SOURCES_LIGHTSENSOR_H_
 #define SOURCES_LIGHTSENSOR_H_
 
-#include <stdint.h>
+#include "Platform.h"
 #include "CLS1.h"
 
 typedef struct {

@@ -7,7 +7,7 @@
  *  Driver for the ST LIS2DH Accelerometer via I2C
  */
 
-#include <stdint.h>
+#include "Platform.h"
 #include "CLS1.h"
 
 #ifndef SOURCES_ACCELSENS_H_

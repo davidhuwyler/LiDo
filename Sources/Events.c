@@ -35,6 +35,7 @@ extern "C" {
 
 
 /* User includes (#include below this line is not maintained by Processor Expert) */
+#include "Platform.h"
 #include "LowPower.h"
 #include "SPIF.h"
 /*
@@ -99,8 +100,12 @@ void FRTOS1_vApplicationTickHook(void)
 {
   /* Called for every RTOS tick. */
   /* NOTE: if using tickless idle mode, the below needs to be done from a FreeRTOS timer! */
+#if PL_CONFIG_HAS_SW_RTC && !configUSE_TICKLESS_IDLE
 	TmDt1_AddTick();
-	TMOUT1_AddTick();
+#endif
+#if !configUSE_TICKLESS_IDLE
+	TMOUT1_AddTick();  /* only USB CDC currently uses the timeout (disabled for now) */
+#endif
 }
 
 /*
