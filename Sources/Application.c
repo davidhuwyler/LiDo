@@ -622,12 +622,13 @@ void APP_Run(void) {
   for(;;) {}
 }
 
-
+#if 0
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
-  CLS1_SendStatusStr((unsigned char*)"APP", (const unsigned char*)"\r\n", io->stdOut);
+  CLS1_SendStatusStr((unsigned char*)"App", (const unsigned char*)"\r\n", io->stdOut);
   return ERR_OK;
 }
+#endif
 
 static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
 {
@@ -752,26 +753,29 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   uint8_t res = ERR_OK;
   const uint8_t *p;
 
-  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "APP help")==0)
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "App help")==0)
   {
-    CLS1_SendHelpStr((unsigned char*)"APP", (const unsigned char*)"Group of Application commands\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  printFile <file>", (const unsigned char*)"Prints a LiDo Sample File\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"App", (const unsigned char*)"Group of Application commands\r\n", io->stdOut);
+    //CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  help", (const unsigned char*)"Print help information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  print <file>", (const unsigned char*)"Prints a LiDo Sample File\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
   }
+#if 0
   else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
     *handled = TRUE;
     return PrintStatus(io);
   }
-  else if (UTIL1_strncmp((char* )cmd, "APP printFile ", sizeof("APP printFile ") - 1) == 0)
+#endif
+  else if (UTIL1_strncmp((char* )cmd, "App print ", sizeof("App print ") - 1) == 0)
   {
-  *handled = TRUE;
-  if ((UTIL1_ReadEscapedName(cmd + sizeof("APP printFile ") - 1,fileName, sizeof(fileName), &lenRead, NULL, NULL) == ERR_OK))
-  {
-    return PrintLiDoFile(fileName, io);
-  }
-  return ERR_FAILED;
+    *handled = TRUE;
+    if ((UTIL1_ReadEscapedName(cmd + sizeof("App print ") - 1,fileName, sizeof(fileName), &lenRead, NULL, NULL) == ERR_OK))
+    {
+      return PrintLiDoFile(fileName, io);
+    }
+    return ERR_FAILED;
   }
   return res;
 }

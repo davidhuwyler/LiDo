@@ -32,8 +32,6 @@ static SemaphoreHandle_t fileSystemAccessMutex;
 #define FILESYSTEM_LOOKAHEAD_SIZE 256 //128
 #define FILESYSTEM_CACHE_SIZE 256
 
-
-
 static int block_device_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
   uint8_t res;

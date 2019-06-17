@@ -68,12 +68,13 @@ static uint8_t ErrorLogFile_PrintList(CLS1_ConstStdIOType *io)
 	return ERR_OK;
 }
 
-
+#if 0
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
   CLS1_SendStatusStr((unsigned char*)"ErrorLogFile", (const unsigned char*)"\r\n", io->stdOut);
   return ERR_OK;
 }
+#endif
 
 uint8_t ErrorLogFile_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io)
 {
@@ -83,16 +84,18 @@ uint8_t ErrorLogFile_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_
 	  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "ErrorLogFile help")==0)
 	  {
 	    CLS1_SendHelpStr((unsigned char*)"ErrorLogFile", (const unsigned char*)"Group of AppData File commands\r\n", io->stdOut);
-	    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+	    //CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+	    CLS1_SendHelpStr((unsigned char*)"  help", (const unsigned char*)"Print help information\r\n", io->stdOut);
 	    CLS1_SendHelpStr((unsigned char*)"  print", (const unsigned char*)"Prints the appData.ini file\r\n", io->stdOut);
 	    *handled = TRUE;
 	    return ERR_OK;
 	  }
+#if 0
 	  else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
 	    *handled = TRUE;
 	    return PrintStatus(io);
 	  }
-
+#endif
 	  else if (UTIL1_strcmp((char*)cmd, "ErrorLogFile print")==0)
 	  {
 	    *handled = TRUE;
