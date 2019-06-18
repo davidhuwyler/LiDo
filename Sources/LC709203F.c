@@ -16,11 +16,13 @@
 #define LC709203F_I2C_SLAVE_ADDR  0x0B
 
 #define LC709203F_REG_SET_BEFORE_RSOC   0x04  /* Before RSCOC */
-#define LC709203F_REG_SET_THERMB        0x06  /* Thermitor B */
+#define LC709203F_REG_SET_THERMB        0x06  /* Thermistor B */
 #define LC709203F_REG_INIT_RSOC         0x07  /* Initial RSOC */
 #define LC709203F_REG_CELL_TEMP         0x08  /* Cell temperature */
 #define LC709203F_REG_VOLTAGE           0x09  /* Cell voltage */
-#define LC709203F_REG_ADJ_APPLI         0x0B  /* Current direction */
+#define LC709203F_REG_CURRENT_DIRECTION 0x0A  /* Current direction */
+#define LC709203F_REG_ADJ_APPLI         0x0B  /* APA, Adjustment Pack Application, sets Parasitic impedance */
+#define LC709203F_REG_APT               0x0C  /* APT, Adjustment Pack Thermistor, adjust temperature measurement delay timing */
 #define LC709203F_REG_RSOC              0x0D  /* RSOC, value based 0-100 scale */
 #define LC709203F_REG_ITE               0x0F  /* ITE, Indicator to Empty */
 #define LC709203F_REG_IC_VER            0x11  /* IC version */
@@ -101,7 +103,7 @@ static void CheckI2CErr(uint8_t res) {
 
 #include "PORT_PDD.h"
 #include "GPIO_PDD.h"
-void LCwakeup(void) {
+void LC_Wakeup(void) {
   /* SDA: PTB3
    * SCL: PTB2
    */
@@ -111,33 +113,41 @@ void LCwakeup(void) {
    * wait for 400 us
    *  */
   PORT_PDD_SetPinMuxControl(PORTB_BASE_PTR, 3, PORT_PDD_MUX_CONTROL_ALT1); /* MUX SDA/PTB3 as GPIO */
+  PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 3, PORT_PDD_OPEN_DRAIN_ENABLE);
   GPIO_PDD_SetPortOutputDirectionMask(PTB_BASE_PTR, (1<<3)); /* SDA/PTB3 as output */
   GPIO_PDD_ClearPortDataOutputMask(PTB_BASE_PTR, 1<<3); /* SDA/PB3 low */
   WAIT1_Waitus(1);                                        /* SDA min 0.6us low */
   GPIO_PDD_SetPortDataOutputMask(PTB_BASE_PTR, 1<<3);   /* SDA/PB3 high */
   WAIT1_Waitus(400);                                      /* wait 400us */
-  PORT_PDD_SetPinMuxControl(PORTB_BASE_PTR, 3, PORT_PDD_MUX_CONTROL_ALT7); /* MUX SDA/PTB3 as I2C pin */
+  /* mux back to normal I2C mode with interrupts enabled */
+  PORTB_PCR3 = (uint32_t)((PORTB_PCR3 & (uint32_t)~(uint32_t)(
+                PORT_PCR_ISF_MASK |
+                PORT_PCR_MUX(0x05)
+               )) | (uint32_t)(
+                PORT_PCR_MUX(0x02)
+               ));
+  PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 0x03u, PORT_PDD_OPEN_DRAIN_ENABLE); /* Set SDA pin as open drain */
 }
 
-void LCinit(void) {
+static void LCinit(void) {
   /* initializes LC709203F for Renata ICP543759PMT battery */
   uint8_t data_w[3];
   uint8_t result;
   uint8_t crc;
 
-  data_w[0] = 0x01;   //0x0001 = operational mode, low byte first
+  data_w[0] = 0x01;   // Operational mode (1: operational, 2: sleep), 0x0001 = operational mode, low byte first
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w, sizeof(data_w));     //set device to operational mode
   CheckI2CErr(result);
 
-  data_w[0] = 0x20;   //0x0020 = 32mOhm, type 1, 3.7V, 4.2V, 1260mAh, low byte first
+  data_w[0] = 0x20;   //APA, set parasitic impedance: 0x0020 = 32mOhm, type 1, 3.7V, 4.2V, 1260mAh, low byte first
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w, sizeof(data_w));     //set APA (parasitic impedance)
   CheckI2CErr(result);
 
-  data_w[0] = 0x01;   //0x0001 = Type 1, low byte first
+  data_w[0] = 0x01;   //Battery Profile (Table 8 in data sheet): 0x0001 = Type 1, low byte first
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w, sizeof(data_w));     //set Battery profile
@@ -155,13 +165,13 @@ void LCinit(void) {
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w, sizeof(data_w));     //set device to thermistor mode
   CheckI2CErr(result);
 
-  data_w[0] = 0x6B;   //0x0D6B = B=3435, low byte first
+  data_w[0] = 0x6B;   //Thermistor B-Constant: 0x0D6B = B=3435, low byte first
   data_w[1] = 0x0D;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, data_w, sizeof(data_w));     //set B-constant of Thermistor
   CheckI2CErr(result);
 
-  data_w[0] = 0x1C;   //0x0C1C = 3100mV = 3.1V, low byte first
+  data_w[0] = 0x1C;   //Low voltage alarm setting: 0x0C1C = 3100mV = 3.1V, low byte first
   data_w[1] = 0x0C;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, data_w, sizeof(data_w));     //set alarm low cell voltage
@@ -193,7 +203,7 @@ int16_t LCgetTemp(void) {
   int16_t temp;
 
   temp = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP);
-  temp -= 0x0AAC; /* \todo */
+  temp -= 0x0AAC; /* From the data sheet command table: 0x0AAC is 0 degree Celsius */
   return (int16_t)temp;
 }
 
@@ -212,6 +222,27 @@ uint16_t LCgetICversion(void) {
   return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_IC_VER);
 }
 
+static const unsigned char *LC_CurrentDirectionToString(LC_CurrentDirection dir) {
+  switch(dir) {
+    case LC_CURRENT_DIR_AUTO:       return (const unsigned char*)"auto";
+    case LC_CURRENT_DIR_CHARGING:   return (const unsigned char*)"charging";
+    case LC_CURRENT_DIR_DISCHARING: return (const unsigned char*)"discharging";
+    case LC_CURRENT_DIR_ERROR:
+    default:                        return (const unsigned char*)"ERROR";
+  }
+}
+
+LC_CurrentDirection LCgetCurrentDirection(void) {
+  uint16_t val;
+
+  val = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CURRENT_DIRECTION);
+  switch(val) {
+    case 0: return LC_CURRENT_DIR_AUTO;
+    case 1: return LC_CURRENT_DIR_CHARGING;
+    case 0xffff: return LC_CURRENT_DIR_DISCHARING;
+    default: return LC_CURRENT_DIR_ERROR;
+  }
+}
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
@@ -252,7 +283,7 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
       temperature = -temperature;
     }
     UTIL1_strcatNum16s(buf, sizeof(buf), temperature%10);
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"C\r\n");
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" C\r\n");
     CLS1_SendStatusStr((unsigned char*)"  Temperature", buf, io->stdOut);
   }
   {
@@ -262,6 +293,14 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
     UTIL1_Num16uToStr(buf, sizeof(buf), mVolt);
     UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" mV\r\n");
     CLS1_SendStatusStr((unsigned char*)"  Voltage", buf, io->stdOut);
+  }
+  {
+    LC_CurrentDirection direction;
+
+    direction = LCgetCurrentDirection();
+    UTIL1_strcpy(buf, sizeof(buf), LC_CurrentDirectionToString(direction));
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  Current dir", buf, io->stdOut);
   }
   return ERR_OK;
 }
@@ -284,7 +323,6 @@ uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdI
 }
 
 void LC_Init(void) {
- // LCwakeup();
   LCinit();
 }
 

@@ -3,11 +3,11 @@ readme.txt
 
 Open points
 - restore -O3 compiler optimization
-- check LC CRC and generate it
 - The LC needs to be initialized for the correct battery
 - need reset button, ability to reset (disconnect from debugger halts the target), or need to disconnect battery
 - small heartbeat indicator
 - re-add getting battery voltage with new IC
+- provide complete interface to IC
 
 User Interface:
 - 1x short press: set marker (1x green blink)

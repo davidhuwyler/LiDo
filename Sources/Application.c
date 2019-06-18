@@ -529,6 +529,10 @@ static void APP_init_task(void *param) {
   LED_G_Off();
   if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
+#if PL_CONFIG_HAS_GAUGE_SENSOR
+    LC_Wakeup(); /* needs to be done before (!!!) any I2C communication! */
+    LC_Init();
+#endif
     WatchDog_Init();
     WatchDog_StartComputationTime(WatchDog_LiDoInit);
     SDEP_Init();
@@ -541,9 +545,6 @@ static void APP_init_task(void *param) {
 #endif
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     AccelSensor_init();
-#endif
-#if PL_CONFIG_HAS_GAUGE_SENSOR
-    LC_Init();
 #endif
       if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
       {
@@ -582,7 +583,7 @@ static void APP_init_task(void *param) {
     }
     KIN1_SoftwareReset();
   }
-  vTaskSuspend(xTaskGetCurrentTaskHandle());
+  vTaskSuspend(xTaskGetCurrentTaskHandle()); /* \todo: could use NULL or kill task? */
 }
 
 void APP_CloseSampleFile(void)
