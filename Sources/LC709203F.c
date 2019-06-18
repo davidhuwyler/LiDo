@@ -15,20 +15,21 @@
 
 #define LC709203F_I2C_SLAVE_ADDR  0x0B
 
-#define LC709203F_REG_CELL_TEMP   0x08  /* Cell temperature */
-#define LC709203F_REG_VOLTAGE     0x09  /* Cell voltage */
-#define LC709203F_REG_ADJ_APPLI   0x0B
-#define LC709203F_REG_RSOC        0x0D  /* RSOC, value based 0-100 scale */
-#define LC709203F_REG_ITE         0x0F  /* ITE, Indicator to Empty */
-#define lC709203F_REG_PW_MODE     0x15
-
-/*
- * Hinweis:
- * Ich habe die Überprüfung der empfangenen Werte mittels dem CRC8 Wert nicht implementiert.
- * Den CRC8 Wert für die zu sendenden Daten habe ich mittels unten stehender Website berechnet.
- * (das IC akzeptiert die Daten nur mit CRC8 Wert)
- * CRC8 value calculated with: http://www.sunshine2k.de/coding/javascript/crc/crc_js.html
- */
+#define LC709203F_REG_SET_BEFORE_RSOC   0x04  /* Before RSCOC */
+#define LC709203F_REG_SET_THERMB        0x06  /* Thermitor B */
+#define LC709203F_REG_INIT_RSOC         0x07  /* Initial RSOC */
+#define LC709203F_REG_CELL_TEMP         0x08  /* Cell temperature */
+#define LC709203F_REG_VOLTAGE           0x09  /* Cell voltage */
+#define LC709203F_REG_ADJ_APPLI         0x0B  /* Current direction */
+#define LC709203F_REG_RSOC              0x0D  /* RSOC, value based 0-100 scale */
+#define LC709203F_REG_ITE               0x0F  /* ITE, Indicator to Empty */
+#define LC709203F_REG_IC_VER            0x11  /* IC version */
+#define LC709203F_REG_CHG_PARAM         0x12  /* change of parameter */
+#define LC709203F_REG_RSOC_ALM          0x13  /* Alarm low RSOC */
+#define LC709203F_REG_LOW_CELL_VOL_ALM  0x14  /* Alarm Low Cell Voltage */
+#define lC709203F_REG_PW_MODE           0x15  /* IC Power Mode */
+#define LC709203F_REG_EN_NTC            0x16  /* Status Bit, enable Termistor mode */
+#define LC709203F_REG_NUM_PARAMS        0x1A  /* Number of the parameter, display batter profile code */
 
 static uint8_t i2cReadCmdData(uint8_t i2cAddr, uint8_t cmd, uint8_t *data, size_t length) {
   return GI2C1_ReadAddress(i2cAddr, &cmd, sizeof(cmd), data, length);
@@ -38,23 +39,55 @@ static uint8_t i2cWriteCmdData(uint8_t i2cAddr, uint8_t cmd, uint8_t *data, size
   return GI2C1_WriteAddress(i2cAddr, &cmd, sizeof(cmd), data, length);
 }
 
-static uint8_t calcCrc(uint8_t a, uint8_t b) {
+static uint8_t calcCrc8Atm(uint8_t a, uint8_t b) {
+  /* the sensor uses a CRC-8-ATM,
+   * Polynomial: x8 + x2 + x + 1
+   * Corresponds to: 100000111
+   */
   #define POLY_8  0x8380
-  uint8_t u1TmpLooper = 0;
-  uint8_t u1TmpOutData = 0;
-  uint16_t u2TmpValue = 0;
+  uint8_t i = 0;
+  uint16_t val = 0;
 
-  u2TmpValue = (unsigned short)(a ^ b);
-  u2TmpValue <<= 8;
-  for( u1TmpLooper = 0 ; u1TmpLooper < 8 ; u1TmpLooper++ ){
-    if( u2TmpValue & 0x8000 ){
-      u2TmpValue ^= POLY_8;
+  val = (uint16_t)(a^b);
+  val <<= 8;
+  for(i=0; i<8; i++) {
+    if (val&0x8000 ){
+      val ^= POLY_8;
     }
-    u2TmpValue <<= 1;
+    val <<= 1;
   }
-  u1TmpOutData = (unsigned char)(u2TmpValue >> 8);
-  return u1TmpOutData;
+  return (uint8_t)(val >> 8);
 }
+
+static uint8_t calcCRC_WriteAccess16(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
+  uint8_t crc;
+
+  crc = calcCrc8Atm(0x00, i2cSlaveAddr<<1); /* I2C slave address */
+  crc = calcCrc8Atm(crc, cmd);              /* command */
+  crc = calcCrc8Atm(crc, low);              /* data byte */
+  return calcCrc8Atm(crc, high);            /* data byte */
+}
+
+static uint8_t calcCRC_ReadAccess16(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
+  uint8_t crc;
+
+  crc = calcCrc8Atm(0x00, i2cSlaveAddr<<1);     /* I2C slave address */
+  crc = calcCrc8Atm(crc, cmd);                  /* command */
+  crc = calcCrc8Atm(crc, (i2cSlaveAddr<<1)|1);  /* I2C address with R bit set */
+  crc = calcCrc8Atm(crc, low);                  /* data byte */
+  return calcCrc8Atm(crc, high);                /* data byte */
+}
+
+static uint8_t CheckCrc(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high, uint8_t crc) {
+  uint8_t val;
+
+  val = calcCRC_ReadAccess16(i2cSlaveAddr, cmd, low, high);
+  if (val != crc) {
+    return ERR_FAILED;
+  }
+  return ERR_OK;
+}
+
 
 static void CheckI2CErr(uint8_t res) {
   if (res==ERR_OK) {
@@ -86,69 +119,58 @@ void LCwakeup(void) {
   PORT_PDD_SetPinMuxControl(PORTB_BASE_PTR, 3, PORT_PDD_MUX_CONTROL_ALT7); /* MUX SDA/PTB3 as I2C pin */
 }
 
-static uint8_t calcCRC_Word(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
-  uint8_t crc;
-
-  crc = calcCrc(0x00, i2cSlaveAddr<<1);
-  crc = calcCrc(crc, cmd);
-  crc = calcCrc(crc, low);
-  return calcCrc(crc, high);
-}
-
 void LCinit(void) {
-  /* initializes LC709203F for renata ICP543759PMT battery */
+  /* initializes LC709203F for Renata ICP543759PMT battery */
   uint8_t data_w[3];
   uint8_t result;
   uint8_t crc;
 
   data_w[0] = 0x01;   //0x0001 = operational mode, low byte first
   data_w[1] = 0x00;
- // data_w[2] = 0x64;   //crc8 value of address, cmd & data bytes (0x16 0x15 0x01 0x00)
-  data_w[2] = calcCRC_Word(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w[0], data_w[1]);
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w, sizeof(data_w));     //set device to operational mode
   CheckI2CErr(result);
 
   data_w[0] = 0x20;   //0x0020 = 32mOhm, type 1, 3.7V, 4.2V, 1260mAh, low byte first
   data_w[1] = 0x00;
- // data_w[2] = 0x51;   //crc8 value of address, cmd & data bytes
-  data_w[2] = calcCRC_Word(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w[0], data_w[1]);
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w, sizeof(data_w));     //set APA (parasitic impedance)
   CheckI2CErr(result);
 
   data_w[0] = 0x01;   //0x0001 = Type 1, low byte first
   data_w[1] = 0x00;
-  data_w[2] = 0x72;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x12, data_w, sizeof(data_w));     //set Battery profile
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w, sizeof(data_w));     //set Battery profile
   CheckI2CErr(result);
 
   data_w[0] = 0x55;   //write 0xAA55 to initialize RSOC, low byte first
   data_w[1] = 0xAA;
-  data_w[2] = 0x17;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x07, data_w, sizeof(data_w));     //initial RSOC
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_INIT_RSOC, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_INIT_RSOC, data_w, sizeof(data_w));     //initial RSOC
   CheckI2CErr(result);
 
   data_w[0] = 0x01;   //0x0001 = thermistor mode, low byte first
   data_w[1] = 0x00;
-  data_w[2] = 0xD9;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x16, data_w, sizeof(data_w));     //set device to thermistor mode
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w, sizeof(data_w));     //set device to thermistor mode
   CheckI2CErr(result);
 
   data_w[0] = 0x6B;   //0x0D6B = B=3435, low byte first
   data_w[1] = 0x0D;
-  data_w[2] = 0x2F;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x06, data_w, sizeof(data_w));     //set B-constant of Thermistor
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, data_w, sizeof(data_w));     //set B-constant of Thermistor
   CheckI2CErr(result);
 
   data_w[0] = 0x1C;   //0x0C1C = 3100mV = 3.1V, low byte first
   data_w[1] = 0x0C;
-  data_w[2] = 0x95;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x14, data_w, sizeof(data_w));     //set alarm low cell voltage
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, data_w, sizeof(data_w));     //set alarm low cell voltage
   CheckI2CErr(result);
 
   data_w[0] = 0x00;   //0x0000 = alarm disable, low byte first
   data_w[1] = 0x00;
-  data_w[2] = 0x0C;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x13, data_w, sizeof(data_w));     //disable alarm low RSOC
+  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC_ALM, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC_ALM, data_w, sizeof(data_w));     //disable alarm low RSOC
   CheckI2CErr(result);
 }
 
@@ -160,8 +182,8 @@ int LCgetVoltage(void) {
 
   result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE, data, sizeof(data));
   CheckI2CErr(result);
+  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE, data[0], data[1], data[2]));
   voltage = (data[1]<<8) | data[0];             //low byte first sent
-  //data[2] contains CRC8 value
   return voltage;
 }
 
@@ -174,7 +196,7 @@ int LCgetTemp(void) {
   result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP, data, sizeof(data));
   CheckI2CErr(result);
   temp = ((data[1]<<8) | data[0])-0x0AAC;       //low byte first sent
-  //data[2] contains CRC8 value
+  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP, data[0], data[1], data[2]));
   return temp;
 }
 
@@ -186,8 +208,8 @@ int LCgetRSOC(void) {
 
   result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC, data, sizeof(data));
   CheckI2CErr(result);
+  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC, data[0], data[1], data[2]));
   RSOC = (data[1]<<8) | data[0];                //low byte first sent
-  //data[2] contains CRC8 value
   return RSOC;
 }
 
@@ -199,14 +221,14 @@ int LCgetITE(void) {
 
   result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE, data, sizeof(data));
   CheckI2CErr(result);
+  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE, data[0], data[1], data[2]));
   ITE = (data[1]<<8) | data[0];                 //low byte first sent
-  //data[2] contains CRC8 value
   return ITE;
 }
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
-  int temp, rsoc, ite;
+  int temp, rsoc, ite, mVolt;
 
   CLS1_SendStatusStr((unsigned char*)"LC", (const unsigned char*)"\r\n", io->stdOut);
 
@@ -220,9 +242,9 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   buf[0] = '\0';
   UTIL1_strcatNum16s(buf, sizeof(buf), ite);
   UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" (0..1000)\r\n");
-  CLS1_SendStatusStr((unsigned char*)"  RSOC", buf, io->stdOut);
+  CLS1_SendStatusStr((unsigned char*)"  ITE", buf, io->stdOut);
 
-  temp = LCgetTemp(); /* cell temperature in deci-degree C */
+  temp = LCgetTemp(); /* cell temperature in 1/10-degree C */
   buf[0] = '\0';
   UTIL1_strcatNum16s(buf, sizeof(buf), temp/10);
   UTIL1_chcat(buf, sizeof(buf), '.');
@@ -231,8 +253,15 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   }
   UTIL1_strcatNum16s(buf, sizeof(buf), temp%10);
   UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"C\r\n");
-  CLS1_SendStatusStr((unsigned char*)"  Temp", buf, io->stdOut);
-return ERR_OK;
+  CLS1_SendStatusStr((unsigned char*)"  Temperature", buf, io->stdOut);
+
+  mVolt = LCgetVoltage(); /* cell voltage in milli-volts */
+  buf[0] = '\0';
+  UTIL1_strcatNum16s(buf, sizeof(buf), mVolt);
+  UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" mV\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  Voltage", buf, io->stdOut);
+
+  return ERR_OK;
 }
 
 uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
@@ -253,7 +282,7 @@ uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdI
 }
 
 void LC_Init(void) {
-  LCwakeup();
+ // LCwakeup();
   LCinit();
 }
 
