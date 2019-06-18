@@ -174,93 +174,95 @@ void LCinit(void) {
   CheckI2CErr(result);
 }
 
-//returns cell voltage in mV
-int LCgetVoltage(void) {
-  unsigned char data[3];
-  int voltage;
-  uint8_t result;
+static uint16_t ReadCmdWordChecked(uint8_t i2cSlaveAddr, uint8_t cmd) {
+  uint8_t data[3];
 
-  result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE, data, sizeof(data));
-  CheckI2CErr(result);
-  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE, data[0], data[1], data[2]));
-  voltage = (data[1]<<8) | data[0];             //low byte first sent
-  return voltage;
+  CheckI2CErr(i2cReadCmdData(i2cSlaveAddr, cmd, data, sizeof(data)));
+  CheckI2CErr(CheckCrc(i2cSlaveAddr, cmd, data[0], data[1], data[2]));
+  return (data[1]<<8) | data[0];
+}
+
+//returns cell voltage in mV
+uint16_t LCgetVoltage(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE);
 }
 
 //returns cell temperature (10 = 1°C)
-int LCgetTemp(void) {
-  unsigned char data[3];
-  int temp;
-  uint8_t result;
+int16_t LCgetTemp(void) {
+  /* cell temperature is in 0.1C units, from 0x09E4 (-20C) up to 0x0D04 (60C) */
+  int16_t temp;
 
-  result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP, data, sizeof(data));
-  CheckI2CErr(result);
-  temp = ((data[1]<<8) | data[0])-0x0AAC;       //low byte first sent
-  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP, data[0], data[1], data[2]));
-  return temp;
+  temp = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP);
+  temp -= 0x0AAC; /* \todo */
+  return (int16_t)temp;
 }
 
-//returns battery charge in percent
-int LCgetRSOC(void) {
-  unsigned char data[3];
-  int RSOC;
-  uint8_t result;
-
-  result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC, data, sizeof(data));
-  CheckI2CErr(result);
-  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC, data[0], data[1], data[2]));
-  RSOC = (data[1]<<8) | data[0];                //low byte first sent
-  return RSOC;
+//returns battery Relative State of Charge in percent
+uint16_t LCgetRSOC(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC);
 }
 
-//returns battery charge in thousandth
-int LCgetITE(void) {
-  unsigned char data[3];
-  int ITE;
-  uint8_t result;
-
-  result = i2cReadCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE, data, sizeof(data));
-  CheckI2CErr(result);
-  CheckI2CErr(CheckCrc(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE, data[0], data[1], data[2]));
-  ITE = (data[1]<<8) | data[0];                 //low byte first sent
-  return ITE;
+// Indicator to empty, returns battery charge in thousandth
+uint16_t LCgetITE(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE);
 }
+
+// Indicator to empty, returns battery charge in thousandth
+uint16_t LCgetICversion(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_IC_VER);
+}
+
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
-  int temp, rsoc, ite, mVolt;
 
   CLS1_SendStatusStr((unsigned char*)"LC", (const unsigned char*)"\r\n", io->stdOut);
+  {
+    uint16_t version;
 
-  rsoc = LCgetRSOC(); /* battery charge in percent */
-  buf[0] = '\0';
-  UTIL1_strcatNum16s(buf, sizeof(buf), rsoc);
-  UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\% (0..100)\r\n");
-  CLS1_SendStatusStr((unsigned char*)"  RSOC", buf, io->stdOut);
-
-  ite = LCgetITE(); /* battery charge in thousandth */
-  buf[0] = '\0';
-  UTIL1_strcatNum16s(buf, sizeof(buf), ite);
-  UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" (0..1000)\r\n");
-  CLS1_SendStatusStr((unsigned char*)"  ITE", buf, io->stdOut);
-
-  temp = LCgetTemp(); /* cell temperature in 1/10-degree C */
-  buf[0] = '\0';
-  UTIL1_strcatNum16s(buf, sizeof(buf), temp/10);
-  UTIL1_chcat(buf, sizeof(buf), '.');
-  if (temp<0) { /* make it positive */
-    temp = -temp;
+    version = LCgetICversion(); /* battery charge in thousandth */
+     UTIL1_strcpy(buf, sizeof(buf), "0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), version);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  IC version", buf, io->stdOut);
   }
-  UTIL1_strcatNum16s(buf, sizeof(buf), temp%10);
-  UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"C\r\n");
-  CLS1_SendStatusStr((unsigned char*)"  Temperature", buf, io->stdOut);
+  {
+    uint16_t rsoc;
 
-  mVolt = LCgetVoltage(); /* cell voltage in milli-volts */
-  buf[0] = '\0';
-  UTIL1_strcatNum16s(buf, sizeof(buf), mVolt);
-  UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" mV\r\n");
-  CLS1_SendStatusStr((unsigned char*)"  Voltage", buf, io->stdOut);
+    rsoc = LCgetRSOC(); /* battery charge in percent */
+    UTIL1_Num16uToStr(buf, sizeof(buf), rsoc);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\% (0..100)\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  RSOC", buf, io->stdOut);
+  }
+  {
+    uint16_t ite;
 
+    ite = LCgetITE(); /* battery charge in thousandth */
+    UTIL1_Num16uToStr(buf, sizeof(buf), ite);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" (0..1000)\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  ITE", buf, io->stdOut);
+  }
+  {
+    int16_t temperature;
+
+    temperature = LCgetTemp(); /* cell temperature in 1/10-degree C */
+    UTIL1_Num16sToStr(buf, sizeof(buf), temperature/10);
+    UTIL1_chcat(buf, sizeof(buf), '.');
+    if (temperature<0) { /* make it positive */
+      temperature = -temperature;
+    }
+    UTIL1_strcatNum16s(buf, sizeof(buf), temperature%10);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"C\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  Temperature", buf, io->stdOut);
+  }
+  {
+    uint16_t mVolt;
+
+    mVolt = LCgetVoltage(); /* cell voltage in milli-volts */
+    UTIL1_Num16uToStr(buf, sizeof(buf), mVolt);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" mV\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  Voltage", buf, io->stdOut);
+  }
   return ERR_OK;
 }
 

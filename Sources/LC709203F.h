@@ -11,10 +11,11 @@
 void LCwakeup(void);
 void LCinit(void);
 
-int LCgetVoltage(void);
-int LCgetTemp(void);
-int LCgetRSOC(void);
-int LCgetITE(void);
+uint16_t LCgetVoltage(void);
+int16_t LCgetTemp(void);
+uint16_t LCgetRSOC(void);
+uint16_t LCgetITE(void);
+uint16_t LCgetICversion(void);
 
 #include "CLS1.h"
 uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
