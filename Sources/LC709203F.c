@@ -17,8 +17,10 @@
 
 #define LC709203F_REG_CELL_TEMP   0x08  /* Cell temperature */
 #define LC709203F_REG_VOLTAGE     0x09  /* Cell voltage */
+#define LC709203F_REG_ADJ_APPLI   0x0B
 #define LC709203F_REG_RSOC        0x0D  /* RSOC, value based 0-100 scale */
 #define LC709203F_REG_ITE         0x0F  /* ITE, Indicator to Empty */
+#define lC709203F_REG_PW_MODE     0x15
 
 /*
  * Hinweis:
@@ -37,7 +39,21 @@ static uint8_t i2cWriteCmdData(uint8_t i2cAddr, uint8_t cmd, uint8_t *data, size
 }
 
 static uint8_t calcCrc(uint8_t a, uint8_t b) {
-  return 0; /* \todo */
+  #define POLY_8  0x8380
+  uint8_t u1TmpLooper = 0;
+  uint8_t u1TmpOutData = 0;
+  uint16_t u2TmpValue = 0;
+
+  u2TmpValue = (unsigned short)(a ^ b);
+  u2TmpValue <<= 8;
+  for( u1TmpLooper = 0 ; u1TmpLooper < 8 ; u1TmpLooper++ ){
+    if( u2TmpValue & 0x8000 ){
+      u2TmpValue ^= POLY_8;
+    }
+    u2TmpValue <<= 1;
+  }
+  u1TmpOutData = (unsigned char)(u2TmpValue >> 8);
+  return u1TmpOutData;
 }
 
 static void CheckI2CErr(uint8_t res) {
@@ -50,32 +66,53 @@ static void CheckI2CErr(uint8_t res) {
   }
 }
 
-//Generates wake up signal on SDA \todo
+#include "PORT_PDD.h"
+#include "GPIO_PDD.h"
 void LCwakeup(void) {
-  PORTD_PCR3 = PORT_PCR_MUX(1) | PORT_PCR_ODE(1);   //SDA as gpio
-  GPIOD_PDDR |= 0x8;
-  GPIOD_PCOR |= 0x8;
-  WAIT1_Waitus(1);                                  //SDA min 0.6us low
-  GPIOD_PSOR |= 0x8;                                //SDA high
-  WAIT1_Waitus(400);                                //wait 400us
-  PORTD_PCR3 = PORT_PCR_MUX(7) | PORT_PCR_ODE(1);   //mux SDA
+  /* SDA: PTB3
+   * SCL: PTB2
+   */
+  /* Generates wake up signal on SDA, according to the data sheet.
+   * This has to happen before any other I2C communication on the bus:
+   * Pull down SDA for 0.6us, then high again,
+   * wait for 400 us
+   *  */
+  PORT_PDD_SetPinMuxControl(PORTB_BASE_PTR, 3, PORT_PDD_MUX_CONTROL_ALT1); /* MUX SDA/PTB3 as GPIO */
+  GPIO_PDD_SetPortOutputDirectionMask(PTB_BASE_PTR, (1<<3)); /* SDA/PTB3 as output */
+  GPIO_PDD_ClearPortDataOutputMask(PTB_BASE_PTR, 1<<3); /* SDA/PB3 low */
+  WAIT1_Waitus(1);                                        /* SDA min 0.6us low */
+  GPIO_PDD_SetPortDataOutputMask(PTB_BASE_PTR, 1<<3);   /* SDA/PB3 high */
+  WAIT1_Waitus(400);                                      /* wait 400us */
+  PORT_PDD_SetPinMuxControl(PORTB_BASE_PTR, 3, PORT_PDD_MUX_CONTROL_ALT7); /* MUX SDA/PTB3 as I2C pin */
 }
 
-//initializes LC709203F for renata ICP543759PMT battery
+static uint8_t calcCRC_Word(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
+  uint8_t crc;
+
+  crc = calcCrc(0x00, i2cSlaveAddr<<1);
+  crc = calcCrc(crc, cmd);
+  crc = calcCrc(crc, low);
+  return calcCrc(crc, high);
+}
+
 void LCinit(void) {
+  /* initializes LC709203F for renata ICP543759PMT battery */
   uint8_t data_w[3];
   uint8_t result;
+  uint8_t crc;
 
   data_w[0] = 0x01;   //0x0001 = operational mode, low byte first
   data_w[1] = 0x00;
-  data_w[2] = 0x64;   //crc8 value of address, cmd & data bytes (0x16 0x15 0x01 0x00)
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x15, data_w, sizeof(data_w));     //set device to operational mode
+ // data_w[2] = 0x64;   //crc8 value of address, cmd & data bytes (0x16 0x15 0x01 0x00)
+  data_w[2] = calcCRC_Word(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w, sizeof(data_w));     //set device to operational mode
   CheckI2CErr(result);
 
   data_w[0] = 0x20;   //0x0020 = 32mOhm, type 1, 3.7V, 4.2V, 1260mAh, low byte first
   data_w[1] = 0x00;
-  data_w[2] = 0x51;   //crc8 value of address, cmd & data bytes
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, 0x0B, data_w, sizeof(data_w));     //set APA (parasitic impedance)
+ // data_w[2] = 0x51;   //crc8 value of address, cmd & data bytes
+  data_w[2] = calcCRC_Word(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w[0], data_w[1]);
+  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w, sizeof(data_w));     //set APA (parasitic impedance)
   CheckI2CErr(result);
 
   data_w[0] = 0x01;   //0x0001 = Type 1, low byte first
@@ -216,27 +253,8 @@ uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdI
 }
 
 void LC_Init(void) {
-  //LCwakeup(); /* \todo */
-  LCinit();
-}
-
-#if 0
-void main(void)
-{
-  int voltage=0, temp = 0, RSOC=0, ITE=0;
-  i2cInit();
   LCwakeup();
   LCinit();
-
-  while(TRUE)
-  {
-    voltage = LCgetVoltage();
-    temp = LCgetTemp();
-    RSOC = LCgetRSOC();
-    ITE = LCgetITE();
-
-  }
 }
-#endif
 
 #endif /* PL_CONFIG_HAS_GAUGE_SENSOR */
