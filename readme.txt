@@ -19,3 +19,6 @@ User Interface:
 - logging: indication with short purple LED
 - red blinky LED: failure (e.g. I2C)
 - blue LED blinking: connection with host
+
+Links:
+- https://github.com/kirananto/RaZorReborn/blob/master/drivers/power/yl_lc709203_fuelgauge.c
