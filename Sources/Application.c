@@ -500,14 +500,14 @@ void APP_init(void)
 
 static bool APP_WaitIfButtonPressed3s(void)
 {
-    if(USER_BUTTON_PRESSED)
+    if(USER_BUTTON_PRESSED())
     {
       for(int i = 0 ; i < 30 ; i++)
       {
         WDog1_Clear();
         vTaskDelay(pdMS_TO_TICKS(100));
         LED_R_Neg();
-        if(!USER_BUTTON_PRESSED)
+        if(!USER_BUTTON_PRESSED())
         {
           return FALSE;
         }
@@ -518,7 +518,6 @@ static bool APP_WaitIfButtonPressed3s(void)
     {
       return FALSE;
     }
-
 }
 
 static void APP_init_task(void *param) {
@@ -563,7 +562,7 @@ static void APP_init_task(void *param) {
   }
   else //Format SPIF after 9s ButtonPress after startup
   {
-    if(USER_BUTTON_PRESSED)
+    if(USER_BUTTON_PRESSED())
     {
       LED_R_Off();
       vTaskDelay(pdMS_TO_TICKS(3000));
@@ -608,7 +607,7 @@ void APP_Run(void) {
   PIN_POWER_ON_SetVal();
 
   //EmercencyBreak: If LowPower went wrong...
-//  while(USER_BUTTON_PRESSED)
+//  while(USER_BUTTON_PRESSED())
 //  {
 //    LED_R_Neg();
 //    vTaskDelay(pdMS_TO_TICKS(50));

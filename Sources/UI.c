@@ -124,7 +124,7 @@ static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer)
 static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer)
 {
 
-	if(USER_BUTTON_PRESSED)
+	if(USER_BUTTON_PRESSED())
 	{
 		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS)
 		{
