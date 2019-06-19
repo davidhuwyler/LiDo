@@ -8,9 +8,9 @@
 #ifndef SOURCES_MCULC709203FCONFIG_H_
 #define SOURCES_MCULC709203FCONFIG_H_
 
-
-#define MCULC709203F_CONFIG_USE_THERMISTOR  (1)
-  /*!< 1: using Thermistor in battery. 0: using I2C mode */
-
+#ifndef MCULC709203F_CONFIG_USE_THERMISTOR
+  #define MCULC709203F_CONFIG_USE_THERMISTOR  (0)
+    /*!< 1: using Thermistor in battery. 0: using I2C mode */
+#endif
 
 #endif /* SOURCES_MCULC709203FCONFIG_H_ */

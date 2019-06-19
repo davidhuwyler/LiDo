@@ -22,6 +22,7 @@ typedef enum {
 } McuLC_CurrentDirection;
 
 McuLC_CurrentDirection LC_GetCurrentDirection(void);
+McuLC_CurrentDirection LC_SetCurrentDirection(void);
 
 #include "CLS1.h"
 uint8_t McuLC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);

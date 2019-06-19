@@ -95,13 +95,13 @@ static void CheckI2CErr(uint8_t res) {
   if (res==ERR_OK) {
     return; /* ok */
   }
-  for(;;) { /* I2C Error? */
+  for(;;) { /* I2C Error? wait for the watchdog to kick in... */
     LED_R_Neg();
     WAIT1_WaitOSms(50);
   }
 }
 
-static void WriteDataWord(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
+static void WriteCmdWordChecked(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
   uint8_t data[3];
 
   data[0] = low;
@@ -155,9 +155,10 @@ uint16_t McuLC_GetVoltage(void) {
 int16_t McuLC_GetTemperature(void) {
   /* cell temperature is in 0.1C units, from 0x09E4 (-20C) up to 0x0D04 (60C) */
   int16_t temp;
+  #define MCULC_TEMP_ZERO_CELSIUS    0x0AAC /* From the data sheet command table: 0x0AAC is 0 degree Celsius */
 
   temp = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP);
-  temp -= 0x0AAC; /* From the data sheet command table: 0x0AAC is 0 degree Celsius */
+  temp -= MCULC_TEMP_ZERO_CELSIUS; /* From the data sheet command table: 0x0AAC is 0 degree Celsius */
   return (int16_t)temp;
 }
 
@@ -197,6 +198,21 @@ McuLC_CurrentDirection McuLC_GetCurrentDirection(void) {
     default:        return McuLC_CURRENT_DIR_ERROR;
   }
 }
+
+void McuLC_SetCurrentDirection(McuLC_CurrentDirection direction) {
+  uint8_t low, high;
+
+  switch(direction) {
+    case McuLC_CURRENT_DIR_AUTO:        low = 0x00; high = 0x00; break;
+    case McuLC_CURRENT_DIR_CHARGING:    low = 0x01; high = 0x00; break;
+    case McuLC_CURRENT_DIR_DISCHARING:  low = 0xff; high = 0xff; break;
+    default:
+      CheckI2CErr(ERR_FAILED);
+      return;
+  }
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CURRENT_DIRECTION, low, high);
+}
+
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
@@ -287,60 +303,34 @@ void McuLC_Init(void) {
   uint8_t result;
   uint8_t crc;
 
-  /* Operational mode (1: operational, 2: sleep), 0x0001 = operational mode */
-  WriteDataWord(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, 0x01, 0x00);
-#if 0
-  data_w[0] = 0x01;   // Operational mode (1: operational, 2: sleep), 0x0001 = operational mode, low byte first
-  data_w[1] = 0x00;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w, sizeof(data_w));     //set device to operational mode
-  CheckI2CErr(result);
-#endif
-  data_w[0] = 0x0C;   //APA, set parasitic impedance (table 7 in data sheet): 0x000C, value for 280mA
-  data_w[1] = 0x00;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w, sizeof(data_w));     //set APA (parasitic impedance)
-  CheckI2CErr(result);
+  /* operational mode (1: operational, 2: sleep), 0x0001 = operational mode */
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, 0x01, 0x00);
 
-  data_w[0] = 0x01;   //Battery Profile (table 8 in data sheet): 0x0001 = Type 1, low byte first
-  data_w[1] = 0x00;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w, sizeof(data_w));     //set Battery profile
-  CheckI2CErr(result);
+  /* APA, set parasitic impedance (table 7 in data sheet): 0x000C, value for 280mA */
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, 0x0C, 0x00);
 
-  data_w[0] = 0x55;   //write 0xAA55 to initialize RSOC, low byte first
-  data_w[1] = 0xAA;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_INIT_RSOC, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_INIT_RSOC, data_w, sizeof(data_w));     //initial RSOC
-  CheckI2CErr(result);
+  /* Battery Profile (table 8 in data sheet): 0x0001 = Type 1 */
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, 0x01, 0x00);
 
+  /* write 0xAA55 to initialize RSOC */
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_INIT_RSOC, 0x55, 0xAA);
+
+  /* Set battery measurement mode: 0x0001: thermistor mode. 0x0000: I2C mode */
 #if MCULC709203F_CONFIG_USE_THERMISTOR
-  data_w[0] = 0x01;   //0x0001 = thermistor mode, low byte first
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, 0x01, 0x00);
 #else
-  data_w[0] = 0x00;   //0x0009 = I2C mode, low byte first
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, 0x00, 0x00);
 #endif
-  data_w[1] = 0x00;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w, sizeof(data_w));     //set device to thermistor mode
-  CheckI2CErr(result);
+  /* set the B-constant of the thermistor to be measured */
+#if MCULC709203F_CONFIG_USE_THERMISTOR
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, 0x6B, 0x0D); /* Thermistor B-Constant: 0x0D6B = B=3435 */
+#endif
 
-  data_w[0] = 0x6B;   //Thermistor B-Constant: 0x0D6B = B=3435, low byte first
-  data_w[1] = 0x0D;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_SET_THERMB, data_w, sizeof(data_w));     //set B-constant of Thermistor
-  CheckI2CErr(result);
+  /* Low voltage alarm setting: 0x0C1C = 3100mV = 3.1V, low byte first */
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, 0x1C, 0x0C);
 
-  data_w[0] = 0x1C;   //Low voltage alarm setting: 0x0C1C = 3100mV = 3.1V, low byte first
-  data_w[1] = 0x0C;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_LOW_CELL_VOL_ALM, data_w, sizeof(data_w));     //set alarm low cell voltage
-  CheckI2CErr(result);
-
-  data_w[0] = 0x00;   //0x0000 = alarm disable, low byte first
-  data_w[1] = 0x00;
-  data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC_ALM, data_w[0], data_w[1]);
-  result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC_ALM, data_w, sizeof(data_w));     //disable alarm low RSOC
-  CheckI2CErr(result);
+  /* 0x0000 = alarm disable, low byte first */
+  WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC_ALM, 0x00, 0x00);
 }
 
 void McuLC_Deinit(void) {
