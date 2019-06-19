@@ -1,5 +1,6 @@
 readme.txt
 ----------
+Note: using the LC709203Fxx-01 version
 
 Open points
 - restore -O3 compiler optimization
@@ -8,6 +9,8 @@ Open points
 - small heartbeat indicator
 - re-add getting battery voltage with new IC
 - provide complete interface to IC
+- check/remove CS for CRC
+- add I2C temperature mode
 
 User Interface:
 - 1x short press: set marker (1x green blink)
@@ -19,6 +22,10 @@ User Interface:
 - logging: indication with short purple LED
 - red blinky LED: failure (e.g. I2C)
 - blue LED blinking: connection with host
+
+Re-enable communication:
+- turn on device (5x button) when connected to USB
+- device implements SEGGER RTT
 
 Links:
 - https://github.com/kirananto/RaZorReborn/blob/master/drivers/power/yl_lc709203_fuelgauge.c

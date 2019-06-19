@@ -32,7 +32,7 @@
 #include "LightAutoGain.h"
 #include "SYS1.h"
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-  #include "LC709203F.h"
+  #include "McuLC709203F.h"
 #endif
 
 #define MUTEX_WAIT_TIME_MS 2000
@@ -530,8 +530,8 @@ static void APP_init_task(void *param) {
   if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-    LC_Wakeup(); /* needs to be done before (!!!) any I2C communication! */
-    LC_Init();
+    McuLC_Wakeup(); /* needs to be done before (!!!) any I2C communication! */
+    McuLC_Init();
 #endif
     WatchDog_Init();
     WatchDog_StartComputationTime(WatchDog_LiDoInit);

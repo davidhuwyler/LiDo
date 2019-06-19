@@ -6,7 +6,8 @@
  */
 #include "Platform.h"
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-#include "LC709203F.h"
+#include "McuLC709203Fconfig.h"
+#include "McuLC709203F.h"
 #include "platform.h"
 #include "GI2C1.h"
 #include "UTIL1.h"
@@ -90,7 +91,6 @@ static uint8_t CheckCrc(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t 
   return ERR_OK;
 }
 
-
 static void CheckI2CErr(uint8_t res) {
   if (res==ERR_OK) {
     return; /* ok */
@@ -101,9 +101,18 @@ static void CheckI2CErr(uint8_t res) {
   }
 }
 
+static void WriteDataWord(uint8_t i2cSlaveAddr, uint8_t cmd, uint8_t low, uint8_t high) {
+  uint8_t data[3];
+
+  data[0] = low;
+  data[1] = high;
+  data[2] = calcCRC_WriteAccess16(i2cSlaveAddr, cmd, data[0], data[1]);
+  CheckI2CErr(i2cWriteCmdData(i2cSlaveAddr, cmd, data, sizeof(data)));
+}
+
 #include "PORT_PDD.h"
 #include "GPIO_PDD.h"
-void LC_Wakeup(void) {
+void McuLC_Wakeup(void) {
   /* SDA: PTB3
    * SCL: PTB2
    */
@@ -129,25 +138,171 @@ void LC_Wakeup(void) {
   PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 0x03u, PORT_PDD_OPEN_DRAIN_ENABLE); /* Set SDA pin as open drain */
 }
 
-static void LCinit(void) {
+static uint16_t ReadCmdWordChecked(uint8_t i2cSlaveAddr, uint8_t cmd) {
+  uint8_t data[3];
+
+  CheckI2CErr(i2cReadCmdData(i2cSlaveAddr, cmd, data, sizeof(data)));
+  CheckI2CErr(CheckCrc(i2cSlaveAddr, cmd, data[0], data[1], data[2]));
+  return (data[1]<<8) | data[0];
+}
+
+//returns cell voltage in mV
+uint16_t McuLC_GetVoltage(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE);
+}
+
+//returns cell temperature (10 = 1°C)
+int16_t McuLC_GetTemperature(void) {
+  /* cell temperature is in 0.1C units, from 0x09E4 (-20C) up to 0x0D04 (60C) */
+  int16_t temp;
+
+  temp = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP);
+  temp -= 0x0AAC; /* From the data sheet command table: 0x0AAC is 0 degree Celsius */
+  return (int16_t)temp;
+}
+
+//returns battery Relative State of Charge in percent
+uint16_t McuLC_GetRSOC(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC);
+}
+
+// Indicator to empty, returns battery charge in thousandth
+uint16_t McuLC_GetITE(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE);
+}
+
+// Indicator to empty, returns battery charge in thousandth
+uint16_t McuLC_GetICversion(void) {
+  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_IC_VER);
+}
+
+static const unsigned char *McuLC_CurrentDirectionToString(McuLC_CurrentDirection dir) {
+  switch(dir) {
+    case McuLC_CURRENT_DIR_AUTO:       return (const unsigned char*)"auto";
+    case McuLC_CURRENT_DIR_CHARGING:   return (const unsigned char*)"charging";
+    case McuLC_CURRENT_DIR_DISCHARING: return (const unsigned char*)"discharging";
+    case McuLC_CURRENT_DIR_ERROR:
+    default:                           return (const unsigned char*)"ERROR";
+  }
+}
+
+McuLC_CurrentDirection McuLC_GetCurrentDirection(void) {
+  uint16_t val;
+
+  val = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CURRENT_DIRECTION);
+  switch(val) {
+    case 0:         return McuLC_CURRENT_DIR_AUTO;
+    case 1:         return McuLC_CURRENT_DIR_CHARGING;
+    case 0xffff:    return McuLC_CURRENT_DIR_DISCHARING;
+    default:        return McuLC_CURRENT_DIR_ERROR;
+  }
+}
+
+static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
+  uint8_t buf[32];
+
+  CLS1_SendStatusStr((unsigned char*)"LC", (const unsigned char*)"\r\n", io->stdOut);
+#if MCULC709203F_CONFIG_USE_THERMISTOR
+  CLS1_SendStatusStr((unsigned char*)"  Bat Temp.", (const unsigned char*)"Thermistor mode\r\n", io->stdOut);
+#else
+  CLS1_SendStatusStr((unsigned char*)"  Bat Temp.", (const unsigned char*)"I2C mode\r\n", io->stdOut);
+#endif
+  {
+    uint16_t version;
+
+    version = McuLC_GetICversion(); /* battery charge in thousandth */
+    UTIL1_strcpy(buf, sizeof(buf), "0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), version);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  IC version", buf, io->stdOut);
+  }
+  {
+    uint16_t rsoc;
+
+    rsoc = McuLC_GetRSOC(); /* battery charge in percent */
+    UTIL1_Num16uToStr(buf, sizeof(buf), rsoc);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\% (0..100)\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  RSOC", buf, io->stdOut);
+  }
+  {
+    uint16_t ite;
+
+    ite = McuLC_GetITE(); /* battery charge in thousandth */
+    UTIL1_Num16uToStr(buf, sizeof(buf), ite);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" (0..1000)\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  ITE", buf, io->stdOut);
+  }
+  {
+    int16_t temperature;
+
+    temperature = McuLC_GetTemperature(); /* cell temperature in 1/10-degree C */
+    UTIL1_Num16sToStr(buf, sizeof(buf), temperature/10);
+    UTIL1_chcat(buf, sizeof(buf), '.');
+    if (temperature<0) { /* make it positive */
+      temperature = -temperature;
+    }
+    UTIL1_strcatNum16s(buf, sizeof(buf), temperature%10);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" C\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  Temperature", buf, io->stdOut);
+  }
+  {
+    uint16_t mVolt;
+
+    mVolt = McuLC_GetVoltage(); /* cell voltage in milli-volts */
+    UTIL1_Num16uToStr(buf, sizeof(buf), mVolt);
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" mV\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  Voltage", buf, io->stdOut);
+  }
+  {
+    McuLC_CurrentDirection direction;
+
+    direction = McuLC_GetCurrentDirection();
+    UTIL1_strcpy(buf, sizeof(buf), McuLC_CurrentDirectionToString(direction));
+    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
+    CLS1_SendStatusStr((unsigned char*)"  Current dir", buf, io->stdOut);
+  }
+  return ERR_OK;
+}
+
+uint8_t McuLC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
+  uint8_t res = ERR_OK;
+  const uint8_t *p;
+  int32_t tmp;
+
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "LC help")==0) {
+    CLS1_SendHelpStr((unsigned char*)"LC", (const unsigned char*)"Group of LC709203F commands\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    *handled = TRUE;
+    return ERR_OK;
+  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LC status")==0)) {
+    *handled = TRUE;
+    return PrintStatus(io);
+  }
+  return res;
+}
+
+void McuLC_Init(void) {
   /* initializes LC709203F for Renata ICP543759PMT battery */
   uint8_t data_w[3];
   uint8_t result;
   uint8_t crc;
 
+  /* Operational mode (1: operational, 2: sleep), 0x0001 = operational mode */
+  WriteDataWord(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, 0x01, 0x00);
+#if 0
   data_w[0] = 0x01;   // Operational mode (1: operational, 2: sleep), 0x0001 = operational mode, low byte first
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, data_w, sizeof(data_w));     //set device to operational mode
   CheckI2CErr(result);
-
-  data_w[0] = 0x20;   //APA, set parasitic impedance: 0x0020 = 32mOhm, type 1, 3.7V, 4.2V, 1260mAh, low byte first
+#endif
+  data_w[0] = 0x0C;   //APA, set parasitic impedance (table 7 in data sheet): 0x000C, value for 280mA
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ADJ_APPLI, data_w, sizeof(data_w));     //set APA (parasitic impedance)
   CheckI2CErr(result);
 
-  data_w[0] = 0x01;   //Battery Profile (Table 8 in data sheet): 0x0001 = Type 1, low byte first
+  data_w[0] = 0x01;   //Battery Profile (table 8 in data sheet): 0x0001 = Type 1, low byte first
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CHG_PARAM, data_w, sizeof(data_w));     //set Battery profile
@@ -159,7 +314,11 @@ static void LCinit(void) {
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_INIT_RSOC, data_w, sizeof(data_w));     //initial RSOC
   CheckI2CErr(result);
 
+#if MCULC709203F_CONFIG_USE_THERMISTOR
   data_w[0] = 0x01;   //0x0001 = thermistor mode, low byte first
+#else
+  data_w[0] = 0x00;   //0x0009 = I2C mode, low byte first
+#endif
   data_w[1] = 0x00;
   data_w[2] = calcCRC_WriteAccess16(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w[0], data_w[1]);
   result = i2cWriteCmdData(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, data_w, sizeof(data_w));     //set device to thermistor mode
@@ -184,146 +343,8 @@ static void LCinit(void) {
   CheckI2CErr(result);
 }
 
-static uint16_t ReadCmdWordChecked(uint8_t i2cSlaveAddr, uint8_t cmd) {
-  uint8_t data[3];
-
-  CheckI2CErr(i2cReadCmdData(i2cSlaveAddr, cmd, data, sizeof(data)));
-  CheckI2CErr(CheckCrc(i2cSlaveAddr, cmd, data[0], data[1], data[2]));
-  return (data[1]<<8) | data[0];
-}
-
-//returns cell voltage in mV
-uint16_t LCgetVoltage(void) {
-  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE);
-}
-
-//returns cell temperature (10 = 1°C)
-int16_t LCgetTemp(void) {
-  /* cell temperature is in 0.1C units, from 0x09E4 (-20C) up to 0x0D04 (60C) */
-  int16_t temp;
-
-  temp = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP);
-  temp -= 0x0AAC; /* From the data sheet command table: 0x0AAC is 0 degree Celsius */
-  return (int16_t)temp;
-}
-
-//returns battery Relative State of Charge in percent
-uint16_t LCgetRSOC(void) {
-  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC);
-}
-
-// Indicator to empty, returns battery charge in thousandth
-uint16_t LCgetITE(void) {
-  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE);
-}
-
-// Indicator to empty, returns battery charge in thousandth
-uint16_t LCgetICversion(void) {
-  return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_IC_VER);
-}
-
-static const unsigned char *LC_CurrentDirectionToString(LC_CurrentDirection dir) {
-  switch(dir) {
-    case LC_CURRENT_DIR_AUTO:       return (const unsigned char*)"auto";
-    case LC_CURRENT_DIR_CHARGING:   return (const unsigned char*)"charging";
-    case LC_CURRENT_DIR_DISCHARING: return (const unsigned char*)"discharging";
-    case LC_CURRENT_DIR_ERROR:
-    default:                        return (const unsigned char*)"ERROR";
-  }
-}
-
-LC_CurrentDirection LCgetCurrentDirection(void) {
-  uint16_t val;
-
-  val = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CURRENT_DIRECTION);
-  switch(val) {
-    case 0: return LC_CURRENT_DIR_AUTO;
-    case 1: return LC_CURRENT_DIR_CHARGING;
-    case 0xffff: return LC_CURRENT_DIR_DISCHARING;
-    default: return LC_CURRENT_DIR_ERROR;
-  }
-}
-
-static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
-  uint8_t buf[32];
-
-  CLS1_SendStatusStr((unsigned char*)"LC", (const unsigned char*)"\r\n", io->stdOut);
-  {
-    uint16_t version;
-
-    version = LCgetICversion(); /* battery charge in thousandth */
-     UTIL1_strcpy(buf, sizeof(buf), "0x");
-    UTIL1_strcatNum16Hex(buf, sizeof(buf), version);
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
-    CLS1_SendStatusStr((unsigned char*)"  IC version", buf, io->stdOut);
-  }
-  {
-    uint16_t rsoc;
-
-    rsoc = LCgetRSOC(); /* battery charge in percent */
-    UTIL1_Num16uToStr(buf, sizeof(buf), rsoc);
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\% (0..100)\r\n");
-    CLS1_SendStatusStr((unsigned char*)"  RSOC", buf, io->stdOut);
-  }
-  {
-    uint16_t ite;
-
-    ite = LCgetITE(); /* battery charge in thousandth */
-    UTIL1_Num16uToStr(buf, sizeof(buf), ite);
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" (0..1000)\r\n");
-    CLS1_SendStatusStr((unsigned char*)"  ITE", buf, io->stdOut);
-  }
-  {
-    int16_t temperature;
-
-    temperature = LCgetTemp(); /* cell temperature in 1/10-degree C */
-    UTIL1_Num16sToStr(buf, sizeof(buf), temperature/10);
-    UTIL1_chcat(buf, sizeof(buf), '.');
-    if (temperature<0) { /* make it positive */
-      temperature = -temperature;
-    }
-    UTIL1_strcatNum16s(buf, sizeof(buf), temperature%10);
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" C\r\n");
-    CLS1_SendStatusStr((unsigned char*)"  Temperature", buf, io->stdOut);
-  }
-  {
-    uint16_t mVolt;
-
-    mVolt = LCgetVoltage(); /* cell voltage in milli-volts */
-    UTIL1_Num16uToStr(buf, sizeof(buf), mVolt);
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)" mV\r\n");
-    CLS1_SendStatusStr((unsigned char*)"  Voltage", buf, io->stdOut);
-  }
-  {
-    LC_CurrentDirection direction;
-
-    direction = LCgetCurrentDirection();
-    UTIL1_strcpy(buf, sizeof(buf), LC_CurrentDirectionToString(direction));
-    UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
-    CLS1_SendStatusStr((unsigned char*)"  Current dir", buf, io->stdOut);
-  }
-  return ERR_OK;
-}
-
-uint8_t LC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
-  uint8_t res = ERR_OK;
-  const uint8_t *p;
-  int32_t tmp;
-
-  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "LC help")==0) {
-    CLS1_SendHelpStr((unsigned char*)"LC", (const unsigned char*)"Group of LC709203F commands\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
-    *handled = TRUE;
-    return ERR_OK;
-  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LC status")==0)) {
-    *handled = TRUE;
-    return PrintStatus(io);
-  }
-  return res;
-}
-
-void LC_Init(void) {
-  LCinit();
+void McuLC_Deinit(void) {
+  /* nothing to do */
 }
 
 #endif /* PL_CONFIG_HAS_GAUGE_SENSOR */
