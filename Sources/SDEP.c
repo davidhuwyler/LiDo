@@ -17,8 +17,8 @@
 #include "PowerManagement.h"
 #include "UI.h"
 
-LDD_TDeviceData* CRCdeviceDataHandle;
-LDD_TUserData *  CRCuserDataHandle;
+static LDD_TDeviceData* CRCdeviceDataHandle;
+static LDD_TUserData *  CRCuserDataHandle;
 
 static bool ongoingSDEPmessageProcessing = FALSE;
 

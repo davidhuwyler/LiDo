@@ -35,7 +35,7 @@ static CLS1_ConstStdIOTypePtr SDEP_Fileio = &SDEP_FileioNonPtr;
 
 static bool newSDEPshellMessage = FALSE;
 
-lfs_file_t openFile;
+static lfs_file_t openFile;
 
 static bool fileToRead = FALSE;
 

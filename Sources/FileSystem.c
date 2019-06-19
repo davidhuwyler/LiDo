@@ -71,7 +71,7 @@ int block_device_sync(const struct lfs_config *c)
 }
 
 // configuration of the file system is provided by this struct
-const struct lfs_config FS_cfg = {
+static const struct lfs_config FS_cfg = {
     // block device operations
     .read = block_device_read,
     .prog = block_device_prog,
@@ -138,8 +138,7 @@ typedef struct {
 } putbuff;
 
 
-static
-void putc_bfd (
+static void putc_bfd (
   putbuff* pb,
   char c
 )
