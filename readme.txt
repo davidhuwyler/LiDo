@@ -11,6 +11,8 @@ Open points
 - provide complete interface to IC
 - check/remove CS for CRC
 - add I2C temperature mode
+- check extra (alarm) pins
+- Check all CS1_EnterCritical() if necessary
 
 User Interface:
 - 1x short press: set marker (1x green blink)
