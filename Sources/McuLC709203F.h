@@ -8,11 +8,12 @@
 #ifndef SOURCES_MCULC709203F_H_
 #define SOURCES_MCULC709203F_H_
 
-uint16_t McuLC_GetVoltage(void);
-int16_t McuLC_GetTemperature(void);
-uint16_t McuLC_GetRSOC(void);
-uint16_t McuLC_GetITE(void);
-uint16_t McuLC_GetICversion(void);
+uint8_t McuLC_GetVoltage(uint16_t *pVoltage);
+uint8_t McuLC_GetTemperature(int16_t *pTemperature);
+uint8_t McuLC_GetRSOC(uint16_t *pRsoc);
+uint8_t McuLC_GetITE(uint16_t *pIte);
+uint8_t McuLC_GetICversion(uint16_t *pVersion);
+uint8_t McuLC_GetTemperatureMeasurementMode(bool *isI2Cmode);
 
 typedef enum {
   McuLC_CURRENT_DIR_AUTO,
@@ -29,7 +30,7 @@ uint8_t McuLC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_S
 
 void McuLC_Wakeup(void); /* must be done before any other I2C communication on the bus! */
 
-void McuLC_Init(void);
+uint8_t McuLC_Init(void);
 
 void McuLC_Deinit(void);
 
