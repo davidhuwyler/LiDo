@@ -12,6 +12,8 @@
 #include "PIN_CHARGE_STATE.h"
 #if PL_CONFIG_HAS_BATT_ADC
   #include "AI_PWR_0_5x_U_BAT.h"
+#else
+  #include "McuLC709203F.h"
 #endif
 #include "FRTOS1.h"
 #include "SDEP.h"
@@ -85,17 +87,15 @@ static void PowerManagement_task(void *param) {
 void PowerManagement_ResumeTaskIfNeeded(void) {
   static TickType_t xLastWakeTime = 0;
 
-  if(xTaskGetTickCount()-xLastWakeTime> 10000 && powerManagementTaskHandle!=NULL)
-  {
+  if(xTaskGetTickCount()-xLastWakeTime> 10000 && powerManagementTaskHandle!=NULL) {
 	  xLastWakeTime = xTaskGetTickCount();
 	  vTaskResume( powerManagementTaskHandle);
   }
 }
 
-#if PL_CONFIG_HAS_BATT_ADC
 //Return the Battery Voltage in mV
-uint16_t PowerManagement_getBatteryVoltage(void)
-{
+uint16_t PowerManagement_getBatteryVoltage(void) {
+#if PL_CONFIG_HAS_BATT_ADC
 	uint16_t adcValue;
 	PIN_EN_U_MEAS_SetVal();
 	WAIT1_Waitus(10);
@@ -103,8 +103,17 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 	PIN_EN_U_MEAS_ClrVal();
 	AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
 	return (adcValue+POWER_MANAGEMENT_LIPO_OFFSET)/10;
-}
+#else
+	uint8_t res;
+	uint16_t voltage;
+
+	res = McuLC_GetVoltage(&voltage);
+	if (res==ERR_OK) {
+	  return voltage;
+	}
+	return 0; /* error case */
 #endif
+}
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"power", (const unsigned char*)"\r\n", io->stdOut);

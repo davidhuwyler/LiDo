@@ -159,7 +159,7 @@ static uint8_t ReadCmdWordChecked(uint8_t i2cSlaveAddr, uint8_t cmd, uint16_t *v
   return ERR_OK;
 }
 
-//returns cell voltage in mV
+// returns cell voltage in mV
 uint8_t McuLC_GetVoltage(uint16_t *pVoltage) {
   return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE, pVoltage);
 }

@@ -203,7 +203,6 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
 
-#if PL_CONFIG_HAS_BATT_ADC
 	case SDEP_CMDID_GET_VOLTAGE:
 		uint16Param =  PowerManagement_getBatteryVoltage();
 		RTC_getTimeUnixFormat(&sint32Param);
@@ -212,7 +211,6 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		answer.payloadSize = 2;
 		SDEP_SendMessage(&answer);
 		return ERR_OK;
-#endif
 
 	case SDEP_CMDID_GET_EN_SAMPLE_AUTO_OFF:
 		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
@@ -347,13 +345,15 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 		//Check FileSystem, MiniINI & SPIF
 		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], (uint8_t*)p ,25); //Read Sampleintervall from SPIF
 		UTIL1_ScanDecimal8uNumber(&p, &uint8param);
-		if(!(uint8param >= 1 && uint8param <= 100 )) {err = ERR_FAILED;}//Check Sampleintervall
+		if(!(uint8param >= 1 && uint8param <= 100 )) {
+		  err = ERR_FAILED;
+		}
 
-#if PL_CONFIG_HAS_BATT_ADC
 		//Check the Battery State
 		uint16Param = PowerManagement_getBatteryVoltage();
-		if(!(uint16Param >= 2978 && uint16Param <= 4200 )) {err = ERR_FAILED;}//Check Battery Voltagerange
-#endif
+		if(!(uint16Param >= 2978 && uint16Param <= 4200 )) {
+		  err = ERR_FAILED;
+		}
 
 		//If all OK, Turn on The RGB LED for the User to check...
 		UI_LEDpulse(LED_W);
@@ -363,9 +363,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 			answer.payloadSize = 0;
 			answer.payload =0;
 			SDEP_SendMessage(&answer);
-		}
-		else
-		{
+		} else {
 			answer.type = SDEP_TYPEBYTE_ERROR;
 			answer.cmdId = SDEP_ERRID_SELFTEST_FAILED;
 			answer.payloadSize = 0;
@@ -520,8 +518,6 @@ uint8_t SDEP_SendPendingAlert(void)
 	return ERR_OK;
 }
 
-uint8_t SDEP_Init(void)
-{
+uint8_t SDEP_Init(void) {
 	SDEPio_init();
 }
-

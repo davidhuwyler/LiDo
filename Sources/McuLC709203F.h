@@ -13,7 +13,13 @@
 extern "C" {
 #endif
 
+/*!
+ * \brief Returns the current battery voltage
+ * \param pVoltage Pointer where to store the value (in mV)
+ * \return Error code, ERR_OK for no error
+ */
 uint8_t McuLC_GetVoltage(uint16_t *pVoltage);
+
 uint8_t McuLC_GetTemperature(int16_t *pTemperature);
 uint8_t McuLC_GetRSOC(uint16_t *pRsoc);
 uint8_t McuLC_GetITE(uint16_t *pIte);
