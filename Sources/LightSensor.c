@@ -189,17 +189,11 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
 
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	allowLightSensToWakeUp = TRUE;
-	CS1_ExitCritical();
+	allowLightSensToWakeUp = TRUE; /* no critical section needed as access is atomic */
 
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
 
-	CS1_EnterCritical();
-	allowLightSensToWakeUp = FALSE;
-	CS1_ExitCritical();
-
+	allowLightSensToWakeUp = FALSE; /* no critical section needed as access is atomic */
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)
@@ -230,15 +224,11 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
-	CS1_EnterCritical();
-	allowLightSensToWakeUp = TRUE;
-	CS1_ExitCritical();
+	allowLightSensToWakeUp = TRUE; /* no critical section needed as access is atomic */
 
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
 
-	CS1_EnterCritical();
-	allowLightSensToWakeUp = FALSE;
-	CS1_ExitCritical();
+	allowLightSensToWakeUp = FALSE; /* no critical section needed as access is atomic */
 
 	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
 	while(i2cData != 0x04)

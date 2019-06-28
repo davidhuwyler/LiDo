@@ -31,12 +31,10 @@ static CLS1_ConstStdIOType SDEP_FileioNonPtr =
 	(CLS1_StdIO_OutErr_FctType) SDEPio_FileSendChar, /* stderr */
 	SDEPio_FileKeyPressed /* if input is not empty */
 };
+
 static CLS1_ConstStdIOTypePtr SDEP_Fileio = &SDEP_FileioNonPtr;
-
-static bool newSDEPshellMessage = FALSE;
-
+static volatile bool newSDEPshellMessage = FALSE;
 static lfs_file_t openFile;
-
 static bool fileToRead = FALSE;
 
 uint8_t SDEPio_HandleShellCMDs(void)
@@ -263,11 +261,11 @@ void SDEPio_FileSendChar(uint8_t ch)
 {
 	FileToSDEPBuf_Put(ch);
 }
+
 bool SDEPio_FileKeyPressed(void)
 {
 	return (bool)FileToSDEPBuf_NofElements();
 }
-
 
 void SDEPio_getSDEPfileIO(CLS1_ConstStdIOTypePtr* io)
 {
@@ -282,10 +280,7 @@ void SDEPio_init(void)
 void SDEPio_switchIOtoSDEPio(void)
 {
 	CLS1_SetStdio(SDEP_Shellio);
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	newSDEPshellMessage = TRUE;
-	CS1_ExitCritical();
+	newSDEPshellMessage = TRUE; /* no critical section needed as access is atomic */
 }
 
 void SDEPio_switchIOtoStdIO(void)
@@ -295,10 +290,7 @@ void SDEPio_switchIOtoStdIO(void)
 
 bool SDEPio_NewSDEPmessageAvail(void)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
 	bool res = newSDEPshellMessage;
-	newSDEPshellMessage = FALSE;
-	CS1_ExitCritical();
+	newSDEPshellMessage = FALSE; /* no critical section needed as access is atomic */
 	return res;
 }

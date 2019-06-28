@@ -55,26 +55,17 @@ static volatile bool requestForSoftwareReset = FALSE;
 
 void APP_setMarkerInLog(void)
 {
-  CS1_CriticalVariable();
-  CS1_EnterCritical();
-  setOneMarkerInLog = TRUE;
-  CS1_ExitCritical();
+  setOneMarkerInLog = TRUE; /* no critical section needed as access is atomic */
 }
 
 void APP_toggleEnableSampling(void)
 {
-  CS1_CriticalVariable();
-  CS1_EnterCritical();
-  toggleEnablingSampling = TRUE;
-  CS1_ExitCritical();
+  toggleEnablingSampling = TRUE; /* no critical section needed as access is atomic */
 }
 
 void APP_requestForSoftwareReset(void)
 {
-  CS1_CriticalVariable();
-  CS1_EnterCritical();
-  requestForSoftwareReset = TRUE;
-  CS1_ExitCritical();
+  requestForSoftwareReset = TRUE; /* no critical section needed as access is atomic */
 }
 
 static void APP_toggleEnableSamplingIfRequested(void)
@@ -271,7 +262,7 @@ void APP_resumeSampleTaskFromISR(void)
           portYIELD_FROM_ISR(pdTRUE);
       }
   }
-    CS1_ExitCritical();
+  CS1_ExitCritical();
 }
 
 void APP_suspendSampleTask(void)

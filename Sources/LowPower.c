@@ -18,7 +18,7 @@
 #include "UI.h"
 #include "LPTMR_PDD.h"
 
-static bool stopModeAllowed = FALSE;
+static volatile bool stopModeAllowed = FALSE;
 static unsigned char ucMCG_C1;
 
 #define CLOCK_DIV 2
@@ -33,18 +33,13 @@ void LowPower_EnterLowpowerMode(void)
     __asm volatile("isb");
 
 #else
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-
 	if(stopModeAllowed)
 	{
-		  CS1_ExitCritical();
 		  ucMCG_C1 = MCG_C1;
 		  Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
 	}
 	else
 	{
-		CS1_ExitCritical();
 	    __asm volatile("dsb");
 	    __asm volatile("wfi");
 	    __asm volatile("isb");
@@ -54,28 +49,17 @@ void LowPower_EnterLowpowerMode(void)
 
 void LowPower_EnableStopMode(void)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	stopModeAllowed = TRUE;
-	CS1_ExitCritical();
+	stopModeAllowed = TRUE; /* no critical section needed as access is atomic */
 }
 
 void LowPower_DisableStopMode(void)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	stopModeAllowed = FALSE;
-	CS1_ExitCritical();
+	stopModeAllowed = FALSE; /* no critical section needed as access is atomic */
 }
 
 bool LowPower_StopModeIsEnabled(void)
 {
-	bool temp;
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	temp = stopModeAllowed;
-	CS1_ExitCritical();
-	return temp;
+	return stopModeAllowed; /* no critical section needed as access is atomic */
 }
 
 void LowPower_init(void)

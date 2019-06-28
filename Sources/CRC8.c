@@ -9,14 +9,11 @@
  */
 
 #include "CRC8.h"
-#include "CS1.h"
 
 #define CRC8_POLYNOM (0x07)
 
-static uint8_t crc8_bytecalc(unsigned char byte,uint8_t* seed)
+static uint8_t crc8_bytecalc(unsigned char byte, uint8_t* seed)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
 	uint8_t i;
 	uint8_t flag;
 	uint8_t polynom = CRC8_POLYNOM;
@@ -42,38 +39,35 @@ static uint8_t crc8_bytecalc(unsigned char byte,uint8_t* seed)
 			*seed ^= polynom;
 		}
 	}
-	CS1_ExitCritical();
 	return *seed;
 }
 
-static uint8_t crc8_messagecalc(unsigned char *msg, uint8_t len,uint8_t* seed)
+static uint8_t crc8_messagecalc(unsigned char *msg, uint8_t len, uint8_t* seed)
 {
-  CS1_CriticalVariable();
-  CS1_EnterCritical();
-
   for(int i=0; i<len; i++)
   {
     crc8_bytecalc(msg[i],seed);
   }
   uint8_t crc = crc8_bytecalc(0,seed);
-  CS1_ExitCritical();
   return crc;
 }
 
-uint8_t crc8_SDEPcrc(SDEPmessage_t* message)
+uint8_t crc8_SDEPcrc(SDEPmessage_t *message)
 {
 	uint8_t crc,seed = 0;
-	crc = crc8_bytecalc(message->type,&seed);
-	crc = crc8_bytecalc((uint8_t)message->cmdId,&seed);
-	crc = crc8_bytecalc((uint8_t)(message->cmdId>>8),&seed);
-	crc = crc8_bytecalc(message->payloadSize,&seed);
-	crc = crc8_messagecalc((unsigned char *)message->payload,message->payloadSize,&seed);
+
+	crc = crc8_bytecalc(message->type, &seed);
+	crc = crc8_bytecalc((uint8_t)message->cmdId, &seed);
+	crc = crc8_bytecalc((uint8_t)(message->cmdId>>8), &seed);
+	crc = crc8_bytecalc(message->payloadSize, &seed);
+	crc = crc8_messagecalc((unsigned char*)message->payload, message->payloadSize, &seed);
 	return crc;
 }
 
-void crc8_liDoSample(liDoSample_t* sample)
+void crc8_liDoSample(liDoSample_t *sample)
 {
 	uint8_t crc,seed = 0;
+
 	crc = crc8_bytecalc((uint8_t)sample->unixTimeStamp,&seed);
 	crc = crc8_bytecalc((uint8_t)(sample->unixTimeStamp>>8),&seed);
 	crc = crc8_bytecalc((uint8_t)(sample->unixTimeStamp>>16),&seed);
