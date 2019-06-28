@@ -378,7 +378,6 @@ uint8_t McuLC_SetTemperatureMeasurementMode(bool i2cMode) {
   return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, i2cMode?0x00:0x01, 0x0);
 }
 
-
 uint8_t McuLC_Init(void) {
   /* initializes LC709203F for Renata ICP543759PMT battery */
   uint8_t data_w[3];
