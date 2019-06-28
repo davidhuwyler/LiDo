@@ -28,6 +28,7 @@
 #include "RTT1.h"
 #include "McuLC709203F.h"
 #include "AS1.h"
+#include "PowerManagement.h"
 
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (1)
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_RTT   (1)
@@ -52,6 +53,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   McuLC_ParseCommand,
 #endif
+  PowerManagement_ParseCommand,
   TmDt1_ParseCommand,
   SPIF_ParseCommand,
   FS_ParseCommand,

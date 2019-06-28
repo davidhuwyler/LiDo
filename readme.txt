@@ -5,14 +5,15 @@ Note: using the LC709203Fxx-01 version
 Open points
 - restore -O3 compiler optimization
 - The LC needs to be initialized for the correct battery
-- need reset button, ability to reset (disconnect from debugger halts the target), or need to disconnect battery
+- need reset button, ability to reset (disconnect from debugger halts the target), or need to disconnect battery (==> V2.2)
+- V2.2 will have FETs for sensors and SPI removed
 - small heartbeat indicator
 - re-add getting battery voltage with new IC
-- provide complete interface to IC
-- check/remove CS for CRC
+- provide complete interface to gauge IC
 - add I2C temperature mode
 - check extra (alarm) pins
-- Check all CS1_EnterCritical() if necessary
+- check waing for SPI in FS driver
+- V2.1 Board: do not get from charing IC the charging state (always low?)
 
 User Interface:
 - 1x short press: set marker (1x green blink)

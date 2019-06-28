@@ -26,6 +26,9 @@
 static TaskHandle_t powerManagementTaskHandle;
 static bool waringLogged = FALSE;
 
+bool PowerManagement_IsCharging(void) {
+  return PIN_CHARGE_STATE_GetVal()==TRUE; /* pin should be HIGH/true if charging */
+}
 
 static void PowerManagement_task(void *param) {
   (void)param;
@@ -71,7 +74,7 @@ static void PowerManagement_task(void *param) {
 	  }
 	  oldAdcValue = adcValue;
 #else
-    if(PIN_CHARGE_STATE_GetVal()) {
+    if(PowerManagement_IsCharging()) {
       UI_LEDpulse(LED_G);
     }
 #endif
@@ -79,13 +82,13 @@ static void PowerManagement_task(void *param) {
   }
 }
 
-void PowerManagement_ResumeTaskIfNeeded(void)
-{
+void PowerManagement_ResumeTaskIfNeeded(void) {
   static TickType_t xLastWakeTime = 0;
+
   if(xTaskGetTickCount()-xLastWakeTime> 10000 && powerManagementTaskHandle!=NULL)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  vTaskResume( powerManagementTaskHandle );
+	  vTaskResume( powerManagementTaskHandle);
   }
 }
 
@@ -103,11 +106,33 @@ uint16_t PowerManagement_getBatteryVoltage(void)
 }
 #endif
 
-void PowerManagement_init(void)
-{
-	  if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS)
-	  {
-		  for(;;){} /* error! probably out of memory */
-	  }
+static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
+  CLS1_SendStatusStr((unsigned char*)"power", (const unsigned char*)"\r\n", io->stdOut);
+  CLS1_SendStatusStr((unsigned char*)"  charging", PowerManagement_IsCharging()?(unsigned char*)"yes\r\n":(unsigned char*)"no\r\n", io->stdOut);
+  return ERR_OK;
+}
+
+uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
+  uint8_t res = ERR_OK;
+  const uint8_t *p;
+  int32_t tmp;
+
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "power help")==0) {
+    CLS1_SendHelpStr((unsigned char*)"power", (const unsigned char*)"Group of power management commands\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    *handled = TRUE;
+    return ERR_OK;
+  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "power status")==0)) {
+    *handled = TRUE;
+    return PrintStatus(io);
+  }
+  return res;
+}
+
+void PowerManagement_init(void) {
+  if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS)
+  {
+    for(;;){} /* error! probably out of memory */
+  }
 }
 

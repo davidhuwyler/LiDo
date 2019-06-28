@@ -10,6 +10,9 @@
 
 #include "Platform.h"
 
+#include "CLS1.h"
+uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+
 void PowerManagement_init(void);
 void PowerManagement_ResumeTaskIfNeeded(void);
 uint16_t PowerManagement_getBatteryVoltage(void);
