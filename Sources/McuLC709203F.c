@@ -239,7 +239,6 @@ uint8_t McuLC_SetCurrentDirection(McuLC_CurrentDirection direction) {
   return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CURRENT_DIRECTION, low, high);
 }
 
-
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32], res;
 
@@ -374,6 +373,11 @@ uint8_t McuLC_GetTemperatureMeasurementMode(bool *isI2Cmode) {
   *isI2Cmode = val==0; /* 0: i2c, 1: thermistor mode */
   return ERR_OK;
 }
+
+uint8_t McuLC_SetTemperatureMeasurementMode(bool i2cMode) {
+  return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, i2cMode?0x00:0x01, 0x0);
+}
+
 
 uint8_t McuLC_Init(void) {
   /* initializes LC709203F for Renata ICP543759PMT battery */

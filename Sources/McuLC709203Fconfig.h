@@ -1,12 +1,17 @@
 /*
- * McuLC709203Fconfig.h
+ * Copyright (c) 2019, Erich Styger
+ * All rights reserved.
  *
- *  Created on: 19.06.2019
- *      Author: Erich Styger
+ * Configuration header file for the LC709203 battery gauge I2C sensor
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef SOURCES_MCULC709203FCONFIG_H_
 #define SOURCES_MCULC709203FCONFIG_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef MCULC709203F_CONFIG_USE_THERMISTOR
   #define MCULC709203F_CONFIG_USE_THERMISTOR  (0)
@@ -14,7 +19,13 @@
 #endif
 
 #ifndef MCULC_CONFIG_BLOCK_ON_I2C_ERROR
-  #define MCULC_CONFIG_BLOCK_ON_I2C_ERROR   (1) /* if it should block on error and wait for the watchdog */
+  #define MCULC_CONFIG_BLOCK_ON_I2C_ERROR   (1)
+    /*!< if it should block on error and wait for the watchdog */
 #endif
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
 
 #endif /* SOURCES_MCULC709203FCONFIG_H_ */
