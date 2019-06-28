@@ -87,7 +87,6 @@ static const struct lfs_config FS_cfg = {
     .block_cycles = 500
 };
 
-
 /*-----------------------------------------------------------------------*/
 /* Get a string from the file
  * (ported from FatFS function: f_gets())
@@ -202,7 +201,6 @@ int FS_puts (
     return 0;
   }
 }
-
 
 uint8_t FS_Format(CLS1_ConstStdIOType *io)
 {
@@ -338,7 +336,6 @@ uint8_t FS_Unmount(CLS1_ConstStdIOType *io)
   {
     return ERR_BUSY;
   }
-
 }
 
 uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
@@ -384,7 +381,6 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
       { /* no more files */
         break;
       }
-
       if(!(UTIL1_strcmp(info.name,".") == 0 || UTIL1_strcmp(info.name,"..") == 0 ))
       {
         switch (info.type)
@@ -428,7 +424,6 @@ uint8_t FS_Dir(const char *path, CLS1_ConstStdIOType *io)
   }
 }
 
-
 /*
  * Prints a list of Files and Directories of a given path
  * If path == NULL, the Files and Direcotries of the root-directory are printed
@@ -444,7 +439,6 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
   {
     return ERR_FAILED; /* listing a directory without an I/O channel does not make any sense */
   }
-
   if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
   {
     if (!FS_isMounted)
@@ -511,9 +505,7 @@ uint8_t FS_FileList(const char *path, CLS1_ConstStdIOType *io)
   {
     return ERR_BUSY;
   }
-
 }
-
 
 uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io)
 {
@@ -592,8 +584,6 @@ uint8_t FS_CopyFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType
   {
     return ERR_BUSY;
   }
-
-
 }
 
 uint8_t FS_MoveFile(const char *srcPath, const char *dstPath,CLS1_ConstStdIOType *io)
@@ -686,7 +676,6 @@ uint8_t FS_ReadFile(lfs_file_t* file, bool readFromBeginning, size_t nofBytes, C
       xSemaphoreGiveRecursive(fileSystemAccessMutex);
       return ERR_PARAM_SIZE; //EOF
     }
-
   }
   else
   {
@@ -716,7 +705,6 @@ uint8_t FS_openLiDoSampleFile(lfs_file_t* file)
 
   if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
   {
-
     if (lfs_file_open(&FS_lfs, file, fileNameBuf, LFS_O_WRONLY | LFS_O_APPEND) < 0)
     {
 
@@ -900,11 +888,11 @@ uint8_t FS_writeLiDoSample(liDoSample_t *sample,lfs_file_t* file)
 
 
 //Function for the Shell PrintHex command
-static uint8_t readFromFile(void *hndl, uint32_t addr, uint8_t *buf,size_t bufSize)
+static uint8_t readFromFile(void *hndl, uint32_t addr, uint8_t *buf, size_t bufSize)
 {
   lfs_file_t *fp;
 
-  fp = (lfs_file_t*) hndl;
+  fp = (lfs_file_t*)hndl;
   if (lfs_file_read(&FS_lfs, fp, buf, bufSize) < 0)
   {
     return ERR_FAILED;
@@ -912,7 +900,7 @@ static uint8_t readFromFile(void *hndl, uint32_t addr, uint8_t *buf,size_t bufSi
   return ERR_OK;
 }
 
-uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
+uint8_t FS_PrintFile(const char *filePath, CLS1_ConstStdIOType *io, bool inHex)
 {
   lfs_file_t file;
   uint8_t res = ERR_OK;
@@ -956,18 +944,27 @@ uint8_t FS_PrintHexFile(const char *filePath, CLS1_ConstStdIOType *io)
       xSemaphoreGiveRecursive(fileSystemAccessMutex);
       return ERR_FAILED;
     }
-    res = CLS1_PrintMemory(&file, 0, fileSize - 1, 4, 16, readFromFile, io);
-    if (res != ERR_OK)
-    {
-      CLS1_SendStr("ERROR while calling PrintMemory()\r\n", io->stdErr);
+    if (inHex) {
+      res = CLS1_PrintMemory(&file, 0, fileSize-1, 4, 16, readFromFile, io);
+      if (res != ERR_OK)
+      {
+        CLS1_SendStr("ERROR while calling PrintMemory()\r\n", io->stdErr);
+      }
+    } else {
+      uint8_t ch;
+
+      while(fileSize>0) {
+        if (lfs_file_read(&FS_lfs, &file, &ch, sizeof(ch)) < 0) {
+          break; /* error case */
+        }
+        CLS1_SendCh(ch, io->stdOut); /* print character */
+        fileSize--;
+      }
     }
     (void) lfs_file_close(&FS_lfs, &file);
-
     xSemaphoreGiveRecursive(fileSystemAccessMutex);
     return res;
-  }
-  else
-  {
+  } else {
     return ERR_BUSY;
   }
 }
@@ -1193,69 +1190,52 @@ uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled,const CLS1_StdIO
     CLS1_SendHelpStr((unsigned char*) "  mv <src> <dst>",(const unsigned char*) "Rename a file\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*) "  cp <src> <dst>",(const unsigned char*) "Copy a file\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*) "  printhex <file>",(const unsigned char*) "Print the file data in hexadecimal format\r\n",io->stdOut);
+    CLS1_SendHelpStr((unsigned char*) "  printtxt <file>",(const unsigned char*) "Print the file data in text format\r\n",io->stdOut);
     CLS1_SendHelpStr((unsigned char*) "  benchmark",(const unsigned char*) "Run a benchmark to measure performance\r\n",io->stdOut);
     *handled = TRUE;
     return ERR_OK;
-  }
-  else if (UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS) == 0|| UTIL1_strcmp((char*)cmd, "FS status") == 0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS) == 0|| UTIL1_strcmp((char*)cmd, "FS status") == 0) {
     *handled = TRUE;
     return FS_PrintStatus(io);
-  }
-  else if (UTIL1_strcmp((char*)cmd, "FS format") == 0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, "FS format") == 0) {
     *handled = TRUE;
     return FS_Format(io);
-  }
-  else if (UTIL1_strcmp((char*)cmd, "FS mount") == 0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, "FS mount") == 0) {
     *handled = TRUE;
     return FS_Mount(io);
-  }
-  else if (UTIL1_strcmp((char*)cmd, "FS unmount") == 0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, "FS unmount") == 0) {
     *handled = TRUE;
     return FS_Unmount(io);
-  }
-  else if (UTIL1_strcmp((char*)cmd, "FS ls") == 0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, "FS ls") == 0) {
     *handled = TRUE;
     return FS_Dir(NULL, io);
-  }
-  else if (UTIL1_strncmp((char* )cmd, "FS ls ", sizeof("FS ls ") - 1) == 0)
-  {
+  } else if (UTIL1_strncmp((char* )cmd, "FS ls ", sizeof("FS ls ") - 1) == 0) {
     *handled = TRUE;
-    if ((UTIL1_ReadEscapedName(cmd + sizeof("FS ls ") - 1,fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK))
-    {
+    if ((UTIL1_ReadEscapedName(cmd + sizeof("FS ls ") - 1,fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK))  {
       return FS_Dir(fileNameSrc, io);
     }
     return ERR_FAILED;
-  }
-  else if (UTIL1_strcmp((char*)cmd, "FS benchmark") == 0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, "FS benchmark") == 0) {
     *handled = TRUE;
     return FS_RunBenchmark(io);
-  }
-  else if (UTIL1_strncmp((char* )cmd, "FS printhex ", sizeof("FS printhex ") - 1) == 0)
-  {
+  } else if (UTIL1_strncmp((char* )cmd, "FS printhex ", sizeof("FS printhex ") - 1) == 0) {
     *handled = TRUE;
-    if ((UTIL1_ReadEscapedName(cmd + sizeof("FS printhex ") - 1,fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK))
-    {
-      return FS_PrintHexFile(fileNameSrc, io);
+    if ((UTIL1_ReadEscapedName(cmd + sizeof("FS printhex ") - 1,fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK)) {
     }
     return ERR_FAILED;
-  }
-  else if (UTIL1_strncmp((char*)cmd, "FS rm ", sizeof("FS rm ")-1) == 0)
-  {
+  } else if (UTIL1_strncmp((char* )cmd, "FS printtxt ", sizeof("FS printtxt ") - 1) == 0) {
+      *handled = TRUE;
+      if ((UTIL1_ReadEscapedName(cmd + sizeof("FS printtxt ") - 1,fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK)) {
+        return FS_PrintFile(fileNameSrc, io, FALSE);
+      }
+      return ERR_FAILED;
+  } else if (UTIL1_strncmp((char*)cmd, "FS rm ", sizeof("FS rm ")-1) == 0) {
     *handled = TRUE;
-    if ((UTIL1_ReadEscapedName(cmd + sizeof("FS rm ") - 1, fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK))
-    {
+    if ((UTIL1_ReadEscapedName(cmd + sizeof("FS rm ") - 1, fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK)) {
       return FS_RemoveFile(fileNameSrc, io);
     }
     return ERR_FAILED;
-  }
-  else if (UTIL1_strncmp((char*)cmd, "FS mv ", sizeof("FS mv ")-1) == 0)
-  {
+  } else if (UTIL1_strncmp((char*)cmd, "FS mv ", sizeof("FS mv ")-1) == 0) {
     *handled = TRUE;
     if ((UTIL1_ReadEscapedName(cmd + sizeof("FS mv ") - 1, fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK)
         && *(cmd + sizeof("FS cp ") - 1 + lenRead) == ' '
@@ -1264,9 +1244,7 @@ uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled,const CLS1_StdIO
       return FS_MoveFile(fileNameSrc, fileNameDst, io);
     }
     return ERR_FAILED;
-  }
-  else if (UTIL1_strncmp((char*)cmd, "FS cp ", sizeof("FS cp ")-1) == 0)
-  {
+  } else if (UTIL1_strncmp((char*)cmd, "FS cp ", sizeof("FS cp ")-1) == 0) {
     *handled = TRUE;
     if ((UTIL1_ReadEscapedName(cmd + sizeof("FS cp ") - 1, fileNameSrc, sizeof(fileNameSrc), &lenRead, NULL, NULL) == ERR_OK)
         && *(cmd + sizeof("FS cp ") - 1 + lenRead) == ' '
@@ -1279,43 +1257,32 @@ uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled,const CLS1_StdIO
   return ERR_OK;
 }
 
-void FS_GetFileAccessSemaphore(SemaphoreHandle_t* sema)
-{
+void FS_GetFileAccessSemaphore(SemaphoreHandle_t *sema) {
   *sema = fileSystemAccessMutex;
 }
 
-uint8_t FS_Init(void)
-{
+uint8_t FS_Init(void) {
   fileSystemAccessMutex = xSemaphoreCreateRecursiveMutex();
-    if( fileSystemAccessMutex == NULL )
-    {
-        for(;;); //Error...
-    }
-
+  if( fileSystemAccessMutex == NULL) {
+      for(;;); //Error...
+  }
   xSemaphoreGiveRecursive(fileSystemAccessMutex);
-  if (SPIF_Init() != ERR_OK)
-  {
+  if (SPIF_Init() != ERR_OK) {
     return ERR_FAILED;
   }
   //return ERR_OK;
   return FS_Mount(NULL);
 }
 
-uint8_t FS_FormatInit(void)
-{
+uint8_t FS_FormatInit(void) {
   fileSystemAccessMutex = xSemaphoreCreateRecursiveMutex();
-    if( fileSystemAccessMutex == NULL )
-    {
-        for(;;); //Error...
-    }
+  if( fileSystemAccessMutex == NULL) {
+      for(;;); //Error...
+  }
   xSemaphoreGiveRecursive(fileSystemAccessMutex);
-
-  if (SPIF_Init() != ERR_OK)
-  {
+  if (SPIF_Init() != ERR_OK) {
     return ERR_FAILED;
   }
-  //return ERR_OK;
   FS_Format(NULL);
   return FS_Mount(NULL);
 }
-
