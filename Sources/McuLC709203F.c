@@ -12,7 +12,7 @@
 #include "GI2C1.h"
 #include "UTIL1.h"
 #include "WAIT1.h"
-#include "LED_R.h"
+#include "LED_R.h
 
 #define LC709203F_I2C_SLAVE_ADDR  0x0B
 
@@ -159,12 +159,12 @@ static uint8_t ReadCmdWordChecked(uint8_t i2cSlaveAddr, uint8_t cmd, uint16_t *v
   return ERR_OK;
 }
 
-// returns cell voltage in mV
+/* returns cell voltage in mV */
 uint8_t McuLC_GetVoltage(uint16_t *pVoltage) {
   return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_VOLTAGE, pVoltage);
 }
 
-/* returns cell temperature (10 = 1°C) */
+/* returns cell temperature (10 = 1 degree C) */
 uint8_t McuLC_GetTemperature(int16_t *pTemperature) {
   /* cell temperature is in 0.1C units, from 0x09E4 (-20C) up to 0x0D04 (60C) */
   uint8_t res;
@@ -183,17 +183,17 @@ uint8_t McuLC_SetTemperature(int16_t temperature) {
   return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_CELL_TEMP, ((uint16_t)temperature)&0xff, (((uint16_t)temperature)>>8)&0xff);
 }
 
-//returns battery Relative State of Charge in percent
+/* returns battery Relative State of Charge in percent */
 uint8_t McuLC_GetRSOC(uint16_t *pRsoc) {
   return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_RSOC, pRsoc);
 }
 
-// Indicator to empty, returns battery charge in thousandth
+/* Indicator to empty, returns battery charge in thousandth */
 uint8_t McuLC_GetITE(uint16_t *pIte) {
   return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_ITE, pIte);
 }
 
-// Indicator to empty, returns battery charge in thousandth
+/* Indicator to empty, returns battery charge in thousandth */
 uint8_t McuLC_GetICversion(uint16_t *pVersion) {
   return ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_IC_VER, pVersion);
 }
@@ -380,8 +380,7 @@ uint8_t McuLC_SetTemperatureMeasurementMode(bool i2cMode) {
 
 uint8_t McuLC_Init(void) {
   /* initializes LC709203F for Renata ICP543759PMT battery */
-  uint8_t data_w[3];
-  uint8_t result, crc, res;
+  uint8_t res;
 
   /* operational mode (1: operational, 2: sleep), 0x0001 = operational mode */
   res = WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, 0x01, 0x00);
