@@ -17,12 +17,11 @@ typedef struct {
 	uint8_t xValue;  // 1digit = 16mG (8Bit signed)
 	uint8_t yValue;
 	uint8_t zValue;
-	uint8_t temp;	 //Temperature in °C (1°C Resolution) (8Bit signed)
+	int8_t temp;	 //Temperature in °C (1°C Resolution) (8Bit signed)
 } AccelAxis_t;
 
 void AccelSensor_init(void);
 uint8_t AccelSensor_getValues(AccelAxis_t* values);
 uint8_t AccelSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
-
 
 #endif /* SOURCES_ACCELSENS_H_ */

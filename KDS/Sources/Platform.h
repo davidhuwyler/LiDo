@@ -26,7 +26,7 @@
 #define PL_CONFIG_HAS_BATT_ADC       (0 && PL_BOARD_REV==20)
 #define PL_CONFIG_HAS_SW_RTC         (0) /* disabled, as we use HW RTC. SW RTC would require a FreeRTOS timer if using tickless idle mode */
 #define PL_CONFIG_HAS_SPIF_PWR_PIN   (1 && (PL_BOARD_REV==20 || PL_BOARD_REV==21)) /* V2.2 does not have ability to power of Flash chip */
-#define PL_CONFIG_HAS_WATCHDOG       (1) /* disable for better debugging only! */
+#define PL_CONFIG_HAS_WATCHDOG       (0) /* disable for better debugging only! */
 
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
   /* User push button (PTC1) is HIGH active */

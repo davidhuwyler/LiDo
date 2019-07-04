@@ -33,6 +33,8 @@
 #define ACCEL_SENS_I2C_REGISTER_OUT_TEMP_H 0x0D
 #define ACCEL_SENS_I2C_REGISTER_OUT_TEMP_L 0x0C
 
+#define ACCEL_SENS_I2C_TEMPERATURE_OFFSET  (11) /* NOTE: the temperature sensor is not absulute, so there needs to be a offset calibration for each device! */
+
 void AccelSensor_init(void)
 {
 	uint8_t i2cData;
@@ -66,57 +68,54 @@ uint8_t AccelSensor_getValues(AccelAxis_t* values)
 	res |= GI2C1_ReadByteAddress8(ACCEL_SENS_I2C_ADDRESS,ACCEL_SENS_I2C_REGISTER_OUT_TEMP_L , &temp ); //Not needed for data acquisition but has to be read out...
 	res |= GI2C1_ReadByteAddress8(ACCEL_SENS_I2C_ADDRESS,ACCEL_SENS_I2C_REGISTER_OUT_TEMP_H , &temp );
 	res |= GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_CTRL_REG4 , 0x00);		//BDU = 1 (needed for Temp.Sensing)
-	values->temp = temp + 16; //Tempoffset needed...
-	return res;
-}
-
-static uint8_t PrintValues(CLS1_ConstStdIOType *io)
-{
-	AccelAxis_t values;
-	uint8_t res = AccelSensor_getValues(&values);
-	CLS1_SendStr("X accel: ",io->stdOut);
-	CLS1_SendNum8s(values.xValue,io->stdOut);
-	CLS1_SendStr("\r\n",io->stdOut);
-	CLS1_SendStr("Y accel: ",io->stdOut);
-	CLS1_SendNum8s(values.yValue,io->stdOut);
-	CLS1_SendStr("\r\n",io->stdOut);
-	CLS1_SendStr("Z accel: ",io->stdOut);
-	CLS1_SendNum8s(values.zValue,io->stdOut);
-	CLS1_SendStr("\r\n",io->stdOut);
-	CLS1_SendStr("Temperature: ",io->stdOut);
-	CLS1_SendNum8u(values.temp,io->stdOut);
-	CLS1_SendStr("\r\n",io->stdOut);
+	values->temp = temp + ACCEL_SENS_I2C_TEMPERATURE_OFFSET; //Tempoffset needed...
 	return res;
 }
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
+  AccelAxis_t values;
   uint8_t buf[32];
-  CLS1_SendStatusStr((unsigned char*)"AccelSens", (const unsigned char*)"\r\n", io->stdOut);
+
+  CLS1_SendStatusStr((unsigned char*)"LIS2DH", (const unsigned char*)"\r\n", io->stdOut);
+  uint8_t res = AccelSensor_getValues(&values);
+
+  if (res==ERR_OK) {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"x: ");
+    UTIL1_strcatNum8s(buf, sizeof(buf), values.xValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)", y: ");
+    UTIL1_strcatNum8s(buf, sizeof(buf), values.yValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)", z: ");
+    UTIL1_strcatNum8s(buf, sizeof(buf), values.zValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"\r\n");
+  } else {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"ERROR\r\n");
+  }
+  CLS1_SendStatusStr((unsigned char*)"  Accel", buf, io->stdOut);
+
+  if (res==ERR_OK) {
+    UTIL1_Num8sToStr(buf, sizeof(buf), values.temp);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" Degree Celsius\r\n");
+  } else {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"ERROR\r\n");
+  }
+  CLS1_SendStatusStr((unsigned char*)"  Temp", buf, io->stdOut);
+
+  UTIL1_Num8sToStr(buf, sizeof(buf), ACCEL_SENS_I2C_TEMPERATURE_OFFSET);
+  UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  Temp offset", buf, io->stdOut);
   return ERR_OK;
 }
 
-uint8_t AccelSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io)
-{
-  uint8_t res = ERR_OK;
-  const uint8_t *p;
-
-  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "AccelSens help")==0)
-  {
-    CLS1_SendHelpStr((unsigned char*)"AccelSens", (const unsigned char*)"Group of Accelerometer (LIS2DH) + Temp. commands\r\n", io->stdOut);
+uint8_t AccelSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "LIS2DH help")==0)  {
+    CLS1_SendHelpStr((unsigned char*)"LIS2DH", (const unsigned char*)"Group of LIS2DH commands\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  getValues", (const unsigned char*)"Measures SensorBank0(x,y,b,b)\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
-  }
-  else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
+  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LIS2DH status")==0)) {
     *handled = TRUE;
     return PrintStatus(io);
   }
-  else if (UTIL1_strcmp((char*)cmd, "AccelSens getValues")==0)
-  {
-    *handled = TRUE;
-    return PrintValues(io);
-  }
-  return res;
+  return ERR_OK;
 }
 #endif /* PL_CONFIG_HAS_ACCEL_SENSOR */

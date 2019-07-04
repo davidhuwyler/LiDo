@@ -16,6 +16,7 @@ Open points
 - V2.1 Board: do not get from charing IC the charging state (always low?)
 - Reenable watchdog
 - supply voltage oszillates with no battery and only USB attached?
+- Temperature sensor? Calibration?
 
 User Interface:
 - 1x short press: set marker (1x green blink)
