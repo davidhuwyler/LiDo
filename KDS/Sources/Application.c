@@ -570,7 +570,7 @@ static void APP_init_task(void *param) {
     }
     KIN1_SoftwareReset();
   }
-  vTaskSuspend(xTaskGetCurrentTaskHandle()); /* \todo: could use NULL or kill task? */
+  vTaskDelete(NULL); /* kill own task as not needed any more */
 }
 
 void APP_CloseSampleFile(void)

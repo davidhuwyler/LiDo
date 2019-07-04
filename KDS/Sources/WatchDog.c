@@ -16,6 +16,7 @@
 #include "WDog1.h"
 #include "LowPower.h"
 #include "PIN_SENSOR_PWR.h"
+#include "LED_R.h"
 #if PL_CONFIG_HAS_SPIF_PWR_PIN
   #include "PIN_SPIF_PWR.h"
 #endif
@@ -97,7 +98,7 @@ static void WatchDog_Task(void *param) {
 
 				CS1_ExitCritical();
 			}
-		}
+		} /* for */
 
 		if(!feedTheDog)//Reset!
 		{
@@ -130,10 +131,19 @@ static void WatchDog_Task(void *param) {
 #if PL_CONFIG_HAS_SPIF_PWR_PIN
 			PIN_SPIF_PWR_SetVal(); //PowerOff SPIF
 #endif
-			for(;;);
-		}
-		else
-		{
+#if PL_CONFIG_HAS_WATCHDOG
+			for(;;) {
+			  /* wait for the watchdog to kick in */
+			}
+#else
+  #warning "watchdog is disabled!"
+	for(;;) {
+    WDog1_Clear();
+	  LED_R_Neg();
+	  vTaskDelay(pdMS_TO_TICKS(100));
+	}
+#endif
+		}	else {
 			WDog1_Clear();
 		}
 
@@ -272,7 +282,7 @@ void WatchDog_DisableSource(WatchDog_KickSource_e kickSource)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
-	watchDogKickSources[kickSource].sourceForceDisabled 			= TRUE;
+	watchDogKickSources[kickSource].sourceForceDisabled 		= TRUE;
 	watchDogKickSources[kickSource].sourceIsActive 					= FALSE;
 	CS1_ExitCritical();
 }
@@ -281,7 +291,7 @@ void WatchDog_EnableSource(WatchDog_KickSource_e kickSource)
 {
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
-	watchDogKickSources[kickSource].sourceForceDisabled 			= FALSE;
+	watchDogKickSources[kickSource].sourceForceDisabled 		= FALSE;
 	watchDogKickSources[kickSource].sourceIsActive 					= TRUE;
 
 	WatchDog_StartComputationTime(kickSource);
