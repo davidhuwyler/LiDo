@@ -12,7 +12,7 @@
 #include "GI2C1.h"
 #include "UTIL1.h"
 #include "WAIT1.h"
-#include "LED_R.h
+#include "LED_R.h"
 
 #define LC709203F_I2C_SLAVE_ADDR  0x0B
 
