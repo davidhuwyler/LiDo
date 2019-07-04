@@ -520,7 +520,7 @@ static void APP_init_task(void *param) {
   if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
   {
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-    McuLC_Wakeup(); /* needs to be done before (!!!) any I2C communication! */
+    McuLC_Wakeup(); /* needs to be done before (!!!) any other I2C communication! */
     McuLC_Init();
 #endif
     WatchDog_Init();
@@ -536,16 +536,13 @@ static void APP_init_task(void *param) {
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     AccelSensor_init();
 #endif
-      if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
-      {
-        AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
-        RTC_init(FALSE);   /* HardReset RTC */
-      }
-      else
-      {
-        RTC_init(TRUE); /* softreset RTC */
-      }
-
+    if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
+    {
+      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
+      RTC_init(FALSE);   /* HardReset RTC */
+    } else {
+      RTC_init(TRUE); /* softreset RTC */
+    }
     UI_Init();
     PowerManagement_init();
     APP_init();

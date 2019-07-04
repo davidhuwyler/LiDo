@@ -16,7 +16,9 @@
 #include "WDog1.h"
 #include "LowPower.h"
 #include "PIN_SENSOR_PWR.h"
-#include "PIN_SPIF_PWR.h"
+#if PL_CONFIG_HAS_SPIF_PWR_PIN
+  #include "PIN_SPIF_PWR.h"
+#endif
 
 #define FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS 5000
 
@@ -125,8 +127,9 @@ static void WatchDog_Task(void *param) {
 					SDEP_InitiateNewAlert(SDEP_ALERT_WATCHDOG_RESET);
 					break;
 			}
-
+#if PL_CONFIG_HAS_SPIF_PWR_PIN
 			PIN_SPIF_PWR_SetVal(); //PowerOff SPIF
+#endif
 			for(;;);
 		}
 		else

@@ -12,8 +12,15 @@
  *      Debouncin internet resource:
  *      http://www.ganssle.com/debouncing.htm
  */
+#include "Platform.h"
 #include "UI.h"
-#include "PTC.h"
+#if (PL_BOARD_REV==20 || PL_BOARD_REV==21)
+  #include "PTC.h" /* uses PTC1 for user button */
+#elif (PL_BOARD_REV==22)
+  #include "PTD.h" /* uses PTD0 for user button */
+#else
+  #error "unknown board"
+#endif
 #include "PORT_PDD.h"
 #include "FRTOS1.h"
 #include "CLS1.h"
@@ -273,7 +280,13 @@ void UI_Init(void)
 
 void UI_ButtonPressed_ISR(void)
 {
-	PORT_PDD_ClearInterruptFlags(PTC_PORT_DEVICE,1U<<1);
+#if (PL_BOARD_REV==20 || PL_BOARD_REV==21) /* uses PTC1 for user button */
+  PORT_PDD_ClearInterruptFlags(PTC_PORT_DEVICE,1U<<1);
+#elif (PL_BOARD_REV==22) /* uses PTD0 for user button */
+  PORT_PDD_ClearInterruptFlags(PTD_PORT_DEVICE,1U<<0);
+#else
+  #error "unknown board"
+#endif
 	CS1_CriticalVariable();
 	CS1_EnterCritical();
 	if(uiInitDone)

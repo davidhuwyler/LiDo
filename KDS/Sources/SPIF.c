@@ -22,7 +22,9 @@
 #include "CLS1.h"
 #include "WAIT1.h"
 
-#include "PIN_SPIF_PWR.h"
+#if PL_CONFIG_HAS_SPIF_PWR_PIN
+  #include "PIN_SPIF_PWR.h"
+#endif
 #include "PIN_SPIF_CS.h"
 #include "PIN_SPIF_RESET.h"
 #include "PIN_SPIF_WP.h"
@@ -562,7 +564,9 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 uint8_t SPIF_Init(void)
 {
 	  uint8_t buf[SPIF_ID_BUF_SIZE];
+#if PL_CONFIG_HAS_SPIF_PWR_PIN
 	  PIN_SPIF_PWR_ClrVal();   //LowActive... --> Power the Chip
+#endif
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!
 	  PIN_SPIF_WP_SetVal();	   //LowActive... --> Enable Write!
 

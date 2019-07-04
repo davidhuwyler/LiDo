@@ -8,11 +8,12 @@
 #include "Platform.h"
 #include "PowerManagement.h"
 #include "PIN_POWER_ON.h"
-#include "PIN_EN_U_MEAS.h"
-#include "PIN_CHARGE_STATE.h"
+#include "PIN_PWR_CHARGE_STATE.h"
 #if PL_CONFIG_HAS_BATT_ADC
+  #include "PIN_EN_U_MEAS.h"
   #include "AI_PWR_0_5x_U_BAT.h"
-#else
+#endif
+#if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
 #include "FRTOS1.h"
@@ -29,7 +30,7 @@ static TaskHandle_t powerManagementTaskHandle;
 static bool waringLogged = FALSE;
 
 bool PowerManagement_IsCharging(void) {
-  return PIN_CHARGE_STATE_GetVal()==TRUE; /* pin should be HIGH/true if charging */
+  return PIN_PWR_CHARGE_STATE_GetVal()==TRUE; /* pin should be HIGH/true if charging */
 }
 
 static void PowerManagement_task(void *param) {
@@ -103,7 +104,7 @@ uint16_t PowerManagement_getBatteryVoltage(void) {
 	PIN_EN_U_MEAS_ClrVal();
 	AI_PWR_0_5x_U_BAT_GetValue16(&adcValue);
 	return (adcValue+POWER_MANAGEMENT_LIPO_OFFSET)/10;
-#else
+#elif PL_CONFIG_HAS_GAUGE_SENSOR
 	uint8_t res;
 	uint16_t voltage;
 
@@ -112,6 +113,8 @@ uint16_t PowerManagement_getBatteryVoltage(void) {
 	  return voltage;
 	}
 	return 0; /* error case */
+#else
+	return 0;
 #endif
 }
 
