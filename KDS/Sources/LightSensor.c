@@ -9,7 +9,16 @@
 #include "Platform.h"
 #if PL_CONFIG_HAS_LIGHT_SENSOR
 #include "LightSensor.h"
-#include "PTB.h"
+#if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
+  #include "PTB.h"  /* AMS sensor IRQ line is on PTB0 */
+#elif (PL_BOARD_REV==22)
+  #include "PTA.h" /* AMS sensor IRQ line is on PTA4 */
+#else
+  #error "unknown board"
+#endif
+#if PL_CONFIG_HAS_SENSOR_PWR_PIN
+  #include "PIN_SENSOR_PWR.h" /* have FET to cut of power for sensors */
+#endif
 #include "PORT_PDD.h"
 #include "LED_R.h"
 #include "FRTOS1.h"
@@ -18,7 +27,6 @@
 #include "CLS1.h"
 #include "CS1.h"
 #include "Application.h"
-#include "PIN_SENSOR_PWR.h"
 #include "UI.h"
 #include "AppDataFile.h"
 
@@ -94,8 +102,10 @@ void LightSensor_init(void)
         for(;;); //Error...
     }
 
+#if PL_CONFIG_HAS_SENSOR_PWR_PIN
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive
+#endif
 
 	WAIT1_WaitOSms(1);
 
@@ -333,26 +343,23 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
   return res;
 }
 
-void LightSensor_Done_ISR(void)
-{
-	PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,1U);
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	if(allowLightSensToWakeUp)
-	{
-		CS1_ExitCritical();
+void LightSensor_Done_ISR(void) {
+#if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
+	PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,(1U<<0)); /* PTB0 */
+#elif (PL_BOARD_REV==22)
+  PORT_PDD_ClearInterruptFlags(PTA_PORT_DEVICE,(1U<<4)); /* PTA4 */
+#else
+  #error "unknown board"
+#endif
+	if(allowLightSensToWakeUp) {  /* no critical section necessary as reading the variable is atomic */
 		APP_resumeSampleTaskFromISR();
-	}
-	else
-	{
-		CS1_ExitCritical();
 	}
 }
 #else /* dummy implementation */
-#include "PORT_PDD.h"
-#include "PTB.h"
 void LightSensor_Done_ISR(void)
 {
-  PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,1U);
+  for(;;) {
+    /* should not happen */
+  }
 }
 #endif /* PL_CONFIG_HAS_LIGHT_SENSOR */

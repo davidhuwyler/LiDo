@@ -15,8 +15,10 @@
 #include "SDEP.h"
 #include "WDog1.h"
 #include "LowPower.h"
-#include "PIN_SENSOR_PWR.h"
 #include "LED_R.h"
+#if PL_CONFIG_HAS_SENSOR_PWR_PIN
+  #include "PIN_SENSOR_PWR.h"
+#endif
 #if PL_CONFIG_HAS_SPIF_PWR_PIN
   #include "PIN_SPIF_PWR.h"
 #endif
@@ -47,14 +49,14 @@ static watchDogKickSource_t watchDogKickSources[WatchDog_NOF_KickSources];
 static void WatchDog_Task(void *param) {
   (void)param;
   TickType_t xLastWakeTime;
-  static bool feedTheDog = TRUE;
-  volatile int i;
+  bool feedTheDog = TRUE;
+  int i;
 
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
 
-		for(i = 0; i< WatchDog_NOF_KickSources ; i++)
+		for(i=0; i<WatchDog_NOF_KickSources; i++)
 		{
 			if(watchDogKickSources[i].sourceIsActive)
 			{
@@ -104,25 +106,26 @@ static void WatchDog_Task(void *param) {
 		{
 			//TODO Power Off SPIF und Sensoren
 			WDog1_Clear();
+    #if PL_CONFIG_HAS_SENSOR_PWR_PIN
 			PIN_SENSOR_PWR_SetVal(); //PowerOff Sensors
-
+    #endif
 			//Send SDEP Alarm and Log Watchdog Reset:
 			switch(i)
 			{
-				case WatchDog_OpenCloseLidoSampleFile :
-					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at OpenCloseLidoSampleFile");
+				case WatchDog_OpenCloseLidoSampleFile:
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at OpenCloseLidoSampleFile");
 					break;
-				case WatchDog_WriteToLidoSampleFile :
-					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at WriteToLidoSampleFile");
+				case WatchDog_WriteToLidoSampleFile:
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at WriteToLidoSampleFile");
 					break;
-				case WatchDog_TakeLidoSample :
-					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at TakeLidoSample");
+				case WatchDog_TakeLidoSample:
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at TakeLidoSample");
 					break;
-				case WatchDog_ToggleEnableSampling :
-					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at ToggleEnableSampling");
+				case WatchDog_ToggleEnableSampling:
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at ToggleEnableSampling");
 					break;
-				case WatchDog_MeasureTaskRunns :
-					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET,"WatchDogReset at MeasureTaskRunns");
+				case WatchDog_MeasureTaskRunns:
+					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at MeasureTaskRunns");
 					break;
 				default:
 					SDEP_InitiateNewAlert(SDEP_ALERT_WATCHDOG_RESET);
@@ -223,8 +226,8 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1000;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 2200;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 2200;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 2500;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 2500;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].timeStampLastKick 					= 0;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
@@ -236,7 +239,7 @@ void WatchDog_Init(void)
 	}
 }
 
-//Fuction also used to activate a source
+//Function also used to activate a source
 void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource)
 {
 	CS1_CriticalVariable();

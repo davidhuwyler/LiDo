@@ -350,8 +350,7 @@ static void APP_makeNewFileIfNeeded(void)
 {
     xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
     //New Hour: Make new File!
-    if(APP_newHour() && fileIsOpen && AppDataFile_GetSamplingEnabled())
-    {
+    if(fileIsOpen && AppDataFile_GetSamplingEnabled() && APP_newHour()) {
 
       WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
       if(FS_closeFile(&sampleFile) != ERR_OK)
@@ -598,8 +597,15 @@ void APP_Run(void) {
 //  while(USER_BUTTON_PRESSED())
 //  {
 //    LED_R_Neg();
-//    vTaskDelay(pdMS_TO_TICKS(50));
+//    WAIT1_Waitms(50);
 //  }
+
+#if 1
+  for (int i=0; i<4; i++) {
+    LED_R_Neg();
+    WAIT1_Waitms(250);
+  }
+#endif
 
   if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
   {

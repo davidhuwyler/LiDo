@@ -13,7 +13,9 @@
 #include "GI2C1.h"
 #include "LED_R.h"
 #include "WAIT1.h"
-#include "PIN_SENSOR_PWR.h"
+#if PL_CONFIG_HAS_SENSOR_PWR_PIN
+  #include "PIN_SENSOR_PWR.h"
+#endif
 
 #define ACCEL_SENS_I2C_ADDRESS 0x19
 #define ACCEL_SENS_I2C_REGISTER_CTRL_REG1 0x20 //SamplingFrequenz und LowpowerMode (Datasheet p33)
@@ -40,8 +42,10 @@ void AccelSensor_init(void)
 	uint8_t i2cData;
 	uint8_t res;
 
+#if PL_CONFIG_HAS_SENSOR_PWR_PIN
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive!
+#endif
 	WAIT1_Waitms(1);
 
 	res = GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_CTRL_REG1 , 0x1F);		//0x1F = 1Hz samples & LowpowerMode on; 0x0F = PowerDownMode

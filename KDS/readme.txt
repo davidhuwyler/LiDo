@@ -17,6 +17,7 @@ Open points
 - Reenable watchdog
 - supply voltage oszillates with no battery and only USB attached?
 - Temperature sensor? Calibration?
+- Uhr nach Reset nicht gesetzt?
 
 User Interface:
 - 1x short press: set marker (1x green blink)
