@@ -70,9 +70,6 @@
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
 #include "SDEPpendingAlertsBuffer.h"
-#include "PTB.h"
-#include "PIN_SENSOR_PWR.h"
-#include "BitIoLdd6.h"
 #include "LED_G.h"
 #include "LEDpin5.h"
 #include "BitIoLdd14.h"
@@ -83,6 +80,7 @@
 #include "BitIoLdd15.h"
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd16.h"
+#include "PTA.h"
 #include "PIN_PWR_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 /* Including shared modules, which are used for whole project */
