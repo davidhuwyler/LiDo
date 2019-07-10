@@ -79,7 +79,6 @@ typedef struct {
     uint8_t res;
     int timeoutMs = 5;
 
-
     do {
       res = AS1_SendChar((uint8_t)ch);  /* Send char */
       if (res==ERR_TXFULL) {
@@ -157,7 +156,6 @@ CLS1_ConstStdIOType *SHELL_GetStdio(void) {
   return &SHELL_stdio;
 }
 
-
 static const SHELL_IODesc ios[] =
 {
 #if SHELL_CONFIG_HAS_SHELL_EXTRA_RTT
@@ -170,7 +168,6 @@ static const SHELL_IODesc ios[] =
   {&CDC1_stdio, CDC1_DefaultShellBuffer, sizeof(CDC1_DefaultShellBuffer)},
 #endif
 };
-
 
 static void SHELL_SwitchIOifNeeded(void)
 {
@@ -198,7 +195,7 @@ static void SHELL_Disable(void)
 	shellDisablingIsInitiated = TRUE;
 	if(cnt==2)
 	{
-		UI_StopShellIndicator();
+		//UI_StopShellIndicator();
 		CDC1_Deinit();
 		USB1_Deinit();
 
@@ -210,9 +207,7 @@ static void SHELL_Disable(void)
 
 		LowPower_EnableStopMode();
 		vTaskSuspend(shellTaskHandle);
-	}
-	else
-	{
+	}	else {
 		cnt++;
 	}
 }
@@ -222,6 +217,7 @@ static void SHELL_task(void *param) {
   shellEnabledTimestamp = xTaskGetTickCount();
   unsigned short charsInUARTbuf;
   int i;
+  int cntr = 0;
 
   (void)param;
   /* initialize buffers */
@@ -231,20 +227,13 @@ static void SHELL_task(void *param) {
   for(;;)
   {
 	  xLastWakeTime = xTaskGetTickCount();
-	  CS1_CriticalVariable();
-	  CS1_EnterCritical();
 
 	  //Disable Shell if Requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected
 	  if(	shellDisablingRequest ||
 	     (( xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
 		 	shellDisablingIsInitiated)
 	  {
-		  CS1_ExitCritical();
 		  SHELL_Disable();
-	  }
-	  else
-	  {
-		  CS1_ExitCritical();
 	  }
 
 	  SHELL_SwitchIOifNeeded();
@@ -261,6 +250,11 @@ static void SHELL_task(void *param) {
 //	  {
 //		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
 //	  }
+	  cntr++;
+	  if (cntr>100) {
+	    cntr = 0;
+      UI_LEDpulse(LED_B);
+	  }
 	  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
   } /* for */
 }
@@ -279,8 +273,5 @@ void SHELL_Init(void) {
 
 void SHELL_requestDisabling(void)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
 	shellDisablingRequest = TRUE;
-	CS1_ExitCritical();
 }

@@ -3,7 +3,9 @@ readme.txt
 Note: using the LC709203Fxx-01 version
 
 Open points
-- restore -O3 compiler optimization
+- Note: restore -O3 compiler optimization
+- Note: currently runtime statistics are enabled, need to be disabled for low power
+- Note: currently Segger systemview is enabled, needs to be disabled for lower power
 - The LC needs to be initialized for the correct battery
 - need reset button, ability to reset (disconnect from debugger halts the target), or need to disconnect battery (==> V2.2)
 - V2.2 will have FETs for sensors and SPI removed
@@ -18,6 +20,8 @@ Open points
 - supply voltage oszillates with no battery and only USB attached?
 - Temperature sensor? Calibration?
 - Uhr nach Reset nicht gesetzt?
+- reset button does not work if in low power mode?
+- need glas/enclosure for light sensor?
 
 User Interface:
 - 1x short press: set marker (1x green blink)

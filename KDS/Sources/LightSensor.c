@@ -101,7 +101,6 @@ void LightSensor_init(void)
     {
         for(;;); //Error...
     }
-
 #if PL_CONFIG_HAS_SENSOR_PWR_PIN
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive

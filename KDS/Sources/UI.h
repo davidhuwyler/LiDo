@@ -14,7 +14,7 @@ typedef enum
 	LED_G,
 	LED_B,
 	LED_Y,
-	LED_V,
+	LED_V, /* sample indication */
 	LED_C,
 	LED_W
 } UI_LEDs_t;

@@ -31,10 +31,13 @@
 #include "LED_B.h"
 #include "Shell.h"
 
+#define USE_SHELL_TOGGLE_TIMER  (0)  /* probably not needed at all */
 
 static TimerHandle_t uiButtonMultiPressTimer;
 static TimerHandle_t uiButtonDebounceTimer;
+#if USE_SHELL_TOGGLE_TIMER
 static TimerHandle_t uiLEDtoggleTimer;
+#endif
 static TimerHandle_t uiLEDmodeIndicatorTimer;
 static TimerHandle_t uiLEDpulseIndicatorTimer;
 
@@ -146,7 +149,6 @@ static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer)
 		}
 		ongoingButtonPress = FALSE;
 	}
-
 }
 
 static void vTimerCallback_LED_ShellInicator(TimerHandle_t pxTimer)
@@ -175,15 +177,18 @@ static void vTimerCallback_LED_ModeIndicator(TimerHandle_t pxTimer)
 	}
 }
 
+#if USE_SHELL_TOGGLE_TIMER
 void UI_StopShellIndicator(void)
 {
-	 if (xTimerDelete(uiLEDtoggleTimer, 0)!=pdPASS)
-	 {
-	    for(;;); /* failure?!? */
-	 }
-	 LED_B_Off();
+  if (uiLEDtoggleTimer!=NULL) {
+     if (xTimerDelete(uiLEDtoggleTimer, 0)!=pdPASS) { /*! \todo might only suspend the timer? */
+        for(;;); /* failure?!? */
+     }
+     uiLEDtoggleTimer = NULL;
+  }
+	LED_B_Off();
 }
-
+#endif
 
 static void vTimerCallback_LEDpulse(TimerHandle_t pxTimer)
 {
@@ -228,7 +233,7 @@ void UI_LEDpulse(UI_LEDs_t color)
 		break;
 	}
 
-	if (xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS)
+	if (uiLEDpulseIndicatorTimer!=NULL && xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS)
 	{
 	   for(;;); /* failure?!? */
 	}
@@ -236,7 +241,6 @@ void UI_LEDpulse(UI_LEDs_t color)
 
 void UI_Init(void)
 {
-
 	uiButtonMultiPressTimer = xTimerCreate( "tmrUiBtn", /* name */
 										 pdMS_TO_TICKS(UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS), /* period/time */
 										 pdFALSE, /* auto reload */
@@ -250,14 +254,14 @@ void UI_Init(void)
 										 (void*)1, /* timer ID */
 										 vTimerCallback_ButtonDebounceTimer); /* callback */
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
-
+#if USE_SHELL_TOGGLE_TIMER
 	uiLEDtoggleTimer = xTimerCreate( "tmrUiLEDtoggle", /* name */
 										 pdMS_TO_TICKS(UI_LED_SHELL_INDICATOR_TOGGLE_DELAY_MS), /* period/time */
 										 pdTRUE, /* auto reload */
 										 (void*)2, /* timer ID */
 										 vTimerCallback_LED_ShellInicator); /* callback */
 	 if (xTimerStart(uiLEDtoggleTimer, 0)!=pdPASS) {  for(;;); /* failure?!? */ }
-
+#endif
 	 uiLEDmodeIndicatorTimer = xTimerCreate( "tmrUiLEDmodeInd", /* name */
 										 pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS), /* period/time */
 										 pdFALSE, /* auto reload */
@@ -272,10 +276,7 @@ void UI_Init(void)
 										 vTimerCallback_LEDpulse); /* callback */
 	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
 
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
 	uiInitDone = TRUE;
-	CS1_ExitCritical();
 }
 
 void UI_ButtonPressed_ISR(void)
@@ -287,16 +288,8 @@ void UI_ButtonPressed_ISR(void)
 #else
   #error "unknown board"
 #endif
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
-	if(uiInitDone)
-	{
-		CS1_ExitCritical();
+	if(uiInitDone) {
 		UI_ButtonCounter();
-	}
-	else
-	{
-		CS1_ExitCritical();
 	}
 }
 

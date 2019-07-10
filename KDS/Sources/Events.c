@@ -238,6 +238,29 @@ void FRTOS1_vOnPostSleepProcessing(TickType_t expectedIdleTicks)
   /* Write your code here ... */
 }
 
+/*
+** ===================================================================
+**     Event       :  Cpu_OnReset (module Events)
+**
+**     Component   :  Cpu [MK22DX256LF5]
+*/
+/*!
+**     @brief
+**         This software event is called after a reset.
+**     @param
+**         Reason          - Content of the reset status register.
+**                           You can use predefined constants RSTSRC_*
+**                           defined in generated PE_Const.h file to
+**                           determine a reason of the last reset. See
+**                           definition of these constants in this file
+**                           for details.
+*/
+/* ===================================================================*/
+void Cpu_OnReset(uint16_t Reason)
+{
+  /* Write your code here ... */
+}
+
 /* END Events */
 
 #ifdef __cplusplus

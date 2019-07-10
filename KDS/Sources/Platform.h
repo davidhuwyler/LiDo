@@ -27,7 +27,10 @@
 #define PL_CONFIG_HAS_SW_RTC         (0) /* disabled, as we use HW RTC. SW RTC would require a FreeRTOS timer if using tickless idle mode */
 #define PL_CONFIG_HAS_SPIF_PWR_PIN   (1 && (PL_BOARD_REV==20 || PL_BOARD_REV==21)) /* V2.2 does not have ability to power off Flash chip */
 #define PL_CONFIG_HAS_SENSOR_PWR_PIN (1 && (PL_BOARD_REV==20 || PL_BOARD_REV==21)) /* V2.2 does not have ability to power off the sensors (accel + light) */
-#define PL_CONFIG_HAS_WATCHDOG       (1) /* disable for better debugging only! */
+
+/* debug ONLY options */
+#define PL_CONFIG_HAS_WATCHDOG       (0) /* disable for better debugging only! */
+#define PL_CONFIG_HAS_LOW_POWER      (0) /* disable for debugging only! */
 
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
   /* User push button (PTC1) is HIGH active */

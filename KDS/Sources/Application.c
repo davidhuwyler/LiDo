@@ -328,7 +328,7 @@ static void APP_sample_task(void *param) {
       else if(sampleError==ERR_OK)
       {
         UI_LEDpulse(LED_V);
-        if(xQueueSendToBack( lidoSamplesToWrite,  ( void * ) &sample, pdMS_TO_TICKS(500)) != pdPASS )
+        if(xQueueSendToBack( lidoSamplesToWrite,  (void*)&sample, pdMS_TO_TICKS(500)) != pdPASS )
           {
             SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
           }
@@ -593,13 +593,13 @@ void APP_Run(void) {
   //PowerON
   PIN_POWER_ON_SetVal();
 
+#if 1
   //EmercencyBreak: If LowPower went wrong...
-//  while(USER_BUTTON_PRESSED())
-//  {
-//    LED_R_Neg();
-//    WAIT1_Waitms(50);
-//  }
-
+  while(USER_BUTTON_PRESSED()) {
+    LED_R_Neg();
+    WAIT1_Waitms(50);
+  }
+#endif
 #if 1
   for (int i=0; i<4; i++) {
     LED_R_Neg();

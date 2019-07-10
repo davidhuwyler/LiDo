@@ -19,6 +19,7 @@
 #include "FRTOS1.h"
 #include "SDEP.h"
 #include "UI.h"
+#include "LED_B.h"
 
 #define POWER_MANAGEMENT_LIPO_WARNING 34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF 29789  // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
@@ -78,6 +79,7 @@ static void PowerManagement_task(void *param) {
 	  oldAdcValue = adcValue;
 #else
     if(PowerManagement_IsCharging()) {
+      LED_B_Off(); /* turn off blue led as this one might indicate a shell connection */
       UI_LEDpulse(LED_G);
     }
 #endif
@@ -88,9 +90,9 @@ static void PowerManagement_task(void *param) {
 void PowerManagement_ResumeTaskIfNeeded(void) {
   static TickType_t xLastWakeTime = 0;
 
-  if(xTaskGetTickCount()-xLastWakeTime> 10000 && powerManagementTaskHandle!=NULL) {
+  if (xTaskGetTickCount()-xLastWakeTime > 10000 && powerManagementTaskHandle!=NULL) {
 	  xLastWakeTime = xTaskGetTickCount();
-	  vTaskResume( powerManagementTaskHandle);
+	  vTaskResume(powerManagementTaskHandle);
   }
 }
 
