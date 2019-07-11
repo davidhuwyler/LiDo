@@ -54,15 +54,15 @@ void LowPower_EnterLowpowerMode(void) {
 }
 
 void LowPower_EnableStopMode(void) {
-	stopModeAllowed = TRUE; /* no critical section needed as access is atomic */
+	stopModeAllowed = TRUE;
 }
 
 void LowPower_DisableStopMode(void) {
-	stopModeAllowed = FALSE; /* no critical section needed as access is atomic */
+	stopModeAllowed = FALSE;
 }
 
 bool LowPower_StopModeIsEnabled(void) {
-	return stopModeAllowed; /* no critical section needed as access is atomic */
+	return stopModeAllowed;
 }
 
 void LowPower_init(void) {

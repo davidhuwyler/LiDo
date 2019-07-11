@@ -24,8 +24,7 @@ Open points
 - need glas/enclosure for light sensor?
 - keep communication open if RTT/debugger is connected
 - todo: use bat emergency pin to cut off power in PowerMangement.c
-- Charging indication pin does not work correctly?
-- need to have ability to reset I2C bus
+- watchdog triggers if using the Shell
 - had empty file?
 CMD>   < AppData print
 00> LIDO_NAME = -
@@ -62,4 +61,9 @@ Power Concept:
 - With the USB connected (5V), it turns on the FET (T3) and powers the target
 - Or: User presses the push button
 - uC can power down Vcc with the DO_PWR_ON pin
-==> Reset button does not help to wake up processor from low power mode!
+==> Reset button does not help to wake up processor from low power mode?
+
+Debug without USB cable:
+- press button and keep it pressed to keep board powered.
+- run code until power pin/FET is pulled high (PIN_POWER_ON, is done during PE_low_level_init())
+

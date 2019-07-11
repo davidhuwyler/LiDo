@@ -10,7 +10,6 @@
 #include "WatchDog.h"
 #include "KIN1.h"
 #include "FRTOS1.h"
-#include "CS1.h"
 #include "AppDataFile.h"
 #include "SDEP.h"
 #include "WDog1.h"
@@ -32,13 +31,13 @@ typedef struct
 	bool		isSingleCheckWatchdogSouce;		//If true, the WatchdogSource needs to be activated every Check and KickIntervall is not checked
 	bool 		sourceIsActive;					//Flags an active WatchdogSource
 	bool		compTimeMeasurementRunning;	    //Flags an active WatchdogSource Time Measurement
-	bool		requestForDeactivation;			//Variable is checked if a source wants to deatcivate its watchdog
+	bool		requestForDeactivation;			//Variable is checked if a source wants to deactivate its watchdog
 	uint16_t	measuredCompTime;				//Measured Computation Time in ms
-	TickType_t	timeStampLastKick;				//Time since last WatchDog kick from this Souce in ms
-	uint16_t 	lowerCompTimeLimit;				//Lower Boundary of allowed Computatoin time
-	uint16_t 	uppwerCompTimeLimit;			//Upper Boundary of allowed Computatoin time									(no effect if isSingleCheckWatchdogSouce = true)
+	TickType_t	timeStampLastKick;				//Time since last WatchDog kick from this Source in ms
+	uint16_t 	lowerCompTimeLimit;				//Lower Boundary of allowed Computation time
+	uint16_t 	uppwerCompTimeLimit;			//Upper Boundary of allowed Computation time									(no effect if isSingleCheckWatchdogSouce = true)
 	uint16_t	maxKickIntervallLimitRaw;		//Upper Boundary of allowed Time between kicks 									(no effect if isSingleCheckWatchdogSouce = true)
-	bool		kickIntervallXSampleIntervall;	//If true, the maxKickIntervallLimit is multiplied with the Lido Sampleintervall(no effect if isSingleCheckWatchdogSouce = true)
+	bool		kickIntervallXSampleIntervall;	//If true, the maxKickIntervallLimit is multiplied with the Lido Sample intervall (no effect if isSingleCheckWatchdogSouce = true)
 	uint16_t	maxKickIntervallLimit;			//maxKickIntervallLimitRaw x SampleIntervall
 	bool		sourceForceDisabled;			//Used to Disable a watchdogSource
 } watchDogKickSource_t;
@@ -51,58 +50,42 @@ static void WatchDog_Task(void *param) {
   bool feedTheDog = TRUE;
   int i;
 
-  for(;;)
-  {
+  for(;;) {
 	  xLastWakeTime = xTaskGetTickCount();
-
-		for(i=0; i<WatchDog_NOF_KickSources; i++)
-		{
-			if(watchDogKickSources[i].sourceIsActive)
-			{
-				CS1_CriticalVariable();
-				CS1_EnterCritical();
-
+	  taskENTER_CRITICAL();
+		for(i=0; i<WatchDog_NOF_KickSources; i++) {
+			if(watchDogKickSources[i].sourceIsActive)	{
 				//Check Watchdog Kick Intervall
 				if(!watchDogKickSources[i].isSingleCheckWatchdogSouce &&
-					(xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].maxKickIntervallLimit)	//FeedDog intervall ran out?
+					(xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].maxKickIntervallLimit)	//FeedDog interval ran out?
 				{
 					feedTheDog = FALSE; // --> WatchDog Source ran out... Reset!
-					CS1_ExitCritical();
 					break;
 				}
 
 				//Check ComputationTime
 				if(watchDogKickSources[i].compTimeMeasurementRunning)
 				{ //If measurement Runs, only check upper Boundary
-					if((xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].uppwerCompTimeLimit )
-					{
+					if((xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].uppwerCompTimeLimit) {
 						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
-						CS1_ExitCritical();
 						break;
 					}
-				}
-				else
-				{
+				}	else {
 					 if(watchDogKickSources[i].measuredCompTime < watchDogKickSources[i].lowerCompTimeLimit || //ComputationTime of the Source in boundary?
 							watchDogKickSources[i].measuredCompTime > watchDogKickSources[i].uppwerCompTimeLimit )
 					{
 						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
-						CS1_ExitCritical();
 						break;
 					}
 				}
-
-				if(watchDogKickSources[i].requestForDeactivation)
-				{
+				if(watchDogKickSources[i].requestForDeactivation)	{
 					watchDogKickSources[i].sourceIsActive = FALSE;
 				}
-
-				CS1_ExitCritical();
 			}
 		} /* for */
+		taskEXIT_CRITICAL();
 
-		if(!feedTheDog)//Reset!
-		{
+		if(!feedTheDog) { //Reset!
 			//TODO Power Off SPIF und Sensoren
 			WDog1_Clear();
     #if PL_CONFIG_HAS_SENSOR_PWR_PIN
@@ -149,12 +132,9 @@ static void WatchDog_Task(void *param) {
 			WDog1_Clear();
 		}
 
-		if(LowPower_StopModeIsEnabled())
-		{
+		if(LowPower_StopModeIsEnabled()) {
 			vTaskSuspend(watchDogTaskHandle);
-		}
-		else
-		{
+		}	else {
 			vTaskDelayUntil(&xLastWakeTime,pdMS_TO_TICKS(WATCHDOG_TASK_DELAY));
 		}
   } /* for */
@@ -162,11 +142,9 @@ static void WatchDog_Task(void *param) {
 
 
 //Only in StopMode Needed
-void WatchDog_ResumeTask(void)
-{
-	if(LowPower_StopModeIsEnabled() && watchDogTaskHandle!=NULL)
-	{
-		vTaskResume( watchDogTaskHandle );
+void WatchDog_ResumeTask(void) {
+	if(LowPower_StopModeIsEnabled() && watchDogTaskHandle!=NULL) {
+		vTaskResume(watchDogTaskHandle);
 	}
 }
 
@@ -226,27 +204,28 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_MeasureTaskRuns].isSingleCheckWatchdogSouce			= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].lowerCompTimeLimit 					    = 0;
-	watchDogKickSources[WatchDog_MeasureTaskRuns].uppwerCompTimeLimit 					  = 2000;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].uppwerCompTimeLimit 					  = 3000;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].measuredCompTime 					      = watchDogKickSources[WatchDog_MeasureTaskRuns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].kickIntervallXSampleIntervall		= TRUE;
-	watchDogKickSources[WatchDog_MeasureTaskRuns].maxKickIntervallLimitRaw				= 2500;
-	watchDogKickSources[WatchDog_MeasureTaskRuns].maxKickIntervallLimit  				  = 2500;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].maxKickIntervallLimitRaw				= 3000;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].maxKickIntervallLimit  				  = 3000;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].timeStampLastKick 					    = 0;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].sourceIsActive 						      = FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].requestForDeactivation				  = FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRuns].sourceForceDisabled					    = FALSE;
 
-	if (xTaskCreate(WatchDog_Task, "WatchDog", 1200/sizeof(StackType_t), NULL,  configMAX_PRIORITIES-2, &watchDogTaskHandle) != pdPASS)
+#if PL_CONFIG_HAS_WATCHDOG
+	if (xTaskCreate(WatchDog_Task, "WatchDog", 1500/sizeof(StackType_t), NULL,  configMAX_PRIORITIES-2, &watchDogTaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
+#endif
 }
 
 //Function also used to activate a source
 void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
+	taskENTER_CRITICAL();
 	if(!watchDogKickSources[kickSource].sourceForceDisabled)
 	{
 		watchDogKickSources[kickSource].timeStampLastKick = xTaskGetTickCount();
@@ -254,13 +233,12 @@ void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource)
 		watchDogKickSources[kickSource].requestForDeactivation 			= FALSE;
 		watchDogKickSources[kickSource].compTimeMeasurementRunning		= TRUE;
 	}
-	CS1_ExitCritical();
+	taskEXIT_CRITICAL();
 }
 
 void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
+  taskENTER_CRITICAL();
 	watchDogKickSources[kickSource].measuredCompTime = xTaskGetTickCount() - watchDogKickSources[kickSource].timeStampLastKick;
 	watchDogKickSources[kickSource].compTimeMeasurementRunning		= FALSE;
 
@@ -281,26 +259,23 @@ void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource)
 	{
 		watchDogKickSources[kickSource].requestForDeactivation 	= TRUE;
 	}
-	CS1_ExitCritical();
+	taskEXIT_CRITICAL();
 }
 
 void WatchDog_DisableSource(WatchDog_KickSource_e kickSource)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
+  taskENTER_CRITICAL();
 	watchDogKickSources[kickSource].sourceForceDisabled 		= TRUE;
 	watchDogKickSources[kickSource].sourceIsActive 					= FALSE;
-	CS1_ExitCritical();
+	taskEXIT_CRITICAL();
 }
 
 void WatchDog_EnableSource(WatchDog_KickSource_e kickSource)
 {
-	CS1_CriticalVariable();
-	CS1_EnterCritical();
+  taskENTER_CRITICAL();
 	watchDogKickSources[kickSource].sourceForceDisabled 		= FALSE;
 	watchDogKickSources[kickSource].sourceIsActive 					= TRUE;
-
+	taskEXIT_CRITICAL();
 	WatchDog_StartComputationTime(kickSource);
-	CS1_ExitCritical();
 }
 

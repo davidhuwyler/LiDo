@@ -52,28 +52,20 @@ static void PowerManagement_task(void *param) {
     PIN_EN_U_MEAS_ClrVal();
 	  adcValue = adcValue + POWER_MANAGEMENT_LIPO_OFFSET;
 
-	  if(PIN_CHARGE_STATE_GetVal()) {
+	  if (PowerManagement_IsCharging()) {
 		  UI_LEDpulse(LED_G);
 	  }
-
-    if(oldAdcValue < POWER_MANAGEMENT_LIPO_WARNING && adcValue < POWER_MANAGEMENT_LIPO_WARNING)
-    {
-        UI_LEDpulse(LED_R);
-
-        if(!waringLogged)
-        {
-            SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_LOW_BATTERY,"Battery is low...");
-            waringLogged = TRUE;
-        }
+    if(oldAdcValue < POWER_MANAGEMENT_LIPO_WARNING && adcValue < POWER_MANAGEMENT_LIPO_WARNING) {
+      UI_LEDpulse(LED_R);
+      if(!waringLogged) {
+        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_LOW_BATTERY,"Battery is low...");
+        waringLogged = TRUE;
+      }
     }
-
-    if(oldAdcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS && adcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS)
-    {
-        waringLogged = FALSE;
+    if(oldAdcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS && adcValue > POWER_MANAGEMENT_LIPO_WARNING_HYS) {
+      waringLogged = FALSE;
     }
-
-	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_CUTOFF && adcValue < POWER_MANAGEMENT_LIPO_CUTOFF)
-	  {
+	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_CUTOFF && adcValue < POWER_MANAGEMENT_LIPO_CUTOFF) {
 		  PIN_POWER_ON_ClrVal(); /* emergency: cut off power */
 	  }
 	  oldAdcValue = adcValue;

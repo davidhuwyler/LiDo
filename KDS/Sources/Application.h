@@ -44,6 +44,8 @@ void APP_suspendSampleTask(void);
 void APP_resumeSampleTaskFromISR(void);
 uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
+void APP_FatalError(void);
+
 //void void RTC_ALARM_ISR(void);
 
 #endif /* SOURCES_APPLICATION_H_ */

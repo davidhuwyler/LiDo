@@ -4,8 +4,8 @@
  *  Created on: Feb 21, 2019
  *      Author: dave
  */
-#include "Platform.h"
 
+#include "Platform.h"
 #include "Application.h"
 #include "Shell.h"
 #include "CLS1.h"
@@ -34,8 +34,6 @@
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_RTT   (1)
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_CDC   (0)
 
-static TaskHandle_t shellTaskHandle;
-static TickType_t shellEnabledTimestamp;
 static bool shellDisablingRequest = FALSE;
 static bool shellDisablingIsInitiated = FALSE;
 
@@ -169,65 +167,60 @@ static const SHELL_IODesc ios[] =
 #endif
 };
 
-static void SHELL_SwitchIOifNeeded(void)
-{
+static void SHELL_SwitchIOifNeeded(void) {
 	static TickType_t SDEPioTimer;
 	static bool SDEPioTimerStarted = FALSE;
-	if(SDEPio_NewSDEPmessageAvail())
-	{
+	if(SDEPio_NewSDEPmessageAvail()) {
 		SDEPioTimerStarted = TRUE;
 		SDEPioTimer = xTaskGetTickCount();
-	}
-	else if(SDEPioTimerStarted && xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300))
-	{
+	}	else if(SDEPioTimerStarted && xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300)) {
 		SDEPio_switchIOtoStdIO();
 		SDEPioTimerStarted = FALSE;
 	}
 }
 
+#if PL_CONFIG_HAS_SHELL_SHUTOWN
 //Function needs to be called 3times to
 //Disable the shell. This makes sure, the
 //Answer message got out before disabling
 //the Shell
-static void SHELL_Disable(void)
-{
+static void SHELL_Disable(void) {
 	static uint8_t cnt = 0;
 	shellDisablingIsInitiated = TRUE;
-	if(cnt==2)
-	{
+	if(cnt==2) {
 		//UI_StopShellIndicator();
 		CDC1_Deinit();
 		USB1_Deinit();
-
 		//Switch Peripheral Clock from ICR48 to FLL clock (Datasheet p.265)
 		//More Infos in AN4905 Crystal-less USB operation on Kinetis MCUs
 		//SIM_SOPT2 &= ~SIM_SOPT2_PLLFLLSEL_MASK;
 		//SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(0x0);
 		//USB0_CLK_RECOVER_IRC_EN = 0x0;	//Disable USB Clock (IRC 48MHz)
-
 		LowPower_EnableStopMode();
-		vTaskSuspend(shellTaskHandle);
+		cnt = 0;
+		vTaskSuspend(NULL);
 	}	else {
 		cnt++;
 	}
 }
+#endif
 
 static void SHELL_task(void *param) {
+  TickType_t shellEnabledTimestamp;
   TickType_t xLastWakeTime;
-  shellEnabledTimestamp = xTaskGetTickCount();
   unsigned short charsInUARTbuf;
   int i;
   int cntr = 0;
 
   (void)param;
+  shellEnabledTimestamp = xTaskGetTickCount();
   /* initialize buffers */
   for(i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
     ios[i].buf[0] = '\0';
   }
-  for(;;)
-  {
+  for(;;) {
 	  xLastWakeTime = xTaskGetTickCount();
-
+#if PL_CONFIG_HAS_SHELL_SHUTOWN
 	  //Disable Shell if Requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected
 	  if(	shellDisablingRequest ||
 	     (( xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
@@ -235,7 +228,7 @@ static void SHELL_task(void *param) {
 	  {
 		  SHELL_Disable();
 	  }
-
+#endif
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
     /* process all I/Os */
@@ -251,7 +244,7 @@ static void SHELL_task(void *param) {
 //		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
 //	  }
 	  cntr++;
-	  if (cntr>100) {
+	  if (cntr>200) {
 	    cntr = 0;
       UI_LEDpulse(LED_B);
 	  }
@@ -265,13 +258,11 @@ void SHELL_Init(void) {
   PORTB_PCR16 |= 0x3;  //Enable Pullup UART RX
   PORTB_PCR17 |= 0x3;  //Enable Pullup UART TX
 
-  if (xTaskCreate(SHELL_task, "Shell", 3000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &shellTaskHandle) != pdPASS)
-  {
-	  for(;;){} /* error! probably out of memory */
+  if (xTaskCreate(SHELL_task, "Shell", 3000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS) {
+	  APP_FatalError();
   }
 }
 
-void SHELL_requestDisabling(void)
-{
+void SHELL_requestDisabling(void) {
 	shellDisablingRequest = TRUE;
 }

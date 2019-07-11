@@ -31,6 +31,7 @@
 #include "LowPower.h"
 #include "LightAutoGain.h"
 #include "SYS1.h"
+#include "WAIT1.h"
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
@@ -53,6 +54,13 @@ static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
 
+void APP_FatalError(void) {
+  for(;;) {
+    LED_R_Neg();
+    WAIT1_Waitms(100);
+  }
+}
+
 void APP_setMarkerInLog(void) {
   setOneMarkerInLog = TRUE;
 }
@@ -65,28 +73,16 @@ void APP_requestForSoftwareReset(void) {
   requestForSoftwareReset = TRUE;
 }
 
-static void APP_toggleEnableSamplingIfRequested(void)
-{
-  CS1_CriticalVariable();
-  CS1_EnterCritical();
-  if(toggleEnablingSampling)
-  {
+static void APP_toggleEnableSamplingIfRequested(void) {
+  if(toggleEnablingSampling) {
     WatchDog_StartComputationTime(WatchDog_ToggleEnableSampling);
-        toggleEnablingSampling = FALSE;
-      CS1_ExitCritical();
-    if(AppDataFile_GetSamplingEnabled())
-    {
+    toggleEnablingSampling = FALSE;
+    if(AppDataFile_GetSamplingEnabled()) {
       AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
-    }
-    else
-    {
-            AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
+    } else {
+      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
     }
     WatchDog_StopComputationTime(WatchDog_ToggleEnableSampling);
-  }
-  else
-  {
-    CS1_ExitCritical();
   }
 }
 
@@ -100,167 +96,136 @@ static void APP_softwareResetIfRequested(void) {
   }
 }
 
-int abs (int i)
-{
+int abs (int i) {
   return i < 0 ? -i : i;
 }
 
-uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool forceSample)
-{
-    static AccelAxis_t oldAccelAndTemp;
-    LightChannels_t lightB0,lightB1;
-    AccelAxis_t accelAndTemp;
-    uint8_t err = ERR_OK;
-    uint8_t lightGain, lightIntTime, lightWaitTime;
+uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool forceSample) {
+  static AccelAxis_t oldAccelAndTemp;
+  LightChannels_t lightB0,lightB1;
+  AccelAxis_t accelAndTemp;
+  uint8_t err = ERR_OK;
+  uint8_t lightGain, lightIntTime, lightWaitTime;
 
-    if(xSemaphoreTakeRecursive(sampleMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS)))
-    {
-      WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
-      sample->unixTimeStamp = unixTimestamp;
-
+  if(xSemaphoreTakeRecursive(sampleMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS))) {
+    WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
+    sample->unixTimeStamp = unixTimestamp;
 #if PL_CONFIG_HAS_ACCEL_SENSOR
-      if(AccelSensor_getValues(&accelAndTemp) != ERR_OK)
-      {
-        SDEP_InitiateNewAlert(SDEP_ALERT_ACCELSENS_ERROR);
-      }
-      sample->accelX = accelAndTemp.xValue;
-      sample->accelY = accelAndTemp.yValue;
-      sample->accelZ = accelAndTemp.zValue;
-#else
-      sample->accelX = 0;
-      sample->accelY = 0;
-      sample->accelZ = 0;
-#endif
-
-      int8_t tempDiff = (int8_t)abs((int8_t)oldAccelAndTemp.temp-(int8_t)accelAndTemp.temp);
-      int8_t xAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.xValue-(int8_t)accelAndTemp.xValue) ;
-      int8_t yAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.yValue-(int8_t)accelAndTemp.yValue) ;
-      int8_t zAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.zValue-(int8_t)accelAndTemp.zValue) ;
-
-
-      if(   forceSample ||
-        tempDiff > SAMPLE_THRESHOLD_TEMP ||
-        xAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
-        yAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
-        zAccelDiff > SAMPLE_THRESHOLD_ACCEL
-        )
-      {
-#if PL_CONFIG_HAS_LIGHT_SENSOR
-        LightSensor_getParams(&lightGain,&lightIntTime,&lightWaitTime);
-        sample->lightGain = lightGain;
-        sample->lightIntTime = lightIntTime;
-        if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
-        {
-          SDEP_InitiateNewAlert(SDEP_ALERT_LIGHTSENS_ERROR);
-        }
-        sample->lightChannelX = lightB1.xChannelValue;
-        sample->lightChannelY = lightB1.yChannelValue;
-        sample->lightChannelZ = lightB1.zChannelValue;
-        sample->lightChannelIR = lightB1.nChannelValue;
-        sample->lightChannelB440 = lightB0.nChannelValue;
-        sample->lightChannelB490 = lightB0.zChannelValue;
-#else
-        sample->lightGain = 0;
-        sample->lightIntTime = 0;
-        sample->lightChannelX = 0;
-        sample->lightChannelY = 0;
-        sample->lightChannelZ = 0;
-        sample->lightChannelIR = 0;
-        sample->lightChannelB440 = 0;
-        sample->lightChannelB490 = 0;
-#endif
-
-        CS1_CriticalVariable();
-        CS1_EnterCritical();
-        if(setOneMarkerInLog)
-        {
-          setOneMarkerInLog =FALSE;
-          CS1_ExitCritical();
-          sample->temp = accelAndTemp.temp | 0x80;
-        }
-        else
-        {
-          CS1_ExitCritical();
-          sample->temp = accelAndTemp.temp;
-        }
-        crc8_liDoSample(sample);
-        WatchDog_StopComputationTime(WatchDog_TakeLidoSample);
-        xSemaphoreGiveRecursive(sampleMutex);
-
-        if(AppDataFile_GetAutoGainEnabled())
-        {
-          uint8_t lightSensorIntTime, lightSensorGain;
-          LiGain_Compute(sample,&lightSensorIntTime,&lightSensorGain);
-#if PL_CONFIG_HAS_LIGHT_SENSOR
-          LightSensor_setParams(lightSensorGain,lightSensorIntTime,lightSensorIntTime);
-#endif
-        }
-        oldAccelAndTemp = accelAndTemp;
-        return ERR_OK;
-      }
-      else
-      {
-        return ERR_DISABLED;
-      }
-    }
-    else
+    if(AccelSensor_getValues(&accelAndTemp) != ERR_OK)
     {
-      return ERR_FAILED;
+      SDEP_InitiateNewAlert(SDEP_ALERT_ACCELSENS_ERROR);
     }
+    sample->accelX = accelAndTemp.xValue;
+    sample->accelY = accelAndTemp.yValue;
+    sample->accelZ = accelAndTemp.zValue;
+#else
+    sample->accelX = 0;
+    sample->accelY = 0;
+    sample->accelZ = 0;
+#endif
+
+    int8_t tempDiff = (int8_t)abs((int8_t)oldAccelAndTemp.temp-(int8_t)accelAndTemp.temp);
+    int8_t xAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.xValue-(int8_t)accelAndTemp.xValue) ;
+    int8_t yAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.yValue-(int8_t)accelAndTemp.yValue) ;
+    int8_t zAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.zValue-(int8_t)accelAndTemp.zValue) ;
+
+    if(   forceSample ||
+      tempDiff > SAMPLE_THRESHOLD_TEMP ||
+      xAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
+      yAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
+      zAccelDiff > SAMPLE_THRESHOLD_ACCEL
+      )
+    {
+#if PL_CONFIG_HAS_LIGHT_SENSOR
+      LightSensor_getParams(&lightGain,&lightIntTime,&lightWaitTime);
+      sample->lightGain = lightGain;
+      sample->lightIntTime = lightIntTime;
+      if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
+      {
+        SDEP_InitiateNewAlert(SDEP_ALERT_LIGHTSENS_ERROR);
+      }
+      sample->lightChannelX = lightB1.xChannelValue;
+      sample->lightChannelY = lightB1.yChannelValue;
+      sample->lightChannelZ = lightB1.zChannelValue;
+      sample->lightChannelIR = lightB1.nChannelValue;
+      sample->lightChannelB440 = lightB0.nChannelValue;
+      sample->lightChannelB490 = lightB0.zChannelValue;
+#else
+      sample->lightGain = 0;
+      sample->lightIntTime = 0;
+      sample->lightChannelX = 0;
+      sample->lightChannelY = 0;
+      sample->lightChannelZ = 0;
+      sample->lightChannelIR = 0;
+      sample->lightChannelB440 = 0;
+      sample->lightChannelB490 = 0;
+#endif
+      if(setOneMarkerInLog) {
+        setOneMarkerInLog =FALSE;
+        sample->temp = accelAndTemp.temp | 0x80;
+      } else {
+        sample->temp = accelAndTemp.temp;
+      }
+      crc8_liDoSample(sample);
+      WatchDog_StopComputationTime(WatchDog_TakeLidoSample);
+      xSemaphoreGiveRecursive(sampleMutex);
+      if(AppDataFile_GetAutoGainEnabled()) {
+        uint8_t lightSensorIntTime, lightSensorGain;
+        LiGain_Compute(sample,&lightSensorIntTime,&lightSensorGain);
+#if PL_CONFIG_HAS_LIGHT_SENSOR
+        LightSensor_setParams(lightSensorGain,lightSensorIntTime,lightSensorIntTime);
+#endif
+      }
+      oldAccelAndTemp = accelAndTemp;
+      return ERR_OK;
+    } else {
+      return ERR_DISABLED;
+    }
+  } else {
+    return ERR_FAILED;
+  }
 }
 
-static bool APP_newDay(void)
-{
+static bool APP_newDay(void) {
    static DATEREC oldDate;
    DATEREC newDate;
 
    TmDt1_GetDate(&newDate);
-   if(newDate.Day != oldDate.Day)
-   {
+   if(newDate.Day != oldDate.Day) {
      oldDate = newDate;
      return TRUE;
    }
    return FALSE;
 }
 
-static bool APP_newHour(void)
-{
+static bool APP_newHour(void) {
    static TIMEREC oldTime;
    TIMEREC newTime;
 
    TmDt1_GetTime(&newTime);
-   if(newTime.Hour != oldTime.Hour)
-   {
+   if(newTime.Hour != oldTime.Hour) {
      oldTime = newTime;
      return TRUE;
    }
    return FALSE;
 }
 
-void APP_resumeSampleTaskFromISR(void)
-{
-  CS1_CriticalVariable();
-  CS1_EnterCritical();
+void APP_resumeSampleTaskFromISR(void) {
   BaseType_t xYieldRequired;
-  if(sampletaskHandle!=NULL)
-  {
+
+  if(sampletaskHandle!=NULL) {
       xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
-      if( xYieldRequired == pdTRUE )
-      {
+      if( xYieldRequired == pdTRUE ) {
           portYIELD_FROM_ISR(pdTRUE);
       }
   }
-  CS1_ExitCritical();
 }
 
 void APP_suspendSampleTask(void)
 {
-  if(sampletaskHandle!=NULL)
-  {
+  if(sampletaskHandle!=NULL) {
     vTaskSuspend(sampletaskHandle);
-  }
-  else
-  {
+  } else {
     //Error
     for(;;)
     {
@@ -295,31 +260,23 @@ static void APP_sample_task(void *param) {
   static int32_t unixTSlastSample;
   int32_t unixTScurrentSample;
   sampleMutex = xSemaphoreCreateRecursiveMutex();
-  if( sampleMutex == NULL )
-  {
-      for(;;); //Error...
+  if (sampleMutex == NULL) {
+    APP_FatalError();
   }
   xSemaphoreGiveRecursive(sampleMutex);
-
-  for(;;)
-  {
+  for(;;) {
     xLastWakeTime = xTaskGetTickCount();
     WatchDog_StartComputationTime(WatchDog_MeasureTaskRuns);
-    if(AppDataFile_GetSamplingEnabled())
-    {
+    if(AppDataFile_GetSamplingEnabled()) {
       RTC_getTimeUnixFormat(&unixTScurrentSample);
       sampleError = APP_getCurrentSample(&sample,unixTScurrentSample,!AppDataFile_GetSampleAutoOff());
-      if(sampleError == ERR_FAILED)
-      {
+      if(sampleError == ERR_FAILED) {
         SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
-      }
-      else if(sampleError==ERR_OK)
-      {
+      } else if(sampleError==ERR_OK) {
         UI_LEDpulse(LED_V);
-        if(xQueueSendToBack( lidoSamplesToWrite,  (void*)&sample, pdMS_TO_TICKS(500)) != pdPASS )
-          {
+        if(xQueueSendToBack( lidoSamplesToWrite,  (void*)&sample, pdMS_TO_TICKS(500)) != pdPASS ) {
             SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
-          }
+        }
       }
     }
     WatchDog_StopComputationTime(WatchDog_MeasureTaskRuns);
@@ -470,7 +427,7 @@ static void APP_init(void) {
 
   if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS)
   {
-      for(;;){} /* error! probably out of memory */
+      APP_FatalError();
   }
 }
 
@@ -590,8 +547,7 @@ static void APP_init_task(void *param) {
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     AccelSensor_init();
 #endif
-    if(RCM_SRS0 & RCM_SRS0_POR_MASK) // Init from PowerOn Reset
-    {
+    if(RCM_SRS0 & RCM_SRS0_POR_MASK) { // Init from PowerOn Reset
       AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
       RTC_init(FALSE);   /* HardReset RTC */
     } else {
@@ -604,8 +560,7 @@ static void APP_init_task(void *param) {
   }
   else //Format SPIF after 9s ButtonPress after startup
   {
-    if(USER_BUTTON_PRESSED())
-    {
+    if(USER_BUTTON_PRESSED()) {
       LED_R_Off();
       vTaskDelay(pdMS_TO_TICKS(3000));
       if(APP_WaitIfButtonPressed3s()) //Format SPIF
@@ -616,9 +571,7 @@ static void APP_init_task(void *param) {
         AppDataFile_CreateFile();
       }
       LED_R_Off();
-    }
-    else
-    {
+    } else {
       FS_Init();
       AppDataFile_Init();
     }
@@ -627,17 +580,12 @@ static void APP_init_task(void *param) {
   vTaskDelete(NULL); /* kill own task as not needed any more */
 }
 
-void APP_CloseSampleFile(void)
-{
+void APP_CloseSampleFile(void) {
   xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
-  if(fileIsOpen)
-  {
-    if(FS_closeFile(&sampleFile) != ERR_OK)
-    {
+  if(fileIsOpen) {
+    if(FS_closeFile(&sampleFile) != ERR_OK) {
         SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
-    }
-    else
-    {
+    } else {
       fileIsOpen = FALSE;
     }
   }
@@ -645,7 +593,7 @@ void APP_CloseSampleFile(void)
 }
 
 void APP_Run(void) {
-  PIN_POWER_ON_SetVal(); /* turn on FET to keep Vcc supplied */
+  PIN_POWER_ON_SetVal(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
 #if 0
   //EmercencyBreak: If LowPower went wrong...
   while(USER_BUTTON_PRESSED()) {
@@ -653,20 +601,24 @@ void APP_Run(void) {
     WAIT1_Waitms(50);
   }
 #endif
-#if 0
+#if 1
   for (int i=0; i<4; i++) {
-    LED_R_Neg();
+    LED_G_Neg();
     WAIT1_Waitms(250);
   }
 #endif
-
-  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS)
-  {
-      for(;;){} /* error! probably out of memory */
+#if 0
+  for (int i=0;i<20;i++) {
+    LED_R_Neg();
+    WAIT1_Waitms(500);
   }
-
+  PIN_POWER_ON_ClrVal(); /* power off */
+#endif
+  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
+    APP_FatalError(); /* error! probably out of memory */
+  }
   vTaskStartScheduler();
-  for(;;) {}
+  for(;;) {} /* should not get here */
 }
 
 #if 0
@@ -689,20 +641,15 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
   TIMEREC time;
   DATEREC date;
 
-  if(AppDataFile_GetSamplingEnabled())
-  {
+  if(AppDataFile_GetSamplingEnabled()) {
     samplingWasEnabled = TRUE;
     AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
   }
-
-  if(FS_openFile(&sampleFile,fileNameSrc) != ERR_OK)
-  {
+  if(FS_openFile(&sampleFile,fileNameSrc) != ERR_OK) {
     SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile open failed");
     return ERR_FAILED;
   }
-
   WatchDog_DisableSource(WatchDog_MeasureTaskRuns);
-
   //Read + Print Header:
   if(FS_readLine(&sampleFile,samplePrintLine,120,&nofReadChars) != ERR_OK)
   {
@@ -718,7 +665,7 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
   while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&
       nofReadChars == LIDO_SAMPLE_SIZE)
   {
-    sampleNr ++;
+    sampleNr++;
 
     unixTimeStamp = (int32)(sampleBuf[0] | sampleBuf[1]<<8 | sampleBuf[2]<<16 | sampleBuf[3]<<24);
     TmDt1_UnixSecondsToTimeDate(unixTimeStamp,0,&time,&date);

@@ -7,6 +7,7 @@
  *  Driver for the AS7264N LightSensor via I2C
  */
 #include "Platform.h"
+#include "Application.h"
 #if PL_CONFIG_HAS_LIGHT_SENSOR
 #include "LightSensor.h"
 #if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
@@ -362,25 +363,20 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
   uint8_t res = ERR_OK;
   const uint8_t *p;
 
-  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "LightSens help")==0)
-  {
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "LightSens help")==0) {
     CLS1_SendHelpStr((unsigned char*)"LightSens", (const unsigned char*)"Group of LightSensor (AS7264N) commands\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  getBank0", (const unsigned char*)"Measures SensorBank0(x,y,b,b)\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  getBank1", (const unsigned char*)"Measures SensorBank1(x,y,z,IR)\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
-  }
-  else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
+  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
     *handled = TRUE;
     return PrintStatus(io);
-  }
-  else if (UTIL1_strcmp((char*)cmd, "LightSens getBank0")==0)
-  {
+  } else if (UTIL1_strcmp((char*)cmd, "LightSens getBank0")==0) {
     *handled = TRUE;
     return PrintBank0(io);
-  }
-  else if (UTIL1_strcmp((char*)cmd, "LightSens getBank1")==0) {
+  } else if (UTIL1_strcmp((char*)cmd, "LightSens getBank1")==0) {
   	*handled = TRUE;
 	  return PrintBank1(io);
   }
@@ -403,7 +399,7 @@ void LightSensor_Done_ISR(void) {
 void LightSensor_Done_ISR(void)
 {
   for(;;) {
-    /* should not happen */
+    APP_FatalError();
   }
 }
 #endif /* PL_CONFIG_HAS_LIGHT_SENSOR */
