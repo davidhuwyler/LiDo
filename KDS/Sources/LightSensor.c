@@ -156,9 +156,9 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	uint8_t res = ERR_OK;
 	uint8_t localGain = 0x3, localIntTime = 0xF0, localWaitTime = 0xF0;
 
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_PWR_MODE , 0x00);			//Disable Lowpower Mode
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_PWR_MODE , 0x00);			//Disable Low-power Mode
 	//WAIT1_Waitus(50);
-	//res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 );	//Disable Lowpower Mode
+	//res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 );	//Disable Low-power Mode
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_1 , 0x8A);		//Register must be initialized with 0x8A (Datasheet p. 20)
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_2 , 0x02);		//Register must be initialized with 0x02 (Datasheet p. 20)
@@ -212,8 +212,8 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 
 	bank0->nChannelValue = ((uint16_t)n_L | ((uint16_t)n_H<<8));
 	bank0->xChannelValue = ((uint16_t)x_L | ((uint16_t)x_H<<8));
-	bank0->yChannelValue = ((uint16_t)n_L | ((uint16_t)y_H<<8));
-	bank0->zChannelValue = ((uint16_t)n_L | ((uint16_t)z_H<<8));
+	bank0->yChannelValue = ((uint16_t)y_L | ((uint16_t)y_H<<8));
+	bank0->zChannelValue = ((uint16_t)z_L | ((uint16_t)z_H<<8));
 
 	//Bank1
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x80);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
@@ -247,8 +247,8 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 
 	bank1->nChannelValue = ((uint16_t)n_L | ((uint16_t)n_H<<8));
 	bank1->xChannelValue = ((uint16_t)x_L | ((uint16_t)x_H<<8));
-	bank1->yChannelValue = ((uint16_t)n_L | ((uint16_t)y_H<<8));
-	bank1->zChannelValue = ((uint16_t)n_L | ((uint16_t)z_H<<8));
+	bank1->yChannelValue = ((uint16_t)y_L | ((uint16_t)y_H<<8));
+	bank1->zChannelValue = ((uint16_t)z_L | ((uint16_t)z_H<<8));
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04);		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x00 );    //Disable Conversion
@@ -326,6 +326,34 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
     UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"ERROR\r\n");
   }
   CLS1_SendStatusStr((unsigned char*)"  Bank1", buf, io->stdOut);
+
+  UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"0x");
+  UTIL1_strcatNum8Hex(buf, sizeof(buf), gain);
+  switch(gain) {
+    case 0: UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (1x)"); break;
+    case 1: UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (3.7x)"); break;
+    case 2: UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (16x)"); break;
+    case 3: UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (64x)"); break;
+    default: UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (ERROR)"); break;
+  }
+  UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  gain", buf, io->stdOut);
+
+  /* IntegrationTime: (256 - value) * 2.8ms */
+  UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"0x");
+  UTIL1_strcatNum8Hex(buf, sizeof(buf), intTime);
+  UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (");
+  UTIL1_strcatNumFloat(buf, sizeof(buf), (256-intTime)*2.8f, 1);
+  UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" ms)\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  int time", buf, io->stdOut);
+
+  /* wait time between measurement (256 - value) * 2.8ms */
+  UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"0x");
+  UTIL1_strcatNum8Hex(buf, sizeof(buf), waitTime);
+  UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" (");
+  UTIL1_strcatNumFloat(buf, sizeof(buf), (256-intTime)*2.8f, 1);
+  UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" ms)\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  wait time", buf, io->stdOut);
   return ERR_OK;
 }
 
