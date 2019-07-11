@@ -565,7 +565,7 @@ static void APP_init_task(void *param) {
   (void)param; /* not used */
 
   LED_G_On();
-  vTaskDelay(pdMS_TO_TICKS(1000));
+  vTaskDelay(pdMS_TO_TICKS(200));
   LED_G_Off();
 
   if(!APP_WaitIfButtonPressed3s()) { //Normal init if the UserButton is not pressed
