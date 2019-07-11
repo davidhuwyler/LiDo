@@ -23,6 +23,21 @@ Open points
 - reset button does not work if in low power mode?
 - need glas/enclosure for light sensor?
 - keep communication open if RTT/debugger is connected
+- todo: use bat emergency pin to cut off power in PowerMangement.c
+- Charging indication pin does not work correctly?
+- need to have ability to reset I2C bus
+- had empty file?
+CMD>   < AppData print
+00> LIDO_NAME = -
+00> LIDO_ID = -
+00> LIDO_VERSION = -
+00> SAMPLE_INTERVALL = -
+00> SAMPLE_ENABLE = 1
+00> LIGHTSENS_GAIN = -
+00> LIGHTSENS_INTT = -
+00> LIGHTSENS_WTIM = -
+00> AUTOGAIN_ENABLE = -
+00> SAMPLE_AUTO_OFF = -
 
 User Interface:
 - 1x short press: set marker (1x green blink)
@@ -41,3 +56,10 @@ Re-enable communication:
 
 Links:
 - https://github.com/kirananto/RaZorReborn/blob/master/drivers/power/yl_lc709203_fuelgauge.c
+
+
+Power Concept:
+- With the USB connected (5V), it turns on the FET (T3) and powers the target
+- Or: User presses the push button
+- uC can power down Vcc with the DO_PWR_ON pin
+==> Reset button does not help to wake up processor from low power mode!

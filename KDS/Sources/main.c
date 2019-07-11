@@ -82,6 +82,10 @@
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd16.h"
 #include "PTA.h"
+#include "I2C_SDA.h"
+#include "BitIoLdd17.h"
+#include "I2C_SCL.h"
+#include "BitIoLdd18.h"
 #include "PIN_PWR_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 /* Including shared modules, which are used for whole project */
@@ -100,10 +104,8 @@ int main(void)
   /*** Processor Expert internal initialization. DON'T REMOVE THIS CODE!!! ***/
   PE_low_level_init();
   /*** End of Processor Expert internal initialization.                    ***/
-
   /* Write your code here */
   APP_Run();
-  /* For example: for(;;) { } */
 
   /*** Don't write any code pass this line, or it will be deleted during code generation. ***/
   /*** RTOS startup code. Macro PEX_RTOS_START is defined by the RTOS component. DON'T MODIFY THIS CODE!!! ***/

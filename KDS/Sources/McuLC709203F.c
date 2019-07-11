@@ -129,9 +129,9 @@ void McuLC_Wakeup(void) {
   PORT_PDD_SetPinMuxControl(PORTB_BASE_PTR, 3, PORT_PDD_MUX_CONTROL_ALT1); /* MUX SDA/PTB3 as GPIO */
   PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 3, PORT_PDD_OPEN_DRAIN_ENABLE);
   GPIO_PDD_SetPortOutputDirectionMask(PTB_BASE_PTR, (1<<3)); /* SDA/PTB3 as output */
-  GPIO_PDD_ClearPortDataOutputMask(PTB_BASE_PTR, 1<<3); /* SDA/PB3 low */
+  GPIO_PDD_ClearPortDataOutputMask(PTB_BASE_PTR, 1<<3);   /* SDA/PB3 low */
   WAIT1_Waitus(1);                                        /* SDA min 0.6us low */
-  GPIO_PDD_SetPortDataOutputMask(PTB_BASE_PTR, 1<<3);   /* SDA/PB3 high */
+  GPIO_PDD_SetPortDataOutputMask(PTB_BASE_PTR, 1<<3);     /* SDA/PB3 high */
   WAIT1_Waitus(400);                                      /* wait 400us */
   /* mux back to normal I2C mode with interrupts enabled */
   PORTB_PCR3 = (uint32_t)((PORTB_PCR3 & (uint32_t)~(uint32_t)(

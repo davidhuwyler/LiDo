@@ -31,7 +31,7 @@ static TaskHandle_t powerManagementTaskHandle;
 static bool waringLogged = FALSE;
 
 bool PowerManagement_IsCharging(void) {
-  return PIN_PWR_CHARGE_STATE_GetVal()==TRUE; /* pin should be HIGH/true if charging */
+  return PIN_PWR_CHARGE_STATE_GetVal()==TRUE; /* pin is HIGH/true if charging */
 }
 
 static void PowerManagement_task(void *param) {
@@ -74,7 +74,7 @@ static void PowerManagement_task(void *param) {
 
 	  if(oldAdcValue < POWER_MANAGEMENT_LIPO_CUTOFF && adcValue < POWER_MANAGEMENT_LIPO_CUTOFF)
 	  {
-		  PIN_POWER_ON_ClrVal(); // PowerOff the device
+		  PIN_POWER_ON_ClrVal(); /* emergency: cut off power */
 	  }
 	  oldAdcValue = adcValue;
 #else

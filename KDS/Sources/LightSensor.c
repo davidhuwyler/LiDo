@@ -65,14 +65,10 @@ static volatile uint8_t gain = 0, intTime = 0, waitTime = 0;
 //Workaround Resuming not working:
 static SemaphoreHandle_t waitForLightSensMutex;
 
-void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime)
-{
-	if(gain > 3)
-	{
+void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime) {
+	if(gain > 3) {
 		paramGain = 3;
-	}
-	else if(gain <0)
-	{
+	} else if(gain <0) {
 		paramGain = 0;
 	}
 	taskENTER_CRITICAL();
@@ -91,16 +87,12 @@ void LightSensor_getParams(uint8_t* paramGain, uint8_t* paramIntegrationTime, ui
 	taskEXIT_CRITICAL();
 }
 
-
-
-void LightSensor_init(void)
-{
-    //Workaround Resuming not working:
+void LightSensor_init(void) {
+  //Workaround Resuming not working:
 	waitForLightSensMutex = xSemaphoreCreateRecursiveMutex();
-    if( waitForLightSensMutex == NULL )
-    {
-        for(;;); //Error...
-    }
+  if( waitForLightSensMutex == NULL ) {
+      for(;;); //Error...
+  }
 #if PL_CONFIG_HAS_SENSOR_PWR_PIN
 	//PowerSensors
 	PIN_SENSOR_PWR_ClrVal(); //LowActive
@@ -148,9 +140,7 @@ void LightSensor_init(void)
 	LightSensor_setParams(gain,intTime,waitTime);
 }
 
-
-uint8_t LightSensor_autoZeroBlocking(void)
-{
+uint8_t LightSensor_autoZeroBlocking(void) {
 	uint8_t i2cData;
 	uint8_t res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_AUTO_ZERO , 0x0F);			//Autozero all Channels
 	res = GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_AUTO_ZERO , &i2cData );
@@ -161,8 +151,7 @@ uint8_t LightSensor_autoZeroBlocking(void)
 	return res;
 }
 
-uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* bank1)
-{
+uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *bank1) {
 	uint8_t i2cData;
 	uint8_t res = ERR_OK;
 	uint8_t localGain = 0x3, localIntTime = 0xF0, localWaitTime = 0xF0;
@@ -267,9 +256,8 @@ uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* ban
 	return res;
 }
 
-static uint8_t PrintBank0(CLS1_ConstStdIOType *io)
-{
-	LightChannels_t lightChannels,lightChannels1;
+static uint8_t PrintBank0(CLS1_ConstStdIOType *io) {
+	LightChannels_t lightChannels, lightChannels1;
 	uint8_t res = LightSensor_getChannelValues(&lightChannels,&lightChannels1);
 	CLS1_SendStr("X value: ",io->stdOut);
 	CLS1_SendNum16u(lightChannels.xChannelValue,io->stdOut);
@@ -286,8 +274,7 @@ static uint8_t PrintBank0(CLS1_ConstStdIOType *io)
 	return res;
 }
 
-static uint8_t PrintBank1(CLS1_ConstStdIOType *io)
-{
+static uint8_t PrintBank1(CLS1_ConstStdIOType *io) {
 	LightChannels_t lightChannels,lightChannels0;
 	uint8_t res = LightSensor_getChannelValues(&lightChannels,&lightChannels);
 	CLS1_SendStr("X value: ",io->stdOut);
@@ -306,8 +293,39 @@ static uint8_t PrintBank1(CLS1_ConstStdIOType *io)
 }
 
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
-  uint8_t buf[32];
+  uint8_t buf[64], res;
+  LightChannels_t bank0, bank1;
+
   CLS1_SendStatusStr((unsigned char*)"LightSens", (const unsigned char*)"\r\n", io->stdOut);
+  res = LightSensor_getChannelValues(&bank0, &bank1);
+  if (res==ERR_OK) {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"X: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank0.xChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" Y: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank0.yChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" B440: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank0.zChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" B480: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank0.nChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"\r\n");
+  } else {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"ERROR\r\n");
+  }
+  CLS1_SendStatusStr((unsigned char*)"  Bank0", buf, io->stdOut);
+  if (res==ERR_OK) {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"X: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank1.xChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)" Y: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank1.yChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"    Z: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank1.zChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"   IR: 0x");
+    UTIL1_strcatNum16Hex(buf, sizeof(buf), bank1.nChannelValue);
+    UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"\r\n");
+  } else {
+    UTIL1_strcpy(buf, sizeof(buf), (unsigned char*)"ERROR\r\n");
+  }
+  CLS1_SendStatusStr((unsigned char*)"  Bank1", buf, io->stdOut);
   return ERR_OK;
 }
 
@@ -321,7 +339,7 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
     CLS1_SendHelpStr((unsigned char*)"LightSens", (const unsigned char*)"Group of LightSensor (AS7264N) commands\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  getBank0", (const unsigned char*)"Measures SensorBank0(x,y,b,b)\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  getBank1", (const unsigned char*)"Measures SensorBank1(x,y,z,IR)C\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  getBank1", (const unsigned char*)"Measures SensorBank1(x,y,z,IR)\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
   }
@@ -335,9 +353,8 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
     return PrintBank0(io);
   }
   else if (UTIL1_strcmp((char*)cmd, "LightSens getBank1")==0) {
-
-	*handled = TRUE;
-	return PrintBank1(io);
+  	*handled = TRUE;
+	  return PrintBank1(io);
   }
   return res;
 }

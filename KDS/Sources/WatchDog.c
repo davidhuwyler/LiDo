@@ -73,7 +73,7 @@ static void WatchDog_Task(void *param) {
 
 				//Check ComputationTime
 				if(watchDogKickSources[i].compTimeMeasurementRunning)
-				{ //If measurement Runns, only check upper Boundary
+				{ //If measurement Runs, only check upper Boundary
 					if((xLastWakeTime - watchDogKickSources[i].timeStampLastKick) > watchDogKickSources[i].uppwerCompTimeLimit )
 					{
 						feedTheDog = FALSE; // --> WatchDog CompTime not in boundary... Reset!
@@ -123,7 +123,7 @@ static void WatchDog_Task(void *param) {
 				case WatchDog_ToggleEnableSampling:
 					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at ToggleEnableSampling");
 					break;
-				case WatchDog_MeasureTaskRunns:
+				case WatchDog_MeasureTaskRuns:
 					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at MeasureTaskRunns");
 					break;
 				default:
@@ -179,62 +179,62 @@ void WatchDog_Init(void)
   #warning "watchdog is disabled!"
 #endif
 	//initial Dog feed...
-	watchDogKickSources[WatchDog_LiDoInit].isSingleCheckWatchdogSouce					= TRUE;
-	watchDogKickSources[WatchDog_LiDoInit].lowerCompTimeLimit 							= 0;
-	watchDogKickSources[WatchDog_LiDoInit].uppwerCompTimeLimit 							= 5000;
-	watchDogKickSources[WatchDog_LiDoInit].measuredCompTime 							= watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
-	watchDogKickSources[WatchDog_LiDoInit].timeStampLastKick 							= 0;
-	watchDogKickSources[WatchDog_LiDoInit].sourceIsActive 								= FALSE;
-	watchDogKickSources[WatchDog_LiDoInit].requestForDeactivation						= FALSE;
-	watchDogKickSources[WatchDog_LiDoInit].sourceForceDisabled							= FALSE;
+	watchDogKickSources[WatchDog_LiDoInit].isSingleCheckWatchdogSouce	= TRUE;
+	watchDogKickSources[WatchDog_LiDoInit].lowerCompTimeLimit 				= 0;
+	watchDogKickSources[WatchDog_LiDoInit].uppwerCompTimeLimit 				= 5000;
+	watchDogKickSources[WatchDog_LiDoInit].measuredCompTime 					= watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
+	watchDogKickSources[WatchDog_LiDoInit].timeStampLastKick 					= 0;
+	watchDogKickSources[WatchDog_LiDoInit].sourceIsActive 						= FALSE;
+	watchDogKickSources[WatchDog_LiDoInit].requestForDeactivation			= FALSE;
+	watchDogKickSources[WatchDog_LiDoInit].sourceForceDisabled				= FALSE;
 
 	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].isSingleCheckWatchdogSouce	= TRUE;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			= 0;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 			= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].measuredCompTime 				= watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].timeStampLastKick 			= 0;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].sourceIsActive 				= FALSE;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].requestForDeactivation		= FALSE;
-	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].sourceForceDisabled			= FALSE;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit 			    = 0;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].uppwerCompTimeLimit 		    = FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].measuredCompTime 				    = watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].lowerCompTimeLimit;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].timeStampLastKick 			    = 0;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].sourceIsActive 				      = FALSE;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].requestForDeactivation	    = FALSE;
+	watchDogKickSources[WatchDog_OpenCloseLidoSampleFile].sourceForceDisabled			    = FALSE;
 
-	watchDogKickSources[WatchDog_WriteToLidoSampleFile].isSingleCheckWatchdogSouce		= TRUE;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].isSingleCheckWatchdogSouce= TRUE;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].lowerCompTimeLimit 				= 0;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].uppwerCompTimeLimit 			= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
-	watchDogKickSources[WatchDog_WriteToLidoSampleFile].measuredCompTime 				= watchDogKickSources[WatchDog_WriteToLidoSampleFile].lowerCompTimeLimit ;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].measuredCompTime 				  = watchDogKickSources[WatchDog_WriteToLidoSampleFile].lowerCompTimeLimit ;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].timeStampLastKick 				= 0;
-	watchDogKickSources[WatchDog_WriteToLidoSampleFile].sourceIsActive 					= FALSE;
-	watchDogKickSources[WatchDog_WriteToLidoSampleFile].requestForDeactivation			= FALSE;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].sourceIsActive 					  = FALSE;
+	watchDogKickSources[WatchDog_WriteToLidoSampleFile].requestForDeactivation		= FALSE;
 	watchDogKickSources[WatchDog_WriteToLidoSampleFile].sourceForceDisabled				= FALSE;
 
 	watchDogKickSources[WatchDog_TakeLidoSample].isSingleCheckWatchdogSouce				= TRUE;
-	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					= 1500;
-	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						= watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit;
-	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						= 0;
-	watchDogKickSources[WatchDog_TakeLidoSample].sourceIsActive 						= FALSE;
-	watchDogKickSources[WatchDog_TakeLidoSample].requestForDeactivation					= FALSE;
-	watchDogKickSources[WatchDog_TakeLidoSample].sourceForceDisabled					= FALSE;
+	watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit 					    = 0;
+	watchDogKickSources[WatchDog_TakeLidoSample].uppwerCompTimeLimit 					    = 2000;
+	watchDogKickSources[WatchDog_TakeLidoSample].measuredCompTime 						    = watchDogKickSources[WatchDog_TakeLidoSample].lowerCompTimeLimit;
+	watchDogKickSources[WatchDog_TakeLidoSample].timeStampLastKick 						    = 0;
+	watchDogKickSources[WatchDog_TakeLidoSample].sourceIsActive 						      = FALSE;
+	watchDogKickSources[WatchDog_TakeLidoSample].requestForDeactivation					  = FALSE;
+	watchDogKickSources[WatchDog_TakeLidoSample].sourceForceDisabled					    = FALSE;
 
-	watchDogKickSources[WatchDog_ToggleEnableSampling].isSingleCheckWatchdogSouce		= TRUE;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].isSingleCheckWatchdogSouce	= TRUE;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit 				= 0;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].uppwerCompTimeLimit 				= FILE_OPEN_CLOSE_WRITE_MAX_DURATION_MS;
-	watchDogKickSources[WatchDog_ToggleEnableSampling].measuredCompTime 				= watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit;
-	watchDogKickSources[WatchDog_ToggleEnableSampling].timeStampLastKick 				= 0;
-	watchDogKickSources[WatchDog_ToggleEnableSampling].sourceIsActive 					= FALSE;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].measuredCompTime 				  = watchDogKickSources[WatchDog_ToggleEnableSampling].lowerCompTimeLimit;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].timeStampLastKick 				  = 0;
+	watchDogKickSources[WatchDog_ToggleEnableSampling].sourceIsActive 					  = FALSE;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].requestForDeactivation			= FALSE;
 	watchDogKickSources[WatchDog_ToggleEnableSampling].sourceForceDisabled				= FALSE;
 
-	watchDogKickSources[WatchDog_MeasureTaskRunns].isSingleCheckWatchdogSouce			= FALSE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1500;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 2500;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimit  				= 2500;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].timeStampLastKick 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceIsActive 						= FALSE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceForceDisabled					= FALSE;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].isSingleCheckWatchdogSouce			= FALSE;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].lowerCompTimeLimit 					    = 0;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].uppwerCompTimeLimit 					  = 2000;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].measuredCompTime 					      = watchDogKickSources[WatchDog_MeasureTaskRuns].lowerCompTimeLimit;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].kickIntervallXSampleIntervall		= TRUE;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].maxKickIntervallLimitRaw				= 2500;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].maxKickIntervallLimit  				  = 2500;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].timeStampLastKick 					    = 0;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].sourceIsActive 						      = FALSE;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].requestForDeactivation				  = FALSE;
+	watchDogKickSources[WatchDog_MeasureTaskRuns].sourceForceDisabled					    = FALSE;
 
 	if (xTaskCreate(WatchDog_Task, "WatchDog", 1200/sizeof(StackType_t), NULL,  configMAX_PRIORITIES-2, &watchDogTaskHandle) != pdPASS)
 	{

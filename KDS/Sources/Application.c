@@ -53,19 +53,16 @@ static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
 
-void APP_setMarkerInLog(void)
-{
-  setOneMarkerInLog = TRUE; /* no critical section needed as access is atomic */
+void APP_setMarkerInLog(void) {
+  setOneMarkerInLog = TRUE;
 }
 
-void APP_toggleEnableSampling(void)
-{
-  toggleEnablingSampling = TRUE; /* no critical section needed as access is atomic */
+void APP_toggleEnableSampling(void) {
+  toggleEnablingSampling = TRUE;
 }
 
-void APP_requestForSoftwareReset(void)
-{
-  requestForSoftwareReset = TRUE; /* no critical section needed as access is atomic */
+void APP_requestForSoftwareReset(void) {
+  requestForSoftwareReset = TRUE;
 }
 
 static void APP_toggleEnableSamplingIfRequested(void)
@@ -93,22 +90,13 @@ static void APP_toggleEnableSamplingIfRequested(void)
   }
 }
 
-static void APP_softwareResetIfRequested()
-{
-  taskENTER_CRITICAL();
-  if(requestForSoftwareReset)
-  {
+static void APP_softwareResetIfRequested(void) {
+  if(requestForSoftwareReset) {
     requestForSoftwareReset = FALSE;
-    taskEXIT_CRITICAL();
-    if(fileIsOpen)
-    {
+    if(fileIsOpen) {
       FS_closeFile(&sampleFile);
     }
     KIN1_SoftwareReset();
-  }
-  else
-  {
-    taskEXIT_CRITICAL();
   }
 }
 
@@ -117,7 +105,7 @@ int abs (int i)
   return i < 0 ? -i : i;
 }
 
-uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp,bool forceSample)
+uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool forceSample)
 {
     static AccelAxis_t oldAccelAndTemp;
     LightChannels_t lightB0,lightB1;
@@ -316,7 +304,7 @@ static void APP_sample_task(void *param) {
   for(;;)
   {
     xLastWakeTime = xTaskGetTickCount();
-    WatchDog_StartComputationTime(WatchDog_MeasureTaskRunns);
+    WatchDog_StartComputationTime(WatchDog_MeasureTaskRuns);
     if(AppDataFile_GetSamplingEnabled())
     {
       RTC_getTimeUnixFormat(&unixTScurrentSample);
@@ -334,7 +322,7 @@ static void APP_sample_task(void *param) {
           }
       }
     }
-    WatchDog_StopComputationTime(WatchDog_MeasureTaskRunns);
+    WatchDog_StopComputationTime(WatchDog_MeasureTaskRuns);
 
     WatchDog_ResumeTask();
     if(writeFileTaskHandle != NULL)
@@ -459,18 +447,16 @@ static void APP_writeLidoFile_task(void *param) {
   } /* for */
 }
 
-void APP_init(void)
-{
-  PIN_POWER_ON_SetVal();
+static void APP_init(void) {
   //Init the SampleQueue, SampleTask and the WriteLidoFile Task
   //The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
   lidoSamplesToWrite = xQueueCreate( 15, sizeof( liDoSample_t ) );
-    if( lidoSamplesToWrite == NULL )
-    {
-      for(;;){} /* error! probably out of memory */
-    }
+  if( lidoSamplesToWrite == NULL )
+  {
+    for(;;){} /* error! probably out of memory */
+  }
 
-  if (xTaskCreate(APP_sample_task, "sampleTask", 1000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
+  if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
   {
       for(;;){} /* error! probably out of memory */
   }
@@ -488,38 +474,107 @@ void APP_init(void)
   }
 }
 
-static bool APP_WaitIfButtonPressed3s(void)
-{
-    if(USER_BUTTON_PRESSED())
+static bool APP_WaitIfButtonPressed3s(void) {
+  if(USER_BUTTON_PRESSED()) {
+    for(int i = 0 ; i < 30 ; i++)
     {
-      for(int i = 0 ; i < 30 ; i++)
-      {
-        WDog1_Clear();
-        vTaskDelay(pdMS_TO_TICKS(100));
-        LED_R_Neg();
-        if(!USER_BUTTON_PRESSED())
-        {
-          return FALSE;
-        }
+      WDog1_Clear();
+      vTaskDelay(pdMS_TO_TICKS(100));
+      LED_R_Neg();
+      if(!USER_BUTTON_PRESSED()) {
+        return FALSE;
       }
-      return TRUE;
     }
-    else
-    {
-      return FALSE;
-    }
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+#include "CI2C1.h"
+#include "I2C_SCL.h"
+#include "I2C_SDA.h"
+
+static void MuxAsGPIO(void) {
+  /* PTB3: SDA, PTB2: SCL */
+  //CI2C1_Deinit(NULL);
+  I2C_SDA_ConnectPin(); /* mux as GPIO */
+  I2C_SCL_ConnectPin(); /* mux as GPOO */
+  I2C_SDA_SetOutput();
+  I2C_SCL_SetOutput();
+}
+
+#include "PORT_PDD.h"
+#include "GPIO_PDD.h"
+static void MuxAsI2C(void) {
+  /* PTB3: SDA, PTB2: SCL */
+  //CI2C1_Init(NULL);
+  /* mux back to normal I2C mode with interrupts enabled */
+  /* PCR3: SDA */
+  PORTB_PCR3 = (uint32_t)((PORTB_PCR3 & (uint32_t)~(uint32_t)(
+                PORT_PCR_ISF_MASK |
+                PORT_PCR_MUX(0x05)
+               )) | (uint32_t)(
+                PORT_PCR_MUX(0x02)
+               ));
+  PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 0x03u, PORT_PDD_OPEN_DRAIN_ENABLE); /* Set SDA pin as open drain */
+  /* PORTB_PCR2: ISF=0,MUX=2 */
+  PORTB_PCR2 = (uint32_t)((PORTB_PCR2 & (uint32_t)~(uint32_t)(
+                PORT_PCR_ISF_MASK |
+                PORT_PCR_MUX(0x05)
+               )) | (uint32_t)(
+                PORT_PCR_MUX(0x02)
+               ));
+  PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 0x02u, PORT_PDD_OPEN_DRAIN_ENABLE); /* Set SCL pin as open drain */
+}
+
+static void ResetI2CBus(void) {
+  int i;
+  MuxAsGPIO();
+
+  /* Drive SDA low first to simulate a start */
+  I2C_SDA_ClrVal();//McuGPIO_Low(sdaPin);
+  WAIT1_Waitus(10);
+  /* Send 9 pulses on SCL and keep SDA high */
+  for (i = 0; i < 9; i++) {
+    I2C_SCL_ClrVal();//McuGPIO_Low(sclPin);
+    WAIT1_Waitus(10);
+
+    I2C_SDA_SetVal();//McuGPIO_High(sdaPin);
+    WAIT1_Waitus(10);
+
+    I2C_SCL_SetVal();//McuGPIO_High(sclPin);
+    WAIT1_Waitus(20);
+  }
+  /* Send stop */
+  I2C_SCL_ClrVal();//McuGPIO_Low(sclPin);
+  WAIT1_Waitus(10);
+  I2C_SDA_ClrVal();//McuGPIO_Low(sdaPin);
+  WAIT1_Waitus(10);
+
+  I2C_SCL_ClrVal();//McuGPIO_Low(sclPin);
+  WAIT1_Waitus(10);
+
+  I2C_SDA_SetVal();//McuGPIO_High(sdaPin);
+  WAIT1_Waitus(10);
+  /* go back to I2C mode */
+  MuxAsI2C();
 }
 
 static void APP_init_task(void *param) {
-  (void)param;
-  PIN_POWER_ON_SetVal();
+  (void)param; /* not used */
+
   LED_G_On();
   vTaskDelay(pdMS_TO_TICKS(1000));
   LED_G_Off();
-  if(!APP_WaitIfButtonPressed3s()) //Normal init if the UserButton is not pressed
-  {
+
+  if(!APP_WaitIfButtonPressed3s()) { //Normal init if the UserButton is not pressed
 #if PL_CONFIG_HAS_GAUGE_SENSOR
     McuLC_Wakeup(); /* needs to be done before (!!!) any other I2C communication! */
+#endif
+    ResetI2CBus();
+#if PL_CONFIG_HAS_GAUGE_SENSOR
+    McuLC_Wakeup(); /* need to do the wakeup again after the reset bus? otherwise will be stuck in McuLC_Init() */
     McuLC_Init();
 #endif
     WatchDog_Init();
@@ -590,17 +645,15 @@ void APP_CloseSampleFile(void)
 }
 
 void APP_Run(void) {
-  //PowerON
-  PIN_POWER_ON_SetVal();
-
-#if 1
+  PIN_POWER_ON_SetVal(); /* turn on FET to keep Vcc supplied */
+#if 0
   //EmercencyBreak: If LowPower went wrong...
   while(USER_BUTTON_PRESSED()) {
     LED_R_Neg();
     WAIT1_Waitms(50);
   }
 #endif
-#if 1
+#if 0
   for (int i=0; i<4; i++) {
     LED_R_Neg();
     WAIT1_Waitms(250);
@@ -648,7 +701,7 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
     return ERR_FAILED;
   }
 
-  WatchDog_DisableSource(WatchDog_MeasureTaskRunns);
+  WatchDog_DisableSource(WatchDog_MeasureTaskRuns);
 
   //Read + Print Header:
   if(FS_readLine(&sampleFile,samplePrintLine,120,&nofReadChars) != ERR_OK)
@@ -735,13 +788,26 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
     return ERR_FAILED;
   }
 
-  WatchDog_EnableSource(WatchDog_MeasureTaskRunns);
+  WatchDog_EnableSource(WatchDog_MeasureTaskRuns);
   return ERR_OK;
 }
 
+static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
+  uint8_t buf[32], res;
+  LightChannels_t bank0, bank1;
 
-uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io)
-{
+  CLS1_SendStatusStr((unsigned char*)"App", (const unsigned char*)"\r\n", io->stdOut);
+  UTIL1_strcpy(buf, sizeof(buf), (const unsigned char*)"V");
+  UTIL1_strcatNum16u(buf, sizeof(buf), PL_BOARD_REV/10);
+  UTIL1_chcat(buf, sizeof(buf), '.');
+  UTIL1_strcatNum16u(buf, sizeof(buf), PL_BOARD_REV%10);
+  UTIL1_strcat(buf, sizeof(buf), (const unsigned char*)"\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  Board Rev.", (unsigned char *)buf, io->stdOut);
+  CLS1_SendStatusStr((unsigned char*)"  Sampling", AppDataFile_GetSamplingEnabled()?(unsigned char *)"yes\r\n":(unsigned char *)"no\r\n", io->stdOut);
+  return ERR_OK;
+}
+
+uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
   unsigned char fileName[48];
   size_t lenRead;
   uint8_t res = ERR_OK;
@@ -750,20 +816,14 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "App help")==0)
   {
     CLS1_SendHelpStr((unsigned char*)"App", (const unsigned char*)"Group of Application commands\r\n", io->stdOut);
-    //CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  help", (const unsigned char*)"Print help information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  print <file>", (const unsigned char*)"Prints a LiDo Sample File\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
-  }
-#if 0
-  else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
+  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "App status")==0)) {
     *handled = TRUE;
     return PrintStatus(io);
-  }
-#endif
-  else if (UTIL1_strncmp((char* )cmd, "App print ", sizeof("App print ") - 1) == 0)
-  {
+  } else if (UTIL1_strncmp((char* )cmd, "App print ", sizeof("App print ") - 1) == 0) {
     *handled = TRUE;
     if ((UTIL1_ReadEscapedName(cmd + sizeof("App print ") - 1,fileName, sizeof(fileName), &lenRead, NULL, NULL) == ERR_OK))
     {
@@ -774,8 +834,7 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   return res;
 }
 
-void RTC_ALARM_ISR(void)
-{
+void RTC_ALARM_ISR(void) {
   if(RTC_SR & RTC_SR_TIF_MASK)/* Timer invalid (Vbat POR or RTC SW reset)? */
   {
     RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
@@ -795,8 +854,7 @@ void RTC_ALARM_ISR(void)
     RTC_TAR = RTC_TSR + sampleIntervall - 1;    //SetNext RTC Alarm
     APP_resumeSampleTaskFromISR();
   }
-
-    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
-       exception return operation might vector to incorrect interrupt */
+  /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+     exception return operation might vector to incorrect interrupt */
   __DSB();
 }

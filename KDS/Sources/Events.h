@@ -85,6 +85,10 @@
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd16.h"
 #include "PTA.h"
+#include "I2C_SDA.h"
+#include "BitIoLdd17.h"
+#include "I2C_SCL.h"
+#include "BitIoLdd18.h"
 #include "PIN_PWR_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 
