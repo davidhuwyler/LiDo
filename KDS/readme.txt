@@ -22,6 +22,7 @@ Open points
 - Uhr nach Reset nicht gesetzt?
 - reset button does not work if in low power mode?
 - need glas/enclosure for light sensor?
+- keep communication open if RTT/debugger is connected
 
 User Interface:
 - 1x short press: set marker (1x green blink)

@@ -53,25 +53,25 @@ void LowPower_EnterLowpowerMode(void) {
 #endif
 }
 
-void LowPower_EnableStopMode(void)
-{
+void LowPower_EnableStopMode(void) {
 	stopModeAllowed = TRUE; /* no critical section needed as access is atomic */
 }
 
-void LowPower_DisableStopMode(void)
-{
+void LowPower_DisableStopMode(void) {
 	stopModeAllowed = FALSE; /* no critical section needed as access is atomic */
 }
 
-bool LowPower_StopModeIsEnabled(void)
-{
+bool LowPower_StopModeIsEnabled(void) {
 	return stopModeAllowed; /* no critical section needed as access is atomic */
 }
 
-void LowPower_init(void)
-{
+void LowPower_init(void) {
 	LLWU_PE2 |= LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
+#if PL_BOARD_REV==20 || PL_BOARD_REV==21
 	LLWU_PE2 |= LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
+#else
+  LLWU_PE2 |= LLWU_PE4_WUPE12(0x1); //Enable PTD0 (UserButton) as WakeUpSouce
+#endif
 }
 
 void LLWU_ISR(void) {
@@ -87,28 +87,30 @@ void LLWU_ISR(void) {
 	uint32_t wakeUpFlags;
 	wakeUpFlags = Cpu_GetLLSWakeUpFlags();
 
-	if (wakeUpFlags&LLWU_INT_MODULE0)  /* LPTMR */
-	{
+	if (wakeUpFlags&LLWU_INT_MODULE0) { /* LPTMR */
 	  LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
 	}
 
-	if (wakeUpFlags&LLWU_INT_MODULE5)  /* RTC Alarm */
-	{
+	if (wakeUpFlags&LLWU_INT_MODULE5) { /* RTC Alarm */
 		RTC_ALARM_ISR();
 	}
 
-	if (wakeUpFlags&LLWU_EXT_PIN5)    /* PTB0 = LightSensor */
-	{
+	if (wakeUpFlags&LLWU_EXT_PIN5) {   /* PTB0 = LightSensor */
 		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
 		LightSensor_Done_ISR();
 	}
 
-	if (wakeUpFlags&LLWU_EXT_PIN6)  /* PTC1 = UserButton */
-	{
+#if PL_BOARD_REV==20 || PL_BOARD_REV==21
+	if (wakeUpFlags&LLWU_EXT_PIN6) { /* PTC1 = UserButton */
 		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag
 		UI_ButtonPressed_ISR();
 	}
-
+#else
+  if (wakeUpFlags&LLWU_EXT_PIN12) { /* PTD0 = UserButton */
+    LLWU_F1 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
+    UI_ButtonPressed_ISR();
+  }
+#endif
 	/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
 	     exception return operation might vector to incorrect interrupt */
 	__DSB();

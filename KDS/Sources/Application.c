@@ -607,7 +607,7 @@ void APP_Run(void) {
   }
 #endif
 
-  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS)
   {
       for(;;){} /* error! probably out of memory */
   }

@@ -226,7 +226,7 @@ void WatchDog_Init(void)
 
 	watchDogKickSources[WatchDog_MeasureTaskRunns].isSingleCheckWatchdogSouce			= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit 					= 0;
-	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1000;
+	watchDogKickSources[WatchDog_MeasureTaskRunns].uppwerCompTimeLimit 					= 1500;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].measuredCompTime 					= watchDogKickSources[WatchDog_MeasureTaskRunns].lowerCompTimeLimit;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].kickIntervallXSampleIntervall		= TRUE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].maxKickIntervallLimitRaw				= 2500;
@@ -236,7 +236,7 @@ void WatchDog_Init(void)
 	watchDogKickSources[WatchDog_MeasureTaskRunns].requestForDeactivation				= FALSE;
 	watchDogKickSources[WatchDog_MeasureTaskRunns].sourceForceDisabled					= FALSE;
 
-	if (xTaskCreate(WatchDog_Task, "WatchDog", 1000/sizeof(StackType_t), NULL,  configMAX_PRIORITIES /*tskIDLE_PRIORITY+2*/, &watchDogTaskHandle) != pdPASS)
+	if (xTaskCreate(WatchDog_Task, "WatchDog", 1200/sizeof(StackType_t), NULL,  configMAX_PRIORITIES-2, &watchDogTaskHandle) != pdPASS)
 	{
 	    for(;;){} /* error! probably out of memory */
 	}
