@@ -8,8 +8,6 @@
 #ifndef SOURCES_LOWPOWER_H_
 #define SOURCES_LOWPOWER_H_
 
-#include "Platform.h"
-
 void LowPower_EnterLowpowerMode(void);
 void LowPower_EnableStopMode(void);
 void LowPower_DisableStopMode(void);

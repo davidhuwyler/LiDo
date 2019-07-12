@@ -10,8 +10,7 @@
 
 static LDD_TDeviceData* rtcDeviceDataHandle;
 
-void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix)
-{
+void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix) {
 	TIMEREC time;
 	DATEREC date;
 
@@ -19,8 +18,7 @@ void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix)
 	*rtcTimeUnix = TmDt1_TimeDateToUnixSeconds(&time, &date, 0);
 }
 
-void RTC_setTimeUnixFormat(int32_t rtcTimeUnix)
-{
+void RTC_setTimeUnixFormat(int32_t rtcTimeUnix) {
 	TIMEREC time;
 	DATEREC date;
 
@@ -28,7 +26,6 @@ void RTC_setTimeUnixFormat(int32_t rtcTimeUnix)
 	TmDt1_SetInternalRTCTimeDate(&time,&date);
 }
 
-void RTC_init(bool softInit)
-{
+void RTC_init(bool softInit) {
 	rtcDeviceDataHandle = RTC1_Init(NULL, softInit);
 }

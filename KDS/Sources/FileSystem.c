@@ -32,41 +32,34 @@ static SemaphoreHandle_t fileSystemAccessMutex;
 #define FILESYSTEM_LOOKAHEAD_SIZE 256 //128
 #define FILESYSTEM_CACHE_SIZE 256
 
-static int block_device_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
-{
+static int block_device_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size) {
   uint8_t res;
   res = SPIF_Read(block * c->block_size + off, buffer, size);
-  if (res != ERR_OK)
-  {
+  if (res != ERR_OK) {
     return LFS_ERR_IO;
   }
   return LFS_ERR_OK;
 }
 
-int block_device_prog(const struct lfs_config *c, lfs_block_t block,lfs_off_t off, const void *buffer, lfs_size_t size)
-{
+int block_device_prog(const struct lfs_config *c, lfs_block_t block,lfs_off_t off, const void *buffer, lfs_size_t size) {
   uint8_t res;
   res = SPIF_ProgramPage(block * c->block_size + off, buffer, size);
-  if (res != ERR_OK)
-  {
+  if (res != ERR_OK) {
     return LFS_ERR_IO;
   }
   return LFS_ERR_OK;
 }
 
-int block_device_erase(const struct lfs_config *c, lfs_block_t block)
-{
+int block_device_erase(const struct lfs_config *c, lfs_block_t block) {
   uint8_t res;
   res = SPIF_EraseSector4K(block * c->block_size);
-  if (res != ERR_OK)
-  {
+  if (res != ERR_OK) {
     return LFS_ERR_IO;
   }
   return LFS_ERR_OK;
 }
 
-int block_device_sync(const struct lfs_config *c)
-{
+int block_device_sync(const struct lfs_config *c) {
   return LFS_ERR_OK;
 }
 
@@ -103,24 +96,21 @@ char* FS_gets (
   byte s[2];
   uint32_t rc;
 
-  if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS)))
-  {
-      while (n < len - 1) { /* Read characters until buffer gets filled */
-        rc = lfs_file_read(&FS_lfs,fp,s,1);
-        if (rc != 1) break;
-        c = s[0];
+  if(xSemaphoreTakeRecursive(fileSystemAccessMutex,pdMS_TO_TICKS(FS_ACCESS_MUTEX_WAIT_TIME_MS))) {
+    while (n < len - 1) { /* Read characters until buffer gets filled */
+      rc = lfs_file_read(&FS_lfs,fp,s,1);
+      if (rc != 1) break;
+      c = s[0];
 
-        if (c == '\r') continue; /* Strip '\r' */
-        *p++ = c;
-        n++;
-        if (c == '\n') break;   /* Break on EOL */
-      }
-      *p = 0;
-      xSemaphoreGiveRecursive(fileSystemAccessMutex);
-      return n ? buff : 0;      /* When no data read (eof or error), return with error. */
-  }
-  else
-  {
+      if (c == '\r') continue; /* Strip '\r' */
+      *p++ = c;
+      n++;
+      if (c == '\n') break;   /* Break on EOL */
+    }
+    *p = 0;
+    xSemaphoreGiveRecursive(fileSystemAccessMutex);
+    return n ? buff : 0;      /* When no data read (eof or error), return with error. */
+  } else {
     return 0;
   }
 }

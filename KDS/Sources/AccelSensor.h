@@ -7,11 +7,11 @@
  *  Driver for the ST LIS2DH Accelerometer via I2C
  */
 
-#include "Platform.h"
-#include "CLS1.h"
-
 #ifndef SOURCES_ACCELSENS_H_
 #define SOURCES_ACCELSENS_H_
+
+#include "Platform.h"
+#include "CLS1.h"
 
 typedef struct {
 	uint8_t xValue;  // 1digit = 16mG (8Bit signed)

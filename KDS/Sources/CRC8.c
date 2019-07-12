@@ -12,48 +12,38 @@
 
 #define CRC8_POLYNOM (0x07)
 
-static uint8_t crc8_bytecalc(unsigned char byte, uint8_t* seed)
-{
+static uint8_t crc8_bytecalc(unsigned char byte, uint8_t* seed)  {
 	uint8_t i;
 	uint8_t flag;
 	uint8_t polynom = CRC8_POLYNOM;
 
-	for (i = 0; i < 8; i++)
-	{
-		if (*seed & 0x80)
-		{
+	for (i = 0; i < 8; i++) {
+		if (*seed & 0x80) {
 			flag = 1;
-		}
-		else
-		{
+		}	else {
 			flag = 0;
 		}
 		*seed <<= 1;
-		if (byte & 0x80)
-		{
+		if (byte & 0x80) {
 			*seed |= 1;
 		}
 		byte <<= 1;
-		if (flag)
-		{
+		if (flag) {
 			*seed ^= polynom;
 		}
 	}
 	return *seed;
 }
 
-static uint8_t crc8_messagecalc(unsigned char *msg, uint8_t len, uint8_t* seed)
-{
-  for(int i=0; i<len; i++)
-  {
+static uint8_t crc8_messagecalc(unsigned char *msg, uint8_t len, uint8_t* seed) {
+  for(int i=0; i<len; i++) {
     crc8_bytecalc(msg[i],seed);
   }
   uint8_t crc = crc8_bytecalc(0,seed);
   return crc;
 }
 
-uint8_t crc8_SDEPcrc(SDEPmessage_t *message)
-{
+uint8_t crc8_SDEPcrc(SDEPmessage_t *message) {
 	uint8_t crc,seed = 0;
 
 	crc = crc8_bytecalc(message->type, &seed);
@@ -64,8 +54,7 @@ uint8_t crc8_SDEPcrc(SDEPmessage_t *message)
 	return crc;
 }
 
-void crc8_liDoSample(liDoSample_t *sample)
-{
+void crc8_liDoSample(liDoSample_t *sample) {
 	uint8_t crc,seed = 0;
 
 	crc = crc8_bytecalc((uint8_t)sample->unixTimeStamp,&seed);

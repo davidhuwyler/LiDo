@@ -129,7 +129,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool for
     int8_t yAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.yValue-(int8_t)accelAndTemp.yValue) ;
     int8_t zAccelDiff = (int8_t)abs((int8_t)oldAccelAndTemp.zValue-(int8_t)accelAndTemp.zValue) ;
 
-    if(   forceSample ||
+    if (forceSample ||
       tempDiff > SAMPLE_THRESHOLD_TEMP ||
       xAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
       yAccelDiff > SAMPLE_THRESHOLD_ACCEL ||
@@ -237,18 +237,10 @@ void APP_suspendSampleTask(void)
 
 void APP_suspendWriteFileTask(void)
 {
-  if(writeFileTaskHandle!=NULL)
-  {
+  if(writeFileTaskHandle!=NULL) {
     vTaskSuspend(writeFileTaskHandle);
-  }
-  else
-  {
-    //Error
-    for(;;)
-    {
-      LED_R_Neg();
-      vTaskDelay(pdMS_TO_TICKS(50));
-    }
+  } else {
+    APP_FatalError();
   }
 }
 
@@ -289,84 +281,69 @@ static void APP_sample_task(void *param) {
   } /* for */
 }
 
-static void APP_makeNewFileIfNeeded(void)
-{
-    xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
-    //New Hour: Make new File!
-    if(fileIsOpen && AppDataFile_GetSamplingEnabled() && APP_newHour()) {
+static void APP_makeNewFileIfNeeded(void) {
+  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
+  //New Hour: Make new File!
+  if(fileIsOpen && AppDataFile_GetSamplingEnabled() && APP_newHour()) {
 
-      WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
-      if(FS_closeFile(&sampleFile) != ERR_OK)
-      {
-        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
-      }
-      WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
-      WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
-      if(FS_openLiDoSampleFile(&sampleFile) != ERR_OK)
-      {
-        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
-      }
-      WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+    WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
+    if(FS_closeFile(&sampleFile) != ERR_OK) {
+      SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
     }
-    xSemaphoreGiveRecursive(fileAccessMutex);
+    WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+    WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
+    if(FS_openLiDoSampleFile(&sampleFile) != ERR_OK) {
+      SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
+    }
+    WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+  }
+  xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
-static void APP_openFileIfNeeded(void)
-{
-    xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
-    if(AppDataFile_GetSamplingEnabled() && !fileIsOpen)
-    {
-      WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
-      if(FS_openLiDoSampleFile(&sampleFile) == ERR_OK)
-      {
-        fileIsOpen = TRUE;
-      }
-      else
-      {
-        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
-      }
-      WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+static void APP_openFileIfNeeded(void) {
+  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
+  if(AppDataFile_GetSamplingEnabled() && !fileIsOpen) {
+    WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
+    if(FS_openLiDoSampleFile(&sampleFile) == ERR_OK) {
+      fileIsOpen = TRUE;
+    } else {
+      SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_openLiDoSampleFile failed");
     }
-    xSemaphoreGiveRecursive(fileAccessMutex);
+    WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+  }
+  xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
-static void APP_writeQueuedSamplesToFile(void)
-{
-    liDoSample_t sample;
-    xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
-    if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
-    {
+static void APP_writeQueuedSamplesToFile(void) {
+  liDoSample_t sample;
+  xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
+  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
+  {
 
-      //Write all pending samples to file
-      while(xQueuePeek(lidoSamplesToWrite,&sample,0) == pdPASS)
-      {
-        WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
-        if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
-        {
-          SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
-        }
-        else
-        {
-          xQueueReceive(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500));
-        }
-        WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
-      }
-    }
-    else if (fileIsOpen)
+    //Write all pending samples to file
+    while(xQueuePeek(lidoSamplesToWrite,&sample,0) == pdPASS)
     {
-      xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
-      WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
-      if(FS_closeFile(&sampleFile) == ERR_OK)
+      WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
+      if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
       {
-        fileIsOpen = FALSE;
+        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
+      } else {
+        xQueueReceive(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500));
       }
-      else
-      {
-        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
-      }
-      WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+      WatchDog_StopComputationTime(WatchDog_WriteToLidoSampleFile);
     }
-    xSemaphoreGiveRecursive(fileAccessMutex);
+  } else if (fileIsOpen)  {
+    xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
+    WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
+    if(FS_closeFile(&sampleFile) == ERR_OK)
+    {
+      fileIsOpen = FALSE;
+    } else {
+      SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
+    }
+    WatchDog_StopComputationTime(WatchDog_OpenCloseLidoSampleFile);
+  }
+  xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
 static void APP_writeLidoFile_task(void *param) {
@@ -374,9 +351,8 @@ static void APP_writeLidoFile_task(void *param) {
   TickType_t xLastWakeTime;
   uint8_t samplingIntervall;
   fileAccessMutex = xSemaphoreCreateRecursiveMutex();
-  if( fileAccessMutex == NULL )
-  {
-    for(;;){} /* error! probably out of memory */
+  if( fileAccessMutex == NULL ) {
+    APP_FatalError();
   }
   xSemaphoreGiveRecursive(fileAccessMutex);
 
@@ -395,8 +371,7 @@ static void APP_writeLidoFile_task(void *param) {
     APP_writeQueuedSamplesToFile();
     APP_suspendWriteFileTask();
 
-    if(LowPower_StopModeIsEnabled())
-    {
+    if(LowPower_StopModeIsEnabled()) {
       SPIF_GoIntoDeepPowerDown();
     }
   } /* for */
@@ -406,14 +381,13 @@ static void APP_init(void) {
   //Init the SampleQueue, SampleTask and the WriteLidoFile Task
   //The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
   lidoSamplesToWrite = xQueueCreate( 15, sizeof( liDoSample_t ) );
-  if( lidoSamplesToWrite == NULL )
-  {
-    for(;;){} /* error! probably out of memory */
+  if( lidoSamplesToWrite == NULL ) {
+    APP_FatalError();
   }
 
   if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
   {
-      for(;;){} /* error! probably out of memory */
+    APP_FatalError();
   }
 
   //Init the RTC alarm Interrupt:
@@ -431,8 +405,7 @@ static void APP_init(void) {
 
 static bool APP_WaitIfButtonPressed3s(void) {
   if(USER_BUTTON_PRESSED()) {
-    for(int i = 0 ; i < 30 ; i++)
-    {
+    for(int i = 0 ; i < 30 ; i++) {
       WDog1_Clear();
       vTaskDelay(pdMS_TO_TICKS(100));
       LED_R_Neg();
@@ -555,9 +528,8 @@ static void APP_init_task(void *param) {
     PowerManagement_init();
     APP_init();
     WatchDog_StopComputationTime(WatchDog_LiDoInit);
-  }
-  else //Format SPIF after 9s ButtonPress after startup
-  {
+  } else { //Format SPIF after 9s ButtonPress after startup
+#if 0 /*! \todo Disabled as not safe! */
     if(USER_BUTTON_PRESSED()) {
       LED_R_Off();
       vTaskDelay(pdMS_TO_TICKS(3000));
@@ -574,6 +546,7 @@ static void APP_init_task(void *param) {
       AppDataFile_Init();
     }
     KIN1_SoftwareReset();
+#endif
   }
   vTaskDelete(NULL); /* kill own task as not needed any more */
 }

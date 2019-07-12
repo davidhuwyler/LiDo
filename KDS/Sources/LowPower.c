@@ -13,19 +13,13 @@
 #include "Platform.h"
 #include "LowPower.h"
 #include "Cpu.h"
-#include "WAIT1.h"
 #include "CLS1.h"
-#include "Application.h"
 #include "Events.h"
 #include "UI.h"
 #include "LPTMR_PDD.h"
 
 static volatile bool stopModeAllowed = FALSE;
-static unsigned char ucMCG_C1;
-
-#define CLOCK_DIV 2
-#define CLOCK_MUL 24
-#define MCG_C6_VDIV0_LOWEST 24
+static unsigned char ucMCG_C1; /* backup to restore register value */
 
 BaseType_t xEnterTicklessIdle(void) {
 #if PL_CONFIG_HAS_LOW_POWER
@@ -75,6 +69,10 @@ void LowPower_init(void) {
 }
 
 void LLWU_ISR(void) {
+  #define CLOCK_DIV 2
+  #define CLOCK_MUL 24
+  #define MCG_C6_VDIV0_LOWEST 24
+
   //Switch to PLL and wait for it to fully start up
   //https://community.nxp.com/thread/458972
   MCG_C5 = ((CLOCK_DIV - 1) | MCG_C5_PLLSTEN0_MASK); // move from state FEE to state PBE (or FBE) PLL remains enabled in normal stop modes
@@ -90,16 +88,13 @@ void LLWU_ISR(void) {
 	if (wakeUpFlags&LLWU_INT_MODULE0) { /* LPTMR */
 	  LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
 	}
-
 	if (wakeUpFlags&LLWU_INT_MODULE5) { /* RTC Alarm */
 		RTC_ALARM_ISR();
 	}
-
 	if (wakeUpFlags&LLWU_EXT_PIN5) {   /* PTB0 = LightSensor */
 		LLWU_F1 |= LLWU_F1_WUF5_MASK; //Clear WakeUpInt Flag
 		LightSensor_Done_ISR();
 	}
-
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
 	if (wakeUpFlags&LLWU_EXT_PIN6) { /* PTC1 = UserButton */
 		LLWU_F1 |= LLWU_F1_WUF6_MASK; //Clear WakeUpInt Flag

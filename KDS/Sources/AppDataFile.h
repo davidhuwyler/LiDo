@@ -9,7 +9,6 @@
 #define SOURCES_APPDATAFILE_H_
 
 #include "Platform.h"
-#include "FileSystem.h"
 #include "CLS1.h"
 
 #define APPDATA_NOF_KEYS 10
