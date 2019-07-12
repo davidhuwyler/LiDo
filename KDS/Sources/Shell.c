@@ -30,9 +30,9 @@
 #include "AS1.h"
 #include "PowerManagement.h"
 
-#define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (1)
+#define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (0)
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_RTT   (1)
-#define SHELL_CONFIG_HAS_SHELL_EXTRA_CDC   (0)
+#define SHELL_CONFIG_HAS_SHELL_EXTRA_CDC   (1)
 
 static bool shellDisablingRequest = FALSE;
 static bool shellDisablingIsInitiated = FALSE;
