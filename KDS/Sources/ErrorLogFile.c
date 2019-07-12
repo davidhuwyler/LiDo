@@ -15,20 +15,13 @@
 #define ERRORLOG_FILENAME "./errorLog.txt"
 #define ERRORLOG_LINEBUFFER_SIZE 100
 
-static lfs_file_t errorLogFile;
-static uint8_t errorLogLineBuf[ERRORLOG_LINEBUFFER_SIZE];
-
-uint8_t ErrorLogFile_Init(void)
-{
-
-}
-
-uint8_t ErrorLogFile_LogError(uint16 SDEP_error_alert_cmdId, uint8_t* message)
-{
+uint8_t ErrorLogFile_LogError(uint16 SDEP_error_alert_cmdId, uint8_t* message) {
+  uint8_t errorLogLineBuf[ERRORLOG_LINEBUFFER_SIZE];
+  lfs_file_t errorLogFile;
 	TIMEREC time;
 	DATEREC date;
 
-	UTIL1_Num16uToStr(errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE,SDEP_error_alert_cmdId);
+	UTIL1_Num16uToStr(errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE,SDEP_error_alert_cmdId);
 	UTIL1_chcat(errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE, ' ');
 	TmDt1_GetInternalRTCTimeDate(&time,&date);
 
@@ -53,17 +46,17 @@ uint8_t ErrorLogFile_LogError(uint16 SDEP_error_alert_cmdId, uint8_t* message)
 	FS_closeFile(&errorLogFile);
 }
 
-static uint8_t ErrorLogFile_PrintList(CLS1_ConstStdIOType *io)
-{
+static uint8_t ErrorLogFile_PrintList(CLS1_ConstStdIOType *io) {
+  uint8_t errorLogLineBuf[ERRORLOG_LINEBUFFER_SIZE];
+  lfs_file_t errorLogFile;
 	uint8_t nofReadChars;
-	FS_openFile(&errorLogFile,ERRORLOG_FILENAME);
 
-	while(FS_readLine(&errorLogFile,errorLogLineBuf,ERRORLOG_LINEBUFFER_SIZE,&nofReadChars) == 0 &&
+	FS_openFile(&errorLogFile,ERRORLOG_FILENAME);
+	while(FS_readLine(&errorLogFile, errorLogLineBuf, ERRORLOG_LINEBUFFER_SIZE, &nofReadChars) == 0 &&
 		  nofReadChars != 0)
 	{
 		CLS1_SendStr(errorLogLineBuf,io->stdErr);
 	}
-
 	FS_closeFile(&errorLogFile);
 	return ERR_OK;
 }
@@ -76,30 +69,31 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
 }
 #endif
 
-uint8_t ErrorLogFile_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io)
-{
-	  uint8_t res = ERR_OK;
-	  const uint8_t *p;
+uint8_t ErrorLogFile_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io) {
+  uint8_t res = ERR_OK;
+  const uint8_t *p;
 
-	  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "ErrorLogFile help")==0)
-	  {
-	    CLS1_SendHelpStr((unsigned char*)"ErrorLogFile", (const unsigned char*)"Group of AppData File commands\r\n", io->stdOut);
-	    //CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
-	    CLS1_SendHelpStr((unsigned char*)"  help", (const unsigned char*)"Print help information\r\n", io->stdOut);
-	    CLS1_SendHelpStr((unsigned char*)"  print", (const unsigned char*)"Prints the appData.ini file\r\n", io->stdOut);
-	    *handled = TRUE;
-	    return ERR_OK;
-	  }
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "ErrorLogFile help")==0) {
+    CLS1_SendHelpStr((unsigned char*)"ErrorLogFile", (const unsigned char*)"Group of AppData File commands\r\n", io->stdOut);
+    //CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  help", (const unsigned char*)"Print help information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  print", (const unsigned char*)"Prints the " ERRORLOG_FILENAME " file\r\n", io->stdOut);
+    *handled = TRUE;
+    return ERR_OK;
 #if 0
-	  else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
-	    *handled = TRUE;
-	    return PrintStatus(io);
-	  }
+  } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LightSens status")==0)) {
+    *handled = TRUE;
+    return PrintStatus(io);
 #endif
-	  else if (UTIL1_strcmp((char*)cmd, "ErrorLogFile print")==0)
-	  {
-	    *handled = TRUE;
-	    return ErrorLogFile_PrintList(io);
-	  }
-	  return res;
+  } else if (UTIL1_strcmp((char*)cmd, "ErrorLogFile print")==0) {
+    *handled = TRUE;
+    return ErrorLogFile_PrintList(io);
+  }
+  return res;
 }
+
+uint8_t ErrorLogFile_Init(void) {
+  /* nothing needed */
+}
+
+

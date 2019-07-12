@@ -110,7 +110,7 @@ static void WatchDog_Task(void *param) {
 					SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "WatchDogReset at MeasureTaskRunns");
 					break;
 				default:
-					SDEP_InitiateNewAlert(SDEP_ALERT_WATCHDOG_RESET);
+				  SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_WATCHDOG_RESET, "unknown WatchdogReset");
 					break;
 			}
 #if PL_CONFIG_HAS_SPIF_PWR_PIN
@@ -121,12 +121,12 @@ static void WatchDog_Task(void *param) {
 			  /* wait for the watchdog to kick in */
 			}
 #else
-  #warning "watchdog is disabled!"
-	for(;;) {
-    WDog1_Clear();
-	  LED_R_Neg();
-	  vTaskDelay(pdMS_TO_TICKS(100));
-	}
+      #warning "watchdog is disabled!"
+      for(;;) {
+        WDog1_Clear();
+        LED_R_Neg();
+        vTaskDelay(pdMS_TO_TICKS(100));
+      }
 #endif
 		}	else {
 			WDog1_Clear();
@@ -139,7 +139,6 @@ static void WatchDog_Task(void *param) {
 		}
   } /* for */
 }
-
 
 //Only in StopMode Needed
 void WatchDog_ResumeTask(void) {

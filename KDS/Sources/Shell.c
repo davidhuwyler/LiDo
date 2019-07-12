@@ -244,9 +244,13 @@ static void SHELL_task(void *param) {
 //		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
 //	  }
 	  cntr++;
-	  if (cntr>200) {
+	  if (cntr>100) { /* indicate shell tasks (and charging state) with a blinky */
 	    cntr = 0;
-      UI_LEDpulse(LED_B);
+	    if (PowerManagement_IsCharging()) {
+        UI_LEDpulse(LED_G);
+	    } else {
+	      UI_LEDpulse(LED_B);
+	    }
 	  }
 	  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
   } /* for */

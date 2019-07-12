@@ -6,6 +6,7 @@
  */
 
 #include "Platform.h"
+#include "Application.h"
 #include "PowerManagement.h"
 #include "PIN_POWER_ON.h"
 #include "PIN_PWR_CHARGE_STATE.h"
@@ -41,8 +42,7 @@ static void PowerManagement_task(void *param) {
   uint16_t oldAdcValue =  36000; // = 3.7V
 #endif
 
-  for(;;)
-  {
+  for(;;) {
 #if PL_CONFIG_HAS_BATT_ADC
     PIN_EN_U_MEAS_SetVal();
   	WAIT1_Waitus(10);
@@ -52,9 +52,6 @@ static void PowerManagement_task(void *param) {
     PIN_EN_U_MEAS_ClrVal();
 	  adcValue = adcValue + POWER_MANAGEMENT_LIPO_OFFSET;
 
-	  if (PowerManagement_IsCharging()) {
-		  UI_LEDpulse(LED_G);
-	  }
     if(oldAdcValue < POWER_MANAGEMENT_LIPO_WARNING && adcValue < POWER_MANAGEMENT_LIPO_WARNING) {
       UI_LEDpulse(LED_R);
       if(!waringLogged) {
@@ -69,14 +66,10 @@ static void PowerManagement_task(void *param) {
 		  PIN_POWER_ON_ClrVal(); /* emergency: cut off power */
 	  }
 	  oldAdcValue = adcValue;
-#else
-    if(PowerManagement_IsCharging()) {
-      LED_B_Off(); /* turn off blue led as this one might indicate a shell connection */
-      UI_LEDpulse(LED_G);
-    }
 #endif
-	  vTaskSuspend(powerManagementTaskHandle);
-  }
+    vTaskSuspend(NULL);
+    /* will wake me up again through PowerManagement_ResumeTaskIfNeeded() in 10 seconds to save energy */
+  } /* for */
 }
 
 void PowerManagement_ResumeTaskIfNeeded(void) {
@@ -88,7 +81,7 @@ void PowerManagement_ResumeTaskIfNeeded(void) {
   }
 }
 
-//Return the Battery Voltage in mV
+/* Return the Battery Voltage in mV */
 uint16_t PowerManagement_getBatteryVoltage(void) {
 #if PL_CONFIG_HAS_BATT_ADC
 	uint16_t adcValue;
@@ -136,9 +129,7 @@ uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, co
 }
 
 void PowerManagement_init(void) {
-  if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS)
-  {
-    for(;;){} /* error! probably out of memory */
+  if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS) {
+    APP_FatalError();
   }
 }
-

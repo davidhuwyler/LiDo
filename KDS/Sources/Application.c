@@ -113,7 +113,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool for
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     if(AccelSensor_getValues(&accelAndTemp) != ERR_OK)
     {
-      SDEP_InitiateNewAlert(SDEP_ALERT_ACCELSENS_ERROR);
+      SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_ACCELSENS_ERROR, "Accel get values failed");
     }
     sample->accelX = accelAndTemp.xValue;
     sample->accelY = accelAndTemp.yValue;
@@ -142,7 +142,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool for
       sample->lightIntTime = lightIntTime;
       if(LightSensor_getChannelValues(&lightB0,&lightB1) != ERR_OK)
       {
-        SDEP_InitiateNewAlert(SDEP_ALERT_LIGHTSENS_ERROR);
+        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_LIGHTSENS_ERROR, "LightSensor get values failed");
       }
       sample->lightChannelX = lightB1.xChannelValue;
       sample->lightChannelY = lightB1.yChannelValue;
@@ -271,19 +271,17 @@ static void APP_sample_task(void *param) {
       RTC_getTimeUnixFormat(&unixTScurrentSample);
       sampleError = APP_getCurrentSample(&sample,unixTScurrentSample,!AppDataFile_GetSampleAutoOff());
       if(sampleError == ERR_FAILED) {
-        SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+        SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_SAMPLING_ERROR, "getCurrentSample failed");
       } else if(sampleError==ERR_OK) {
         UI_LEDpulse(LED_V);
         if(xQueueSendToBack( lidoSamplesToWrite,  (void*)&sample, pdMS_TO_TICKS(500)) != pdPASS ) {
-            SDEP_InitiateNewAlert(SDEP_ALERT_SAMPLING_ERROR);
+          SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_SAMPLING_ERROR, "lidoSamplesToWrite failed");
         }
       }
     }
     WatchDog_StopComputationTime(WatchDog_MeasureTaskRuns);
-
     WatchDog_ResumeTask();
-    if(writeFileTaskHandle != NULL)
-    {
+    if(writeFileTaskHandle != NULL) {
       vTaskResume(writeFileTaskHandle);
     }
     PowerManagement_ResumeTaskIfNeeded();

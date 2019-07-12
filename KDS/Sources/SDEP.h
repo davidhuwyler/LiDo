@@ -80,7 +80,6 @@ uint8_t SDEP_Parse(void);
 uint8_t SDEP_Init(void);
 uint8_t SDEP_SendMessage(SDEPmessage_t* response);
 
-uint8_t SDEP_InitiateNewAlert(uint16 CmdId);
 uint8_t SDEP_InitiateNewAlertWithMessage(uint16 CmdId,uint8_t* message);
 uint8_t SDEP_SendPendingAlert(void);
 

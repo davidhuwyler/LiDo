@@ -493,13 +493,7 @@ uint8_t SDEP_Parse(void)
 
 uint8_t SDEP_InitiateNewAlertWithMessage(uint16 CmdId,uint8_t* message)
 {
-	ErrorLogFile_LogError(CmdId,message);
-	return SDEPpendingAlertsBuffer_Put(CmdId);
-}
-
-uint8_t SDEP_InitiateNewAlert(uint16 CmdId)
-{
-	ErrorLogFile_LogError(CmdId,"");
+	ErrorLogFile_LogError(CmdId, message);
 	return SDEPpendingAlertsBuffer_Put(CmdId);
 }
 
