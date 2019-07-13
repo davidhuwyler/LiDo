@@ -10,6 +10,10 @@
 #include "PowerManagement.h"
 #include "PIN_POWER_ON.h"
 #include "PIN_PWR_CHARGE_STATE.h"
+#include "FRTOS1.h"
+#include "SDEP.h"
+#include "UI.h"
+#include "LED_B.h"
 #if PL_CONFIG_HAS_BATT_ADC
   #include "PIN_EN_U_MEAS.h"
   #include "AI_PWR_0_5x_U_BAT.h"
@@ -17,10 +21,9 @@
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
-#include "FRTOS1.h"
-#include "SDEP.h"
-#include "UI.h"
-#include "LED_B.h"
+#if PL_CONFIG_HAS_BAT_ALARM_PIN
+  #include "BAT_ALARM.h"
+#endif
 
 #define POWER_MANAGEMENT_LIPO_WARNING     34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
 #define POWER_MANAGEMENT_LIPO_CUTOFF      29789 // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
@@ -108,6 +111,9 @@ uint16_t PowerManagement_getBatteryVoltage(void) {
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"power", (const unsigned char*)"\r\n", io->stdOut);
   CLS1_SendStatusStr((unsigned char*)"  charging", PowerManagement_IsCharging()?(unsigned char*)"yes\r\n":(unsigned char*)"no\r\n", io->stdOut);
+#if PL_CONFIG_HAS_BAT_ALARM_PIN
+  CLS1_SendStatusStr((unsigned char*)"  alarm", BAT_ALARM_GetVal()?(unsigned char*)"no (HIGH)\r\n":(unsigned char*)"yes (LOW)\r\n", io->stdOut);
+#endif
   return ERR_OK;
 }
 
