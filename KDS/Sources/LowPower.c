@@ -64,7 +64,7 @@ void LowPower_init(void) {
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
 	LLWU_PE2 |= LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
 #else
-  LLWU_PE2 |= LLWU_PE4_WUPE12(0x1); //Enable PTD0 (UserButton) as WakeUpSouce
+  LLWU_PE4 |= LLWU_PE4_WUPE12(0x1); //Enable PTD0 (UserButton) as WakeUpSouce
 #endif
 }
 
@@ -102,7 +102,7 @@ void LLWU_ISR(void) {
 	}
 #else
   if (wakeUpFlags&LLWU_EXT_PIN12) { /* PTD0 = UserButton */
-    LLWU_F1 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
+    LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
     UI_ButtonPressed_ISR();
   }
 #endif
