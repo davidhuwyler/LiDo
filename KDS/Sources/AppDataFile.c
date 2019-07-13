@@ -20,14 +20,14 @@
 const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2] =
 {
 		{"LIDO_NAME","Lido01"},			//Name
-		{"LIDO_ID","0x00"},//UID of the Controller
+		{"LIDO_ID","0x00"},         //UID of the Controller
 		{"LIDO_VERSION","V0.1"},		//SoftwareVersion
-		{"SAMPLE_INTERVALL","1"},		//Sampleintervall [s]
+		{"SAMPLE_INTERVALL","10"},		//Sample intervall [s]
 		{"SAMPLE_ENABLE","0"},			//Sample enable defines if the LiDo is sampling (1 = sampling)
 		{"LIGHTSENS_GAIN","3"},			//Gain of the LightSensor (0=1x; 1=3.7x; 2=16x; 3=64x;)
 		{"LIGHTSENS_INTT","240"},		//LightSensor IntegrationTime  (256 - value) * 2.8ms
 		{"LIGHTSENS_WTIM","240"},		//LightSensor Time between Conversions: (256 - value) * 2.8ms
-		{"AUTOGAIN_ENABLE","0"},			//Enables (1) or disables(0) the LightsensorAutogain Algorithm
+		{"AUTOGAIN_ENABLE","0"},		//Enables (1) or disables(0) the LightsensorAutogain Algorithm
 		{"SAMPLE_AUTO_OFF","0"}			//Samples only if the accelerometer senses a movement
 };
 
@@ -36,8 +36,7 @@ static uint8_t localSampleIntervall = 1;
 static bool loacalAutoGainEnabled = FALSE;
 static bool localSampleAutoOff = FALSE;
 
-static void AppDataFile_UpdateRAMvariables(void)
-{
+static void AppDataFile_UpdateRAMvariables(void) {
 	uint8_t buf[25];
 	const unsigned char *p;
 
@@ -82,9 +81,7 @@ uint8_t AppDataFile_GetSampleIntervall(uint8_t* sampleIntervall)
 	{
 		*sampleIntervall = 1;
 		return ERR_FAILED;
-	}
-	else
-	{
+	} else {
 		*sampleIntervall = localSampleIntervall;
 		return ERR_OK;
 	}
