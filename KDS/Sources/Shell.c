@@ -40,6 +40,7 @@ static bool shellDisablingIsInitiated = FALSE;
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
   CLS1_ParseCommand,
+  APP_ParseCommand,
   FRTOS1_ParseCommand,
   KIN1_ParseCommand,
 #if PL_CONFIG_HAS_LIGHT_SENSOR
@@ -57,7 +58,6 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
   FS_ParseCommand,
   AppData_ParseCommand,
   ErrorLogFile_ParseCommand,
-  APP_ParseCommand,
   NULL /* sentinel */
 };
 
@@ -199,7 +199,9 @@ static void SHELL_Disable(void) {
 #endif
 		LowPower_EnableStopMode();
 		cnt = 0;
+#if PL_CONFIG_HAS_SHELL_SHUTOWN
 		vTaskSuspend(NULL);
+#endif
 	}	else {
 		cnt++;
 	}
