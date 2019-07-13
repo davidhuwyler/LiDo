@@ -39,13 +39,14 @@
 #define LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_4 0x88
 #define LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_5 0x9A
 #define LIGHTSENSOR_I2C_REGISTER_PWR_MODE 0x73
-#define LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG 0x22
-#define LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR 0xF8
+#define LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG  0x22
+#define LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR    0xF8
+#define LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK (1<<2)
 #define LIGHTSENSOR_I2C_REGISTER_INTR_POLL_EN 0xF9
-#define LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T 0xD9		// Integrationtime (whole Byte)
+#define LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T 0xD9		// Integration time (whole Byte)
 #define LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV 0xB9	// GAIN: Bit0 + Bit0    |     IDRV: Bit6 + Bit7 (IDRV is the LED Drive Current. Not used)
 #define LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK 0xDB		// Photodiode Bank to read (BIT7 1 or 0)
-#define LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME 0xDA		// Waittime (whole Byte)
+#define LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME 0xDA		// Wait time (whole Byte)
 #define LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN 0xFA
 #define LIGHTSENSOR_I2C_REGISTER_AUTO_ZERO 0xBA
 #define LIGHTSENSOR_I2C_REGISTER_TMP_H 0xD1			 	//Temperature High Byte
@@ -111,19 +112,16 @@ void LightSensor_init(void) {
 	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_5 , 0x02);		//Register must be initialized with 0x00 (Datasheet p. 20)
 
 	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG , 0xCA);		//Enable Interrupt after Conversion finished
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04);		//Clear Interrupt
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK);		//Clear Interrupt
 	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_EN , 0x04);		//Enable ChannelData for Interrupts
 
 	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV , 0x03);	//Gain = b00=1x; b01=3.7x; b10=16x; b11=64x;
 	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T , 0xF0);		//IntegrationTime: (256 - value) * 2.8ms
 	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME , 0xF0);		//Time between Conversions: (256 - value) * 2.8ms
 
-	if(res != ERR_OK)
-	{
-		for(;;)//IIC Error
-		{
-			LED_R_Neg();
-			WAIT1_WaitOSms(50);
+	if(res != ERR_OK) {
+		for(;;) {//IIC Error
+		  APP_FatalError();
 		}
 	}
 
@@ -157,6 +155,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	uint8_t res = ERR_OK;
 	uint8_t localGain = 0x3, localIntTime = 0xF0, localWaitTime = 0xF0;
 
+	GI2C1_RequestBus(); /* need to have exclusive access to device. Shell shall not interfere */
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_PWR_MODE , 0x00);			//Disable Low-power Mode
 	//WAIT1_Waitus(50);
 	//res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 );	//Disable Low-power Mode
@@ -168,7 +167,7 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_5 , 0x02);		//Register must be initialized with 0x00 (Datasheet p. 20)
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG , 0xCA);	//Enable Interrupt after Conversion finished
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04);		//Clear Interrupt
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK);		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_EN , 0x04);		//Enable ChannelData for Interrupts
 
 	taskENTER_CRITICAL();
@@ -184,21 +183,17 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x00);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK);		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
-
 	allowLightSensToWakeUp = TRUE; /* no critical section needed as access is atomic */
-
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
+	allowLightSensToWakeUp = FALSE;
 
-	allowLightSensToWakeUp = FALSE; /* no critical section needed as access is atomic */
+	do { /* wait until CLR bit is set */
+	  res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, &i2cData);
+	} while ((i2cData&LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK)==0); /* Wait for CLR bit. Note that bit 0 might be set (is reserved!) if the sensor had a high light exposure! */
 
-	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
-	while(i2cData != 0x04)
-	{
-		GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
-	}
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x83 ); //LatchData Conversion
 
 	uint8_t n_L, n_H, x_L, x_H, y_L, y_H, z_L, z_H;
@@ -220,20 +215,18 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_BANK , 0x80);		//0x80 = Bank1 (x,y,z,NIR) 0x00 = Bank0 (x,y,b,b)
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04 );		//Clear Interrupt
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
 
 	allowLightSensToWakeUp = TRUE; /* no critical section needed as access is atomic */
 
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
 
-	allowLightSensToWakeUp = FALSE; /* no critical section needed as access is atomic */
+	allowLightSensToWakeUp = FALSE;
 
-	res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
-	while(i2cData != 0x04)
-	{
-		GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , &i2cData );
-	}
+  do { /* wait until CLR bit is set */
+    res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, &i2cData);
+  } while ((i2cData&(LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK))==0); /* Wait for CLR bit. Note that bit 0 might be set (is reserved!) if the sensor had a high light exposure! */
 
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x83 ); //LatchData Conversion
 
@@ -251,9 +244,10 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	bank1->yChannelValue = ((uint16_t)y_L | ((uint16_t)y_H<<8));
 	bank1->zChannelValue = ((uint16_t)z_L | ((uint16_t)z_H<<8));
 
-	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , 0x04);		//Clear Interrupt
+	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK);		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x00 );    //Disable Conversion
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_PWR_MODE , 0x02);			//Enable Lowpower Mode
+	GI2C1_ReleaseBus();
 	return res;
 }
 
