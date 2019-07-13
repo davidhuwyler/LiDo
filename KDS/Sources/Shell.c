@@ -179,7 +179,6 @@ static void SHELL_SwitchIOifNeeded(void) {
 	}
 }
 
-#if PL_CONFIG_HAS_SHELL_SHUTOWN
 //Function needs to be called 3times to
 //Disable the shell. This makes sure, the
 //Answer message got out before disabling
@@ -189,6 +188,7 @@ static void SHELL_Disable(void) {
 	shellDisablingIsInitiated = TRUE;
 	if(cnt==2) {
 		//UI_StopShellIndicator();
+#if PL_CONFIG_HAS_SHELL_SHUTOWN
 		CDC1_Deinit();
 		USB1_Deinit();
 		//Switch Peripheral Clock from ICR48 to FLL clock (Datasheet p.265)
@@ -196,6 +196,7 @@ static void SHELL_Disable(void) {
 		//SIM_SOPT2 &= ~SIM_SOPT2_PLLFLLSEL_MASK;
 		//SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(0x0);
 		//USB0_CLK_RECOVER_IRC_EN = 0x0;	//Disable USB Clock (IRC 48MHz)
+#endif
 		LowPower_EnableStopMode();
 		cnt = 0;
 		vTaskSuspend(NULL);
@@ -203,7 +204,6 @@ static void SHELL_Disable(void) {
 		cnt++;
 	}
 }
-#endif
 
 static void SHELL_task(void *param) {
   TickType_t shellEnabledTimestamp;
@@ -220,7 +220,6 @@ static void SHELL_task(void *param) {
   }
   for(;;) {
 	  xLastWakeTime = xTaskGetTickCount();
-#if PL_CONFIG_HAS_SHELL_SHUTOWN
 	  //Disable Shell if Requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected
 	  if(	shellDisablingRequest ||
 	     (( xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
@@ -228,7 +227,6 @@ static void SHELL_task(void *param) {
 	  {
 		  SHELL_Disable();
 	  }
-#endif
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
     /* process all I/Os */
@@ -244,7 +242,7 @@ static void SHELL_task(void *param) {
 //		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
 //	  }
 	  cntr++;
-	  if (cntr>100) { /* indicate shell tasks (and charging state) with a blinky */
+	  if (cntr>200) { /* indicate shell tasks (and charging state) with a blinky */
 	    cntr = 0;
 	    if (PowerManagement_IsCharging()) {
         UI_LEDpulse(LED_G);
