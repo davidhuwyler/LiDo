@@ -10,6 +10,7 @@
 #include "WatchDog.h"
 #include "KIN1.h"
 #include "FRTOS1.h"
+#include "Application.h"
 #include "AppDataFile.h"
 #include "SDEP.h"
 #include "WDog1.h"
@@ -118,7 +119,7 @@ static void WatchDog_Task(void *param) {
 #endif
 #if PL_CONFIG_HAS_WATCHDOG
 			for(;;) {
-			  /* wait for the watchdog to kick in */
+			  APP_FatalError();
 			}
 #else
       #warning "watchdog is disabled!"

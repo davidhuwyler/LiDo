@@ -28,6 +28,7 @@ Open points
 - todo: use bat emergency pin to cut off power in PowerMangement.c
 - watchdog triggers if using the Shell
 - need to protect I2C acces with mutex
+- V2.2: disabled reset pin in CPU
 - had empty file?
 CMD>   < AppData print
 00> LIDO_NAME = -
@@ -42,9 +43,15 @@ CMD>   < AppData print
 00> SAMPLE_AUTO_OFF = -
 
 User Interface:
+- device is in sleep mode:
+  - 3sec press: wake up => active mode
+
+- turn on device:
+
 - 1x short press: set marker (1x green blink)
 - 2x short press: toggle sampling (2x green blink)
-- 4x short press: disable communication, go into low power mode
+- 4x short press: disable communication (if device is active), go into low power mode
+- 
 - 9sec press after power-on: format device (red on after power-on, goes out after 3 secs, on at 6s and off at 9s)
 
 - short press while logging: setting marker (confirmed with green LED blink)

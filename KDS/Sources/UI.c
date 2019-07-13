@@ -14,6 +14,8 @@
  */
 #include "Platform.h"
 #include "UI.h"
+#include "Application.h"
+#include "AppDataFile.h"
 #if (PL_BOARD_REV==20 || PL_BOARD_REV==21)
   #include "PTC.h" /* uses PTC1 for user button */
 #elif (PL_BOARD_REV==22)
@@ -24,181 +26,158 @@
 #include "PORT_PDD.h"
 #include "FRTOS1.h"
 #include "CLS1.h"
-#include "Application.h"
-#include "AppDataFile.h"
 #include "LED_R.h"
 #include "LED_G.h"
 #include "LED_B.h"
 #include "Shell.h"
 
-#define USE_SHELL_TOGGLE_TIMER  (0)  /* probably not needed at all */
+#define UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS (1000)  /* used to count duration of button press */
+#define UI_BUTTON_DEBOUNCE_INTERVALL_MS          (20)
+
+/* button press counter confirmation LED blinking */
+#define UI_LED_MODE_INDICATOR_DURATION_ON_MS     (25) /* time the LED is on */
+#define UI_LED_MODE_INDICATOR_DURATION_OFF_MS    (975) /* time the LED is off */
+static uint8_t localNofBtnConfirmBlinks = 0; /* nof confirmation button blink cylces. Is twice the number of blinks because of on and off phases */
+
+#define UI_LED_PULSE_INDICATOR_DURATION_MS       (1)
 
 static TimerHandle_t uiButtonMultiPressTimer;
 static TimerHandle_t uiButtonDebounceTimer;
-#if USE_SHELL_TOGGLE_TIMER
-static TimerHandle_t uiLEDtoggleTimer;
-#endif
 static TimerHandle_t uiLEDmodeIndicatorTimer;
 static TimerHandle_t uiLEDpulseIndicatorTimer;
 
-static bool uiInitDone = FALSE;
-static bool ongoingButtonPress = FALSE;
+static bool uiInitDone = FALSE;  /* if UI (this module) has been initialized */
+static bool ongoingButtonPress = FALSE; /* button is kept pressed */
 static uint8_t buttonCnt = 0;
-static uint8_t localNofBtnConfirmBlinks = 0;
 
-static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks)
-{
-	LED_G_On();
-	localNofBtnConfirmBlinks = nofBtnConfirmBlinks;
-	if(xTimerChangePeriod(uiLEDmodeIndicatorTimer,400,0) != pdPASS){for(;;);}
-	if(xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { for(;;);}
+static void vTimerCallback_LED_ModeIndicator(TimerHandle_t pxTimer) {
+  uint16_t timerDelayMS = 0;
+
+  localNofBtnConfirmBlinks--;
+  if((localNofBtnConfirmBlinks%2)==0) { /* even number: LED is on */
+    LED_R_Off();
+    LED_B_Off();
+    LED_G_Off();
+    timerDelayMS = UI_LED_MODE_INDICATOR_DURATION_OFF_MS;
+  } else {
+    LED_R_Off();
+    LED_B_Off();
+    LED_G_On();
+    timerDelayMS = UI_LED_MODE_INDICATOR_DURATION_ON_MS;
+  }
+  if(localNofBtnConfirmBlinks>0) { /* still blinkys to go on ... */
+    if (xTimerChangePeriod(uiLEDmodeIndicatorTimer, timerDelayMS, 0) != pdPASS){
+      APP_FatalError();
+    }
+    if (xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { /* start timer */
+      APP_FatalError();
+    }
+  } else { /* stop timer */
+    if (xTimerStop(uiLEDmodeIndicatorTimer, 0)!=pdPASS) {
+      APP_FatalError();
+    }
+  }
 }
 
-static void UI_Button_1pressDetected(void)
-{
+static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks) {
+  localNofBtnConfirmBlinks = (nofBtnConfirmBlinks*2)-1; /* twice because of on and then off */
+  /* set to initial on period */
+  LED_R_Off();
+  LED_B_Off();
+  LED_G_On();
+  if (xTimerChangePeriod(uiLEDmodeIndicatorTimer, UI_LED_MODE_INDICATOR_DURATION_ON_MS, 0) != pdPASS){
+    APP_FatalError();
+  }
+  if (xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { /* start timer */
+    APP_FatalError();
+  }
+}
+
+static void UI_Button_1pressDetected(void) {
 	UI_StartBtnConfirmBlinker(1);
 	APP_setMarkerInLog();
 }
 
-static void UI_Button_2pressDetected(void)
-{
+static void UI_Button_2pressDetected(void) {
 	UI_StartBtnConfirmBlinker(2);
 	APP_toggleEnableSampling();
 }
 
-static void UI_Button_3pressDetected(void)
-{
-
+static void UI_Button_3pressDetected(void) {
 }
 
-static void UI_Button_4pressDetected(void)
-{
+static void UI_Button_4pressDetected(void) {
 	UI_StartBtnConfirmBlinker(4);
 	SHELL_requestDisabling();
 }
 
-static void UI_Button_5pressDetected(void)
-{
+static void UI_Button_5pressDetected(void) {
 	UI_StartBtnConfirmBlinker(5);
 	APP_requestForSoftwareReset();
 }
 
-
-static void UI_ButtonCounter(void)
-{
+static void UI_ButtonCounter(void) {
 	static TickType_t lastButtonPressTimeStamp;
-	if(!ongoingButtonPress)
-	{
+
+	if(!ongoingButtonPress) {
 		 ongoingButtonPress = TRUE;
 		 buttonCnt++;
-
-		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS)
-		 {
-		    for(;;); /* failure?!? */
+		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS) {
+		    APP_FatalError();
 		 }
-
-		 if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS)
-		 {
-		    for(;;); /* failure?!? */
+		 if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS) {
+		   APP_FatalError();
 		 }
 	}
 }
 
-static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer)
-{
-	switch(buttonCnt)
-	{
-	case 0:		//Should not happen...
-		break;
-	case 1:
-		UI_Button_1pressDetected();
-		break;
-	case 2:
-		UI_Button_2pressDetected();
-		break;
-	case 3:
-		UI_Button_3pressDetected();
-		break;
-	case 4:
-		UI_Button_4pressDetected();
-		break;
-	case 5:
-		UI_Button_5pressDetected();
-		break;
-	default:
-		break;
-	}
+static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer) {
+	switch(buttonCnt) {
+    case 0:		//Should not happen...
+      break;
+    case 1:
+      UI_Button_1pressDetected();
+      break;
+    case 2:
+      UI_Button_2pressDetected();
+      break;
+    case 3:
+      UI_Button_3pressDetected();
+      break;
+    case 4:
+      UI_Button_4pressDetected();
+      break;
+    case 5:
+      UI_Button_5pressDetected();
+      break;
+    default:
+      break;
+	} /* switch */
 	buttonCnt = 0;
 }
 
-static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer)
-{
-
-	if(USER_BUTTON_PRESSED())
-	{
-		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS)
-		{
-		   for(;;); /* failure?!? */
+static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer) {
+	if(USER_BUTTON_PRESSED())	{
+		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS) {
+		  APP_FatalError();
 		}
-	}
-	else
-	{
-		if (xTimerReset(uiButtonMultiPressTimer, 0)!=pdPASS)
-		{
-		   for(;;); /* failure?!? */
+	} else {
+		if (xTimerReset(uiButtonMultiPressTimer, 0)!=pdPASS) {
+		  APP_FatalError();
 		}
 		ongoingButtonPress = FALSE;
 	}
 }
 
-static void vTimerCallback_LED_ShellInicator(TimerHandle_t pxTimer)
-{
-	LED_B_Neg();
-}
-
-static void vTimerCallback_LED_ModeIndicator(TimerHandle_t pxTimer)
-{
-	uint16_t timerDelayMS = 0;
-	if(LED_G_Get())
-	{
-		localNofBtnConfirmBlinks--;
-		LED_G_Off();
-		timerDelayMS = 200;
-	}
-	else
-	{
-		LED_G_On();
-		timerDelayMS = 400;
-	}
-
-	if(localNofBtnConfirmBlinks)
-	{
-		if(xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { for(;;);}
-	}
-}
-
-#if USE_SHELL_TOGGLE_TIMER
-void UI_StopShellIndicator(void)
-{
-  if (uiLEDtoggleTimer!=NULL) {
-     if (xTimerDelete(uiLEDtoggleTimer, 0)!=pdPASS) { /*! \todo might only suspend the timer? */
-        for(;;); /* failure?!? */
-     }
-     uiLEDtoggleTimer = NULL;
-  }
+static void vTimerCallback_LEDpulse(TimerHandle_t pxTimer) {
+  /* end of LED pulse: turn off all LEDs */
+	LED_R_Off();
+	LED_G_Off();
 	LED_B_Off();
 }
-#endif
 
-static void vTimerCallback_LEDpulse(TimerHandle_t pxTimer)
-{
-	LED_R_Off();LED_G_Off();LED_B_Off();
-}
-
-void UI_LEDpulse(UI_LEDs_t color)
-{
-	switch(color)
-	{
+void UI_LEDpulse(UI_LEDs_t color) {
+	switch(color) {
 	case LED_R:
 		LED_R_On();
 		break;
@@ -231,56 +210,50 @@ void UI_LEDpulse(UI_LEDs_t color)
 		LED_G_On();
 		LED_R_On();
 		break;
-	}
-
-	if (uiLEDpulseIndicatorTimer!=NULL && xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS)
-	{
-	   for(;;); /* failure?!? */
+	} /* switch */
+	if (uiLEDpulseIndicatorTimer!=NULL && xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS) {
+	  APP_FatalError();
 	}
 }
 
-void UI_Init(void)
-{
+void UI_Init(void) {
 	uiButtonMultiPressTimer = xTimerCreate( "tmrUiBtn", /* name */
 										 pdMS_TO_TICKS(UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS), /* period/time */
 										 pdFALSE, /* auto reload */
 										 (void*)0, /* timer ID */
 										 vTimerCallback_ButtonMultiPressTimer); /* callback */
-	if (uiButtonMultiPressTimer==NULL) { for(;;); /* failure! */}
-
+	if (uiButtonMultiPressTimer==NULL) {
+	  APP_FatalError();
+	}
 	uiButtonDebounceTimer = xTimerCreate( "tmrUiBtnDeb", /* name */
 										 pdMS_TO_TICKS(UI_BUTTON_DEBOUNCE_INTERVALL_MS), /* period/time */
 										 pdFALSE, /* auto reload */
 										 (void*)1, /* timer ID */
 										 vTimerCallback_ButtonDebounceTimer); /* callback */
-	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
-#if USE_SHELL_TOGGLE_TIMER
-	uiLEDtoggleTimer = xTimerCreate( "tmrUiLEDtoggle", /* name */
-										 pdMS_TO_TICKS(UI_LED_SHELL_INDICATOR_TOGGLE_DELAY_MS), /* period/time */
-										 pdTRUE, /* auto reload */
-										 (void*)2, /* timer ID */
-										 vTimerCallback_LED_ShellInicator); /* callback */
-	 if (xTimerStart(uiLEDtoggleTimer, 0)!=pdPASS) {  for(;;); /* failure?!? */ }
-#endif
-	 uiLEDmodeIndicatorTimer = xTimerCreate( "tmrUiLEDmodeInd", /* name */
-										 pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_MS), /* period/time */
+	if (uiButtonDebounceTimer==NULL) {
+	  APP_FatalError();
+	}
+	uiLEDmodeIndicatorTimer = xTimerCreate( "tmrUiLEDmodeInd", /* name */
+										 pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_ON_MS+UI_LED_MODE_INDICATOR_DURATION_OFF_MS), /* period/time */
 										 pdFALSE, /* auto reload */
 										 (void*)3, /* timer ID */
 										 vTimerCallback_LED_ModeIndicator); /* callback */
-	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
+	if (uiLEDmodeIndicatorTimer==NULL) {
+	  APP_FatalError();
+	}
 
 	uiLEDpulseIndicatorTimer = xTimerCreate( "tmrUiLEDpulse", /* name */
 										 pdMS_TO_TICKS(UI_LED_PULSE_INDICATOR_DURATION_MS), /* period/time */
 										 pdFALSE, /* auto reload */
 										 (void*)4, /* timer ID */
 										 vTimerCallback_LEDpulse); /* callback */
-	if (uiButtonDebounceTimer==NULL) { for(;;); /* failure! */}
-
+	if (uiLEDpulseIndicatorTimer==NULL) {
+	  APP_FatalError();
+	}
 	uiInitDone = TRUE;
 }
 
-void UI_ButtonPressed_ISR(void)
-{
+void UI_ButtonPressed_ISR(void) { /* wakeup and interrupt by user button press */
 #if (PL_BOARD_REV==20 || PL_BOARD_REV==21) /* uses PTC1 for user button */
   PORT_PDD_ClearInterruptFlags(PTC_PORT_DEVICE,1U<<1);
 #elif (PL_BOARD_REV==22) /* uses PTD0 for user button */
@@ -292,7 +265,3 @@ void UI_ButtonPressed_ISR(void)
 		UI_ButtonCounter();
 	}
 }
-
-
-
-

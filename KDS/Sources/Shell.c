@@ -27,15 +27,18 @@
 #include "ErrorLogFile.h"
 #include "RTT1.h"
 #include "McuLC709203F.h"
-#include "AS1.h"
 #include "PowerManagement.h"
+#if PL_BOARD_REV==20
+  #include "AS1.h"
+#endif
 
-#define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (0)
+#define SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS 10000  /* after this milli seconds, the shell gets disabled */
+
+#define SHELL_CONFIG_HAS_SHELL_EXTRA_UART  (0 && PL_BOARD_REV==20)
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_RTT   (1)
 #define SHELL_CONFIG_HAS_SHELL_EXTRA_CDC   (1)
 
 static bool shellDisablingRequest = FALSE;
-static bool shellDisablingIsInitiated = FALSE;
 
 static const CLS1_ParseCommandCallback CmdParserTable[] =
 {
@@ -173,19 +176,19 @@ static void SHELL_SwitchIOifNeeded(void) {
 	if(SDEPio_NewSDEPmessageAvail()) {
 		SDEPioTimerStarted = TRUE;
 		SDEPioTimer = xTaskGetTickCount();
-	}	else if(SDEPioTimerStarted && xTaskGetTickCount() - SDEPioTimer > pdMS_TO_TICKS(300)) {
+	}	else if(SDEPioTimerStarted && xTaskGetTickCount()-SDEPioTimer > pdMS_TO_TICKS(300)) {
 		SDEPio_switchIOtoStdIO();
 		SDEPioTimerStarted = FALSE;
 	}
 }
 
+/* \todo Fix the thing in the comment below */
 //Function needs to be called 3times to
 //Disable the shell. This makes sure, the
 //Answer message got out before disabling
 //the Shell
 static void SHELL_Disable(void) {
 	static uint8_t cnt = 0;
-	shellDisablingIsInitiated = TRUE;
 	if(cnt==2) {
 		//UI_StopShellIndicator();
 #if PL_CONFIG_HAS_SHELL_SHUTOWN
@@ -210,29 +213,29 @@ static void SHELL_Disable(void) {
 static void SHELL_task(void *param) {
   TickType_t shellEnabledTimestamp;
   TickType_t xLastWakeTime;
-  unsigned short charsInUARTbuf;
-  int i;
   int cntr = 0;
+  bool shellDisablingIsInitiated = FALSE;
 
   (void)param;
   shellEnabledTimestamp = xTaskGetTickCount();
   /* initialize buffers */
-  for(i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
+  for(int i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
     ios[i].buf[0] = '\0';
   }
   for(;;) {
 	  xLastWakeTime = xTaskGetTickCount();
-	  //Disable Shell if Requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected
-	  if(	shellDisablingRequest ||
-	     (( xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS ) && CDC1_ApplicationStarted() == FALSE) ||
-		 	shellDisablingIsInitiated)
+	  /* Disable Shell if Requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected */
+	  if (	 shellDisablingRequest
+	      || ((xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS) && !CDC1_ApplicationStarted())
+	      || shellDisablingIsInitiated)
 	  {
+	    shellDisablingIsInitiated = TRUE;
 		  SHELL_Disable();
 	  }
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
     /* process all I/Os */
-    for(i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
+    for(int i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
       (void)CLS1_ReadAndParseWithCommandTable(ios[i].buf, ios[i].bufSize, ios[i].stdio, CmdParserTable);
     }
 	  SDEPio_HandleShellCMDs();
@@ -258,10 +261,13 @@ static void SHELL_task(void *param) {
 
 void SHELL_Init(void) {
   CLS1_SetStdio(&SHELL_stdio); /* make sure that Shell is using our custom I/O handler */
-
-  PORTB_PCR16 |= 0x3;  //Enable Pullup UART RX
-  PORTB_PCR17 |= 0x3;  //Enable Pullup UART TX
-
+#if PL_BOARD_REV==20
+  /* enable and turn on pull-up resistor for UART pins: Rx (PTB16) and Tx (PTB17) */
+  PORT_PDD_SetPinPullSelect(PORTB_BASE_PTR, 16, PORT_PDD_PULL_UP);
+  PORT_PDD_SetPinPullEnable(PORTB_BASE_PTR, 16, PORT_PDD_PULL_ENABLE);
+  PORT_PDD_SetPinPullSelect(PORTB_BASE_PTR, 17, PORT_PDD_PULL_UP);
+  PORT_PDD_SetPinPullEnable(PORTB_BASE_PTR, 17, PORT_PDD_PULL_ENABLE);
+#endif
   if (xTaskCreate(SHELL_task, "Shell", 3000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS) {
 	  APP_FatalError();
   }

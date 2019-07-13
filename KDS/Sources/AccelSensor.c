@@ -16,6 +16,9 @@
 #if PL_CONFIG_HAS_SENSOR_PWR_PIN
   #include "PIN_SENSOR_PWR.h"
 #endif
+#if PL_CONFIG_HAS_ACCEL_ISR1_PIN
+  #include "ACC_INT1.h"
+#endif
 
 #define ACCEL_SENS_I2C_ADDRESS 0x19
 #define ACCEL_SENS_I2C_REGISTER_CTRL_REG1 0x20 //SamplingFrequenz und LowpowerMode (Datasheet p33)
@@ -50,14 +53,8 @@ void AccelSensor_init(void)
 
 	res = GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_CTRL_REG1 , 0x1F);		//0x1F = 1Hz samples & LowpowerMode on; 0x0F = PowerDownMode
 	res |= GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_TEMP_CFG , 0xC0);		//Enable Temp. Measurement
-
-	if(res != ERR_OK)
-	{
-		for(;;)//IIC Error
-		{
-			LED_R_Neg();
-			WAIT1_Waitms(50);
-		}
+	if(res != ERR_OK) {
+		APP_FatalError();
 	}
 }
 
@@ -107,6 +104,10 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   UTIL1_Num8sToStr(buf, sizeof(buf), ACCEL_SENS_I2C_TEMPERATURE_OFFSET);
   UTIL1_strcat(buf, sizeof(buf), (unsigned char*)"\r\n");
   CLS1_SendStatusStr((unsigned char*)"  Temp offset", buf, io->stdOut);
+#if PL_CONFIG_HAS_ACCEL_ISR1_PIN
+  UTIL1_strcpy(buf, sizeof(buf), ACC_INT1_GetVal()?(unsigned char*)"HIGH\r\n":(unsigned char*)"LOW\r\n");
+  CLS1_SendStatusStr((unsigned char*)"  INT1", buf, io->stdOut);
+#endif
   return ERR_OK;
 }
 
