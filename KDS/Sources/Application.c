@@ -99,6 +99,7 @@ static void APP_toggleEnableSamplingIfRequested(void) {
 static void APP_softwareResetIfRequested(void) {
   if(requestForSoftwareReset) {
     requestForSoftwareReset = FALSE;
+    McuLC_SetPowerMode(TRUE); /* put charge/gauge IC into sleep mode, otherwise it consumes up to 100 uA, and if we don't have USB power, the reset will not restart the device */
     if (fileIsOpen) {
       FS_closeFile(&sampleFile);
     }
@@ -498,9 +499,7 @@ static void APP_init_task(void *param) {
     AppDataFile_Init();
     SHELL_Init();
     LowPower_init();
-#if PL_CONFIG_HAS_LIGHT_SENSOR
     LightSensor_init();
-#endif
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     AccelSensor_init();
 #endif
