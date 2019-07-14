@@ -8,13 +8,11 @@
 #include "RTC1.h"
 #include "TmDt1.h"
 
-static LDD_TDeviceData* rtcDeviceDataHandle;
-
 void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix) {
 	TIMEREC time;
 	DATEREC date;
 
-	TmDt1_GetInternalRTCTimeDate(&time,&date);
+	TmDt1_GetInternalRTCTimeDate(&time, &date);
 	*rtcTimeUnix = TmDt1_TimeDateToUnixSeconds(&time, &date, 0);
 }
 
@@ -27,5 +25,5 @@ void RTC_setTimeUnixFormat(int32_t rtcTimeUnix) {
 }
 
 void RTC_init(bool softInit) {
-	rtcDeviceDataHandle = RTC1_Init(NULL, softInit);
+	(void)RTC1_Init(NULL, softInit);
 }
