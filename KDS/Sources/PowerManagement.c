@@ -138,6 +138,7 @@ uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, co
     CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  on", (const unsigned char*)"Power on (only useful if USB connected)\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  off", (const unsigned char*)"Power off (effective if no USB connected)\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  request off", (const unsigned char*)"Request power off (effective if no USB connected)\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
   } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "power status")==0)) {
@@ -147,9 +148,13 @@ uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, co
     *handled = TRUE;
     PowerManagement_PowerOn();
     return ERR_OK;
-  } else if (UTIL1_strcmp((char*)cmd, "power off")==0) {
+  } else if (UTIL1_strcmp((char*)cmd, "power request off")==0) {
     *handled = TRUE;
     APP_requestForPowerOff();
+    return ERR_OK;
+  } else if (UTIL1_strcmp((char*)cmd, "power off")==0) {
+    *handled = TRUE;
+    PowerManagement_PowerOff();
     return ERR_OK;
   }
   return res;

@@ -382,13 +382,13 @@ static void APP_init(void) {
   //Init the SampleQueue, SampleTask and the WriteLidoFile Task
   //The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
   lidoSamplesToWrite = xQueueCreate(15, sizeof(liDoSample_t));
-  if( lidoSamplesToWrite == NULL) {
+  if (lidoSamplesToWrite==NULL) {
     APP_FatalError();
   }
   if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS) {
     APP_FatalError();
   }
-  RTC_InitRTCInterrupt();
+  RTC_EnableRTCInterrupt();
   if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS) {
     APP_FatalError();
   }

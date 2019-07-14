@@ -10,6 +10,7 @@
 #include "RTC.h"
 #include "RTC1.h"
 #include "TmDt1.h"
+#include "LED_R.h"
 
 void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix) {
 	TIMEREC time;
@@ -27,7 +28,7 @@ void RTC_setTimeUnixFormat(int32_t rtcTimeUnix) {
 	TmDt1_SetInternalRTCTimeDate(&time,&date);
 }
 
-void RTC_InitRTCInterrupt(void) {
+void RTC_EnableRTCInterrupt(void) {
   /* Init the RTC alarm Interrupt: */
   RTC_CR  |= RTC_CR_SUP_MASK;   /* Write to RTC Registers enabled */
   RTC_IER |= RTC_IER_TAIE_MASK; /* Enable RTC Alarm Interrupt */
@@ -36,7 +37,12 @@ void RTC_InitRTCInterrupt(void) {
   RTC_TAR = RTC_TSR;            /* RTC Alarm at RTC Time */
 }
 
+void RTC_DisableRTCInterrupt(void) {
+  /*! \todo */
+}
+
 void RTC_ALARM_ISR(void) {
+  //LED_R_Neg(); /* debugging only */
   if (RTC_SR & RTC_SR_TIF_MASK) { /* Timer invalid (Vbat POR or RTC SW reset)? */
     RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
     RTC_TPR = 0x00U;       /* Reset prescaler */
