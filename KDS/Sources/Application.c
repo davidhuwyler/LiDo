@@ -32,6 +32,11 @@
 #include "LightAutoGain.h"
 #include "SYS1.h"
 #include "WAIT1.h"
+#include "CI2C1.h"
+#include "I2C_SCL.h"
+#include "I2C_SDA.h"
+#include "PORT_PDD.h"
+#include "GPIO_PDD.h"
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
@@ -96,7 +101,7 @@ static void APP_softwareResetIfRequested(void) {
   }
 }
 
-int abs (int i) {
+int abs(int i) {
   return i < 0 ? -i : i;
 }
 
@@ -214,29 +219,22 @@ void APP_resumeSampleTaskFromISR(void) {
   BaseType_t xYieldRequired;
 
   if(sampletaskHandle!=NULL) {
-      xYieldRequired = xTaskResumeFromISR( sampletaskHandle );//Enable Sample Task for Execution
-      if( xYieldRequired == pdTRUE ) {
-          portYIELD_FROM_ISR(pdTRUE);
-      }
-  }
-}
-
-void APP_suspendSampleTask(void)
-{
-  if(sampletaskHandle!=NULL) {
-    vTaskSuspend(sampletaskHandle);
-  } else {
-    //Error
-    for(;;)
-    {
-      LED_R_Neg();
-      vTaskDelay(pdMS_TO_TICKS(50));
+    xYieldRequired = xTaskResumeFromISR(sampletaskHandle);//Enable Sample Task for Execution
+    if( xYieldRequired == pdTRUE ) {
+      portYIELD_FROM_ISR(pdTRUE);
     }
   }
 }
 
-void APP_suspendWriteFileTask(void)
-{
+void APP_suspendSampleTask(void) {
+  if(sampletaskHandle!=NULL) {
+    vTaskSuspend(sampletaskHandle);
+  } else {
+    APP_FatalError();
+  }
+}
+
+void APP_suspendWriteFileTask(void) {
   if(writeFileTaskHandle!=NULL) {
     vTaskSuspend(writeFileTaskHandle);
   } else {
@@ -261,12 +259,12 @@ static void APP_sample_task(void *param) {
     WatchDog_StartComputationTime(WatchDog_MeasureTaskRuns);
     if(AppDataFile_GetSamplingEnabled()) {
       RTC_getTimeUnixFormat(&unixTScurrentSample);
-      sampleError = APP_getCurrentSample(&sample,unixTScurrentSample,!AppDataFile_GetSampleAutoOff());
+      sampleError = APP_getCurrentSample(&sample,unixTScurrentSample, !AppDataFile_GetSampleAutoOff());
       if(sampleError == ERR_FAILED) {
         SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_SAMPLING_ERROR, "getCurrentSample failed");
       } else if(sampleError==ERR_OK) {
         UI_LEDpulse(LED_V);
-        if(xQueueSendToBack( lidoSamplesToWrite,  (void*)&sample, pdMS_TO_TICKS(500)) != pdPASS ) {
+        if(xQueueSendToBack(lidoSamplesToWrite, (void*)&sample, pdMS_TO_TICKS(500)) != pdPASS ) {
           SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_SAMPLING_ERROR, "lidoSamplesToWrite failed");
         }
       }
@@ -285,7 +283,6 @@ static void APP_makeNewFileIfNeeded(void) {
   xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
   //New Hour: Make new File!
   if(fileIsOpen && AppDataFile_GetSamplingEnabled() && APP_newHour()) {
-
     WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
     if(FS_closeFile(&sampleFile) != ERR_OK) {
       SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
@@ -317,15 +314,11 @@ static void APP_openFileIfNeeded(void) {
 static void APP_writeQueuedSamplesToFile(void) {
   liDoSample_t sample;
   xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
-  if(AppDataFile_GetSamplingEnabled() && fileIsOpen)
-  {
-
+  if(AppDataFile_GetSamplingEnabled() && fileIsOpen) {
     //Write all pending samples to file
-    while(xQueuePeek(lidoSamplesToWrite,&sample,0) == pdPASS)
-    {
+    while(xQueuePeek(lidoSamplesToWrite, &sample, 0) == pdPASS) {
       WatchDog_StartComputationTime(WatchDog_WriteToLidoSampleFile);
-      if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK)
-      {
+      if(FS_writeLiDoSample(&sample,&sampleFile) != ERR_OK) {
         SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_writeLiDoSample failed");
       } else {
         xQueueReceive(lidoSamplesToWrite,&sample,pdMS_TO_TICKS(500));
@@ -335,8 +328,7 @@ static void APP_writeQueuedSamplesToFile(void) {
   } else if (fileIsOpen)  {
     xSemaphoreTakeRecursive(fileAccessMutex,pdMS_TO_TICKS(MUTEX_WAIT_TIME_MS));
     WatchDog_StartComputationTime(WatchDog_OpenCloseLidoSampleFile);
-    if(FS_closeFile(&sampleFile) == ERR_OK)
-    {
+    if(FS_closeFile(&sampleFile) == ERR_OK) {
       fileIsOpen = FALSE;
     } else {
       SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
@@ -355,14 +347,10 @@ static void APP_writeLidoFile_task(void *param) {
     APP_FatalError();
   }
   xSemaphoreGiveRecursive(fileAccessMutex);
-
-  for(;;)
-  {
-    if(LowPower_StopModeIsEnabled())
-    {
+  for(;;) {
+    if(LowPower_StopModeIsEnabled()) {
       SPIF_ReleaseFromDeepPowerDown();
     }
-
     APP_softwareResetIfRequested();
     APP_toggleEnableSamplingIfRequested();
     AppDataFile_GetSampleIntervall(&samplingIntervall);
@@ -370,7 +358,6 @@ static void APP_writeLidoFile_task(void *param) {
     APP_openFileIfNeeded();
     APP_writeQueuedSamplesToFile();
     APP_suspendWriteFileTask();
-
     if(LowPower_StopModeIsEnabled()) {
       SPIF_GoIntoDeepPowerDown();
     }
@@ -380,26 +367,22 @@ static void APP_writeLidoFile_task(void *param) {
 static void APP_init(void) {
   //Init the SampleQueue, SampleTask and the WriteLidoFile Task
   //The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
-  lidoSamplesToWrite = xQueueCreate( 15, sizeof( liDoSample_t ) );
-  if( lidoSamplesToWrite == NULL ) {
+  lidoSamplesToWrite = xQueueCreate(15, sizeof(liDoSample_t));
+  if( lidoSamplesToWrite == NULL) {
     APP_FatalError();
   }
-
-  if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS)
-  {
+  if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS) {
     APP_FatalError();
   }
-
   //Init the RTC alarm Interrupt:
   RTC_CR  |= RTC_CR_SUP_MASK;   //Write to RTC Registers enabled
-  RTC_IER |= RTC_IER_TAIE_MASK;   //Enable RTC Alarm Interrupt
+  RTC_IER |= RTC_IER_TAIE_MASK; //Enable RTC Alarm Interrupt
   RTC_IER |= RTC_IER_TOIE_MASK; //Enable RTC Overflow Interrupt
   RTC_IER |= RTC_IER_TIIE_MASK; //Enable RTC Invalid Interrupt
-  RTC_TAR = RTC_TSR;        //RTC Alarm at RTC Time
+  RTC_TAR = RTC_TSR;            //RTC Alarm at RTC Time
 
-  if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS)
-  {
-      APP_FatalError();
+  if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS) {
+    APP_FatalError();
   }
 }
 
@@ -419,9 +402,6 @@ static bool APP_WaitIfButtonPressed3s(void) {
   }
 }
 
-#include "CI2C1.h"
-#include "I2C_SCL.h"
-#include "I2C_SDA.h"
 
 static void MuxAsGPIO(void) {
   /* PTB3: SDA, PTB2: SCL */
@@ -432,8 +412,6 @@ static void MuxAsGPIO(void) {
   I2C_SCL_SetOutput();
 }
 
-#include "PORT_PDD.h"
-#include "GPIO_PDD.h"
 static void MuxAsI2C(void) {
   /* PTB3: SDA, PTB2: SCL */
   //CI2C1_Init(NULL);
@@ -731,8 +709,7 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   uint8_t res = ERR_OK;
   const uint8_t *p;
 
-  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "App help")==0)
-  {
+  if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "App help")==0) {
     CLS1_SendHelpStr((unsigned char*)"App", (const unsigned char*)"Group of Application commands\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  print <file>", (const unsigned char*)"Prints a LiDo Sample File\r\n", io->stdOut);
@@ -743,8 +720,7 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
     return PrintStatus(io);
   } else if (UTIL1_strncmp((char* )cmd, "App print ", sizeof("App print ") - 1) == 0) {
     *handled = TRUE;
-    if ((UTIL1_ReadEscapedName(cmd + sizeof("App print ") - 1,fileName, sizeof(fileName), &lenRead, NULL, NULL) == ERR_OK))
-    {
+    if ((UTIL1_ReadEscapedName(cmd + sizeof("App print ") - 1,fileName, sizeof(fileName), &lenRead, NULL, NULL) == ERR_OK)) {
       return PrintLiDoFile(fileName, io);
     }
     return ERR_FAILED;
@@ -753,20 +729,15 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 }
 
 void RTC_ALARM_ISR(void) {
-  if(RTC_SR & RTC_SR_TIF_MASK)/* Timer invalid (Vbat POR or RTC SW reset)? */
-  {
+  if (RTC_SR & RTC_SR_TIF_MASK) { /* Timer invalid (Vbat POR or RTC SW reset)? */
     RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
     RTC_TPR = 0x00U;       /* Reset prescaler */
     RTC_TSR = 0x02UL;      /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
-  }
-  else if(RTC_SR & RTC_SR_TOF_MASK)
-  {
+  } else if (RTC_SR & RTC_SR_TOF_MASK) {
     RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
     RTC_TPR = 0x00U;       /* Reset prescaler */
     RTC_TSR = 0x02UL;      /* Set init. time - 2000-01-01 0:0:1 (clears flag)*/
-  }
-  else /* Alarm interrupt */
-  {
+  } else { /* Alarm interrupt */
     uint8_t sampleIntervall;
     AppDataFile_GetSampleIntervall(&sampleIntervall);
     RTC_TAR = RTC_TSR + sampleIntervall - 1;    //SetNext RTC Alarm

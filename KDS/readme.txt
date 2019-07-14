@@ -28,7 +28,8 @@ Open points
 - todo: use bat emergency pin to cut off power in PowerMangement.c
 - watchdog triggers if using the Shell
 - need to protect I2C acces with mutex
-- V2.2: disabled reset pin in CPU
+- V2.2: disabled reset pin in CPU?
+- after changing the appData.ini file, I have to do a KIN1 reset to start the sampling task again? ==> issue is that the appdata file was empty! see below.
 - had empty file?
 CMD>   < AppData print
 00> LIDO_NAME = -

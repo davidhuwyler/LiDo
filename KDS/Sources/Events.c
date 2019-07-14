@@ -128,9 +128,9 @@ void FRTOS1_vApplicationIdleHook(void)
 #if !configUSE_TICKLESS_IDLE
 	LowPower_EnterLowpowerMode();
 #else
-  __asm volatile("dsb");
-  __asm volatile("wfi");
-  __asm volatile("isb");
+ // __asm volatile("dsb");
+ // __asm volatile("wfi");
+ // __asm volatile("isb");
 #endif
 }
 

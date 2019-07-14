@@ -223,11 +223,9 @@ void WatchDog_Init(void)
 }
 
 //Function also used to activate a source
-void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource)
-{
+void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource) {
 	taskENTER_CRITICAL();
-	if(!watchDogKickSources[kickSource].sourceForceDisabled)
-	{
+	if(!watchDogKickSources[kickSource].sourceForceDisabled) {
 		watchDogKickSources[kickSource].timeStampLastKick = xTaskGetTickCount();
 		watchDogKickSources[kickSource].sourceIsActive 					= TRUE;
 		watchDogKickSources[kickSource].requestForDeactivation 			= FALSE;
@@ -236,46 +234,36 @@ void WatchDog_StartComputationTime(WatchDog_KickSource_e kickSource)
 	taskEXIT_CRITICAL();
 }
 
-void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource)
-{
+void WatchDog_StopComputationTime(WatchDog_KickSource_e kickSource) {
   taskENTER_CRITICAL();
 	watchDogKickSources[kickSource].measuredCompTime = xTaskGetTickCount() - watchDogKickSources[kickSource].timeStampLastKick;
 	watchDogKickSources[kickSource].compTimeMeasurementRunning		= FALSE;
 
-	if(!watchDogKickSources[kickSource].isSingleCheckWatchdogSouce)
-	{
-		if(watchDogKickSources[kickSource].kickIntervallXSampleIntervall)
-		{
+	if(!watchDogKickSources[kickSource].isSingleCheckWatchdogSouce)	{
+		if(watchDogKickSources[kickSource].kickIntervallXSampleIntervall)	{
 			uint8_t sampleIntervall_s;
 			AppDataFile_GetSampleIntervall(&sampleIntervall_s);
 			watchDogKickSources[kickSource].maxKickIntervallLimit = watchDogKickSources[kickSource].maxKickIntervallLimitRaw * sampleIntervall_s;
-		}
-		else
-		{
+		}	else {
 			watchDogKickSources[kickSource].maxKickIntervallLimit;
 		}
-	}
-	else
-	{
+	}	else {
 		watchDogKickSources[kickSource].requestForDeactivation 	= TRUE;
 	}
 	taskEXIT_CRITICAL();
 }
 
-void WatchDog_DisableSource(WatchDog_KickSource_e kickSource)
-{
+void WatchDog_DisableSource(WatchDog_KickSource_e kickSource) {
   taskENTER_CRITICAL();
 	watchDogKickSources[kickSource].sourceForceDisabled 		= TRUE;
 	watchDogKickSources[kickSource].sourceIsActive 					= FALSE;
 	taskEXIT_CRITICAL();
 }
 
-void WatchDog_EnableSource(WatchDog_KickSource_e kickSource)
-{
+void WatchDog_EnableSource(WatchDog_KickSource_e kickSource) {
   taskENTER_CRITICAL();
 	watchDogKickSources[kickSource].sourceForceDisabled 		= FALSE;
 	watchDogKickSources[kickSource].sourceIsActive 					= TRUE;
 	taskEXIT_CRITICAL();
 	WatchDog_StartComputationTime(kickSource);
 }
-

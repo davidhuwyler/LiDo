@@ -385,7 +385,7 @@ void LightSensor_Done_ISR(void) {
 #else
   #error "unknown board"
 #endif
-	if(allowLightSensToWakeUp) {  /* no critical section necessary as reading the variable is atomic */
+	if(allowLightSensToWakeUp) {
 		APP_resumeSampleTaskFromISR();
 	}
 }
