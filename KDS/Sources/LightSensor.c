@@ -122,7 +122,7 @@ void LightSensor_init(void) {
 
 	if(res != ERR_OK) {
 		for(;;) {//IIC Error
-		  APP_FatalError();
+		  APP_FatalError(__FILE__, __LINE__);
 		}
 	}
 

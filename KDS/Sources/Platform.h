@@ -20,8 +20,8 @@
 #endif
 
 /* Sensor configurations */
-#define PL_CONFIG_HAS_LIGHT_SENSOR   (0 && PL_BOARD_REV==22)
-#define PL_CONFIG_HAS_ACCEL_SENSOR   (0 && PL_BOARD_REV==22)
+#define PL_CONFIG_HAS_LIGHT_SENSOR   (1 && PL_BOARD_REV==22)
+#define PL_CONFIG_HAS_ACCEL_SENSOR   (1 && PL_BOARD_REV==22)
 #define PL_CONFIG_HAS_GAUGE_SENSOR   (1 && (PL_BOARD_REV==21||PL_BOARD_REV==22)) /* LC709203F on V2.1. Earlier board had an ADC */
 #define PL_CONFIG_HAS_BATT_ADC       (1 && PL_BOARD_REV==20)
 #define PL_CONFIG_HAS_SW_RTC         (0) /* disabled, as we use HW RTC. SW RTC would require a FreeRTOS timer if using tickless idle mode */

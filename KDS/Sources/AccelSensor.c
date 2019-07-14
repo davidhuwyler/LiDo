@@ -53,7 +53,7 @@ void AccelSensor_init(void) {
 	res = GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_CTRL_REG1 , 0x1F);		//0x1F = 1Hz samples & LowpowerMode on; 0x0F = PowerDownMode
 	res |= GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_TEMP_CFG , 0xC0);		//Enable Temp. Measurement
 	if(res != ERR_OK) {
-		APP_FatalError();
+		APP_FatalError(__FILE__, __LINE__);
 	}
 }
 

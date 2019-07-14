@@ -133,8 +133,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp, bool for
     WatchDog_StartComputationTime(WatchDog_TakeLidoSample);
     sample->unixTimeStamp = unixTimestamp;
 #if PL_CONFIG_HAS_ACCEL_SENSOR
-    if(AccelSensor_getValues(&accelAndTemp) != ERR_OK)
-    {
+    if(AccelSensor_getValues(&accelAndTemp) != ERR_OK) {
       SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_ACCELSENS_ERROR, "Accel get values failed");
     }
     sample->accelX = accelAndTemp.xValue;
@@ -221,15 +220,15 @@ static bool APP_newDay(void) {
 }
 
 static bool APP_newHour(void) {
-   static TIMEREC oldTime;
-   TIMEREC newTime;
+  static TIMEREC oldTime;
+  TIMEREC newTime;
 
-   TmDt1_GetTime(&newTime);
-   if(newTime.Hour != oldTime.Hour) {
-     oldTime = newTime;
-     return TRUE;
-   }
-   return FALSE;
+  TmDt1_GetTime(&newTime);
+  if(newTime.Hour != oldTime.Hour) {
+    oldTime = newTime;
+    return TRUE;
+  }
+  return FALSE;
 }
 
 void APP_resumeSampleTaskFromISR(void) {

@@ -37,8 +37,8 @@ CMD>   < AppData print
 00> SAMPLE_AUTO_OFF = -
 
 User Interface:
-- device is in sleep mode:
-  - 3sec press: wake up => active mode, blinks white LED
+- device is powered down:
+  - 1 sec press: wake up => active mode, blinks white LED
 
 - active device:
   - 1x short press: set marker (1x green blink) if sampling
@@ -46,8 +46,8 @@ User Interface:
   - 3x short press: no functionality
   - 4x short press: disable communication/shell, go into low power mode
   - 5x short press: software reset
-  - 6x short press: power off
-  - 9sec press after power-on: format device (red on after power-on, goes out after 3 secs, on at 6s and off at 9s)
+  - 6x short press: power down
+  - (9sec press after power-on: format device (red on after power-on, goes out after 3 secs, on at 6s and off at 9s))
 
 - short press while logging: setting marker (confirmed with green LED blink)
 - logging: indication with short purple LED
