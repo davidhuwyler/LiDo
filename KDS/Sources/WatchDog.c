@@ -119,7 +119,7 @@ static void WatchDog_Task(void *param) {
 #endif
 #if PL_CONFIG_HAS_WATCHDOG
 			for(;;) {
-			  APP_FatalError();
+			  APP_FatalError(__FILE__, __LINE__);
 			}
 #else
       #warning "watchdog is disabled!"

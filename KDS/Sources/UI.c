@@ -67,14 +67,14 @@ static void vTimerCallback_LED_ModeIndicator(TimerHandle_t pxTimer) {
   }
   if(localNofBtnConfirmBlinks>0) { /* still blinkys to go on ... */
     if (xTimerChangePeriod(uiLEDmodeIndicatorTimer, timerDelayMS, 0) != pdPASS){
-      APP_FatalError();
+      APP_FatalError(__FILE__, __LINE__);
     }
     if (xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { /* start timer */
-      APP_FatalError();
+      APP_FatalError(__FILE__, __LINE__);
     }
   } else { /* stop timer */
     if (xTimerStop(uiLEDmodeIndicatorTimer, 0)!=pdPASS) {
-      APP_FatalError();
+      APP_FatalError(__FILE__, __LINE__);
     }
   }
 }
@@ -86,10 +86,10 @@ static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks) {
   LED_B_Off();
   LED_G_On();
   if (xTimerChangePeriod(uiLEDmodeIndicatorTimer, UI_LED_MODE_INDICATOR_DURATION_ON_MS, 0) != pdPASS){
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
   if (xTimerReset(uiLEDmodeIndicatorTimer, 0)!=pdPASS) { /* start timer */
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 }
 
@@ -126,10 +126,10 @@ static void UI_ButtonCounter(void) {
 		 ongoingButtonPress = TRUE;
 		 buttonCnt++;
 		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS) {
-		   APP_FatalError();
+		   APP_FatalError(__FILE__, __LINE__);
 		 }
 		 if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS) {
-		   APP_FatalError();
+		   APP_FatalError(__FILE__, __LINE__);
 		 }
 	}
 }
@@ -165,11 +165,11 @@ static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer) {
 static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer) {
 	if(USER_BUTTON_PRESSED())	{
 		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS) {
-		  APP_FatalError();
+		  APP_FatalError(__FILE__, __LINE__);
 		}
 	} else {
 		if (xTimerReset(uiButtonMultiPressTimer, 0)!=pdPASS) {
-		  APP_FatalError();
+		  APP_FatalError(__FILE__, __LINE__);
 		}
 		ongoingButtonPress = FALSE;
 	}
@@ -218,7 +218,7 @@ void UI_LEDpulse(UI_LEDs_t color) {
 		break;
 	} /* switch */
 	if (uiLEDpulseIndicatorTimer!=NULL && xTimerReset(uiLEDpulseIndicatorTimer, 0)!=pdPASS) {
-	  APP_FatalError();
+	  APP_FatalError(__FILE__, __LINE__);
 	}
 }
 
@@ -229,7 +229,7 @@ void UI_Init(void) {
 										 (void*)0, /* timer ID */
 										 vTimerCallback_ButtonMultiPressTimer); /* callback */
 	if (uiButtonMultiPressTimer==NULL) {
-	  APP_FatalError();
+	  APP_FatalError(__FILE__, __LINE__);
 	}
 	uiButtonDebounceTimer = xTimerCreate( "tmrUiBtnDeb", /* name */
 										 pdMS_TO_TICKS(UI_BUTTON_DEBOUNCE_INTERVALL_MS), /* period/time */
@@ -237,7 +237,7 @@ void UI_Init(void) {
 										 (void*)1, /* timer ID */
 										 vTimerCallback_ButtonDebounceTimer); /* callback */
 	if (uiButtonDebounceTimer==NULL) {
-	  APP_FatalError();
+	  APP_FatalError(__FILE__, __LINE__);
 	}
 	uiLEDmodeIndicatorTimer = xTimerCreate( "tmrUiLEDmodeInd", /* name */
 										 pdMS_TO_TICKS(UI_LED_MODE_INDICATOR_DURATION_ON_MS+UI_LED_MODE_INDICATOR_DURATION_OFF_MS), /* period/time */
@@ -245,7 +245,7 @@ void UI_Init(void) {
 										 (void*)3, /* timer ID */
 										 vTimerCallback_LED_ModeIndicator); /* callback */
 	if (uiLEDmodeIndicatorTimer==NULL) {
-	  APP_FatalError();
+	  APP_FatalError(__FILE__, __LINE__);
 	}
 
 	uiLEDpulseIndicatorTimer = xTimerCreate( "tmrUiLEDpulse", /* name */
@@ -254,7 +254,7 @@ void UI_Init(void) {
 										 (void*)4, /* timer ID */
 										 vTimerCallback_LEDpulse); /* callback */
 	if (uiLEDpulseIndicatorTimer==NULL) {
-	  APP_FatalError();
+	  APP_FatalError(__FILE__, __LINE__);
 	}
 	uiInitDone = TRUE;
 }

@@ -393,7 +393,7 @@ void LightSensor_Done_ISR(void) {
 void LightSensor_Done_ISR(void)
 {
   for(;;) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 }
 #endif /* PL_CONFIG_HAS_LIGHT_SENSOR */

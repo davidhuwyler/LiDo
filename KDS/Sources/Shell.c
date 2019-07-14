@@ -269,7 +269,7 @@ void SHELL_Init(void) {
   PORT_PDD_SetPinPullEnable(PORTB_BASE_PTR, 17, PORT_PDD_PULL_ENABLE);
 #endif
   if (xTaskCreate(SHELL_task, "Shell", 3000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS) {
-	  APP_FatalError();
+	  APP_FatalError(__FILE__, __LINE__);
   }
 }
 

@@ -162,6 +162,6 @@ uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, co
 
 void PowerManagement_init(void) {
   if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 }

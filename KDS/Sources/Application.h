@@ -45,6 +45,6 @@ void APP_suspendSampleTask(void);
 void APP_resumeSampleTaskFromISR(void);
 uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
-void APP_FatalError(void);
+void APP_FatalError(const char *fileName, unsigned int lineNo);
 
 #endif /* SOURCES_APPLICATION_H_ */

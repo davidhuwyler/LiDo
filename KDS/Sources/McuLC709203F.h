@@ -27,6 +27,8 @@ uint8_t McuLC_GetICversion(uint16_t *pVersion);
 
 uint8_t McuLC_SetTemperatureMeasurementMode(bool i2cMode);
 
+uint8_t McuLC_SetPowerMode(bool sleepMode);
+
 /*!
  * \brief Get the current temperature measurement mode
  * \param pDir Pointer where to store the mode

@@ -60,7 +60,7 @@ static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
 static volatile bool requestForPowerOff = FALSE;
 
-void APP_FatalError(void) {
+void APP_FatalError(const char *fileName, unsigned int lineNo) {
   for(;;) {
     LED_R_Neg();
     WAIT1_Waitms(100);
@@ -109,6 +109,7 @@ static void APP_softwareResetIfRequested(void) {
 static void APP_PowerOffIfRequested(void) {
   if(requestForPowerOff) {
     requestForPowerOff = FALSE;
+    McuLC_SetPowerMode(TRUE); /* put charge/gauge IC into sleep mode, otherwise it consumes up to 100 uA! */
     if (fileIsOpen) {
       FS_closeFile(&sampleFile);
     }
@@ -245,7 +246,7 @@ void APP_suspendSampleTask(void) {
   if(sampletaskHandle!=NULL) {
     vTaskSuspend(sampletaskHandle);
   } else {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 }
 
@@ -253,7 +254,7 @@ void APP_suspendWriteFileTask(void) {
   if(writeFileTaskHandle!=NULL) {
     vTaskSuspend(writeFileTaskHandle);
   } else {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 }
 
@@ -265,7 +266,7 @@ static void APP_sample_task(void *param) {
   (void)param; /* not used */
   sampleMutex = xSemaphoreCreateRecursiveMutex();
   if (sampleMutex == NULL) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
   xSemaphoreGiveRecursive(sampleMutex);
   for(;;) {
@@ -357,7 +358,7 @@ static void APP_writeLidoFile_task(void *param) {
   (void)param; /* not used */
   fileAccessMutex = xSemaphoreCreateRecursiveMutex();
   if( fileAccessMutex == NULL ) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
   xSemaphoreGiveRecursive(fileAccessMutex);
   for(;;) {
@@ -383,14 +384,14 @@ static void APP_init(void) {
   //The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
   lidoSamplesToWrite = xQueueCreate(15, sizeof(liDoSample_t));
   if (lidoSamplesToWrite==NULL) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
   if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
   RTC_EnableRTCInterrupt();
   if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 }
 
@@ -723,7 +724,7 @@ void APP_Run(void) {
   PIN_POWER_ON_ClrVal(); /* power off */
 #endif
   if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
-    APP_FatalError(); /* error! probably out of memory */
+    APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
   }
   vTaskStartScheduler();
   for(;;) {} /* should not get here */
