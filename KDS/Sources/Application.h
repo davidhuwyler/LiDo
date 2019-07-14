@@ -47,6 +47,4 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 
 void APP_FatalError(void);
 
-//void void RTC_ALARM_ISR(void);
-
 #endif /* SOURCES_APPLICATION_H_ */

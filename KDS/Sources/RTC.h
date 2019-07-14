@@ -12,6 +12,7 @@
 
 void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix);
 void RTC_setTimeUnixFormat(int32_t rtcTimeUnix);
+void RTC_InitRTCInterrupt(void);
 void RTC_init(bool softInit);
 
 #endif /* SOURCES_RTC_H_ */

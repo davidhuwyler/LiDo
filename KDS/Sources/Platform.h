@@ -32,8 +32,8 @@
 
 /* debug ONLY options */
 #define PL_CONFIG_HAS_WATCHDOG       (0) /* disable for better debugging only! */
-#define PL_CONFIG_HAS_LOW_POWER      (1) /* disable for debugging only! */
-#define PL_CONFIG_HAS_SHELL_SHUTOWN  (1) /* if USB cable disconnect shall disable the shell and shutdown the USB peripheral to save power. */
+#define PL_CONFIG_HAS_LOW_POWER      (0) /* disable for debugging only! */
+#define PL_CONFIG_HAS_SHELL_SHUTOWN  (0) /* if USB cable disconnect shall disable the shell and shutdown the USB peripheral to save power. */
 
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
   /* User push button (PTC1) is HIGH active */
