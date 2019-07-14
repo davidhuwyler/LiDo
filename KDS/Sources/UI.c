@@ -94,8 +94,10 @@ static void UI_StartBtnConfirmBlinker(uint8_t nofBtnConfirmBlinks) {
 }
 
 static void UI_Button_1pressDetected(void) {
-	UI_StartBtnConfirmBlinker(1);
-	APP_setMarkerInLog();
+  if (AppDataFile_GetSamplingEnabled()) {
+    UI_StartBtnConfirmBlinker(1);
+    APP_setMarkerInLog();
+  }
 }
 
 static void UI_Button_2pressDetected(void) {
