@@ -6,10 +6,10 @@
  *
  *      UserInterface of the LiDo
  *
- *      - User Button PTC11
+ *      - User Button
  *      - LEDs
  *
- *      Debouncin internet resource:
+ *      Debouncing internet resource:
  *      http://www.ganssle.com/debouncing.htm
  */
 #include "Platform.h"
@@ -116,14 +116,17 @@ static void UI_Button_5pressDetected(void) {
 	APP_requestForSoftwareReset();
 }
 
-static void UI_ButtonCounter(void) {
-	static TickType_t lastButtonPressTimeStamp;
+static void UI_Button_6pressDetected(void) {
+  UI_StartBtnConfirmBlinker(6);
+  APP_requestForPowerOff();
+}
 
+static void UI_ButtonCounter(void) {
 	if(!ongoingButtonPress) {
 		 ongoingButtonPress = TRUE;
 		 buttonCnt++;
 		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS) {
-		    APP_FatalError();
+		   APP_FatalError();
 		 }
 		 if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS) {
 		   APP_FatalError();
@@ -149,6 +152,9 @@ static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer) {
       break;
     case 5:
       UI_Button_5pressDetected();
+      break;
+    case 6:
+      UI_Button_6pressDetected();
       break;
     default:
       break;

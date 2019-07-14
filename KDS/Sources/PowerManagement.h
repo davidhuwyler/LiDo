@@ -14,6 +14,8 @@
 uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 
 bool PowerManagement_IsCharging(void);
+void PowerManagement_PowerOn(void);
+void PowerManagement_PowerOff(void);
 void PowerManagement_init(void);
 void PowerManagement_ResumeTaskIfNeeded(void);
 uint16_t PowerManagement_getBatteryVoltage(void);

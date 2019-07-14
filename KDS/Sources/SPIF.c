@@ -111,118 +111,102 @@ bool SPIF_isBusy(void)
 	  return (status&1);  //Bit1 of StatusReg = WIP (Write in progress)
 }
 
-void SPIF_WaitIfBusy(void)
-{
-	  while(SPIF_isBusy())
-	  {
-	    WAIT1_Waitus(30);
-	  }
+void SPIF_WaitIfBusy(void) {
+  while(SPIF_isBusy()) {
+    WAIT1_Waitus(30);
+  }
 }
 
-uint8_t SPIF_GoIntoDeepPowerDown(void)
-{
-
-      SPIF_WaitIfBusy();
-      SPIF_CS_ENABLE();
-      SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
-      SPIF_CS_DISABLE();
-
-      return ERR_OK;
+uint8_t SPIF_GoIntoDeepPowerDown(void) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_ENABLE_DEEP_SLEEP);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
-uint8_t SPIF_ReleaseFromDeepPowerDown(void)
-{
-    SPIF_CS_ENABLE();
-    SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
-    SPIF_CS_DISABLE();
-    WAIT1_Waitus(30);    //It takes 30 us to wake from DeepPowerDown
-
-    return ERR_OK;
+uint8_t SPIF_ReleaseFromDeepPowerDown(void) {
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_DISABLE_DEEP_SLEEP);
+  SPIF_CS_DISABLE();
+  WAIT1_Waitus(30);    //It takes 30 us to wake from DeepPowerDown
+  return ERR_OK;
 }
 
-
-uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize)
-{
-	  SPIF_WaitIfBusy();
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_READ_DATA);
-	  SPI_WRITE(address>>24);
-	  SPI_WRITE(address>>16);
-	  SPI_WRITE(address>>8);
-	  SPI_WRITE(address);
-
-	  SPI_WRITE_READ_BLOCK(SPIdummyBuf,buf,bufSize);
-
-	  SPIF_CS_DISABLE();
-	  return ERR_OK;
+uint8_t SPIF_Read(uint32_t address, uint8_t *buf, size_t bufSize) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_READ_DATA);
+  SPI_WRITE(address>>24);
+  SPI_WRITE(address>>16);
+  SPI_WRITE(address>>8);
+  SPI_WRITE(address);
+  SPI_WRITE_READ_BLOCK(SPIdummyBuf,buf,bufSize);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
-uint8_t SPIF_EraseAll(void)
-{
-	  SPIF_WaitIfBusy();
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
-	  SPIF_CS_DISABLE();
-	  WAIT1_Waitus(1);
+uint8_t SPIF_EraseAll(void) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
+  SPIF_CS_DISABLE();
+  WAIT1_Waitus(1);
 
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_ERASE_CHIP);
-	  SPIF_CS_DISABLE();
-	  return ERR_OK;
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_ERASE_CHIP);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
-uint8_t SPIF_EraseSector4K(uint32_t address)
-{
-	  SPIF_WaitIfBusy();
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
-	  SPIF_CS_DISABLE();
-	  WAIT1_Waitus(1);
+uint8_t SPIF_EraseSector4K(uint32_t address) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
+  SPIF_CS_DISABLE();
+  WAIT1_Waitus(1);
 
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_ERASE_4K_SECTOR);
-	  SPI_WRITE(address>>24);
-	  SPI_WRITE(address>>16);
-	  SPI_WRITE(address>>8);
-	  SPI_WRITE(address);
-	  SPIF_CS_DISABLE();
-	  return ERR_OK;
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_ERASE_4K_SECTOR);
+  SPI_WRITE(address>>24);
+  SPI_WRITE(address>>16);
+  SPI_WRITE(address>>8);
+  SPI_WRITE(address);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
-uint8_t SPIF_EraseBlock32K(uint32_t address)
-{
-	  SPIF_WaitIfBusy();
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
-	  SPIF_CS_DISABLE();
-	  WAIT1_Waitus(1);
+uint8_t SPIF_EraseBlock32K(uint32_t address) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
+  SPIF_CS_DISABLE();
+  WAIT1_Waitus(1);
 
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_ERASE_32K_BLOCK);
-	  SPI_WRITE(address>>24);
-	  SPI_WRITE(address>>16);
-	  SPI_WRITE(address>>8);
-	  SPI_WRITE(address);
-	  SPIF_CS_DISABLE();
-	  return ERR_OK;
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_ERASE_32K_BLOCK);
+  SPI_WRITE(address>>24);
+  SPI_WRITE(address>>16);
+  SPI_WRITE(address>>8);
+  SPI_WRITE(address);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
-uint8_t SPIF_EraseBlock64K(uint32_t address)
-{
-	  SPIF_WaitIfBusy();
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
-	  SPIF_CS_DISABLE();
-	  WAIT1_Waitus(1);
-
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_ERASE_64K_BLOCK);
-	  SPI_WRITE(address>>24);
-	  SPI_WRITE(address>>16);
-	  SPI_WRITE(address>>8);
-	  SPI_WRITE(address);
-	  SPIF_CS_DISABLE();
-	  return ERR_OK;
+uint8_t SPIF_EraseBlock64K(uint32_t address) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
+  SPIF_CS_DISABLE();
+  WAIT1_Waitus(1);
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_ERASE_64K_BLOCK);
+  SPI_WRITE(address>>24);
+  SPI_WRITE(address>>16);
+  SPI_WRITE(address>>8);
+  SPI_WRITE(address);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
 /*!
@@ -232,41 +216,37 @@ uint8_t SPIF_EraseBlock64K(uint32_t address)
  * \param dataSize size of data in bytes, max 256
  * \return error code, ERR_OK for no error
  */
-uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize)
-{
-	  SPIF_WaitIfBusy();
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
-	  SPIF_CS_DISABLE();
-	  WAIT1_Waitus(1);
-	  SPIF_CS_ENABLE();
-	  SPI_WRITE(SPIF_SPI_CMD_PROGRAM_PAGE);
-	  SPI_WRITE(address>>24);
-	  SPI_WRITE(address>>16);
-	  SPI_WRITE(address>>8);
-	  SPI_WRITE(address);
-
-	  SPI_WRITE_READ_BLOCK((uint8_t *)data,SPIdummyBuf,dataSize);
-
-	  SPIF_CS_DISABLE();
-	  return ERR_OK;
+uint8_t SPIF_ProgramPage(uint32_t address, const uint8_t *data, size_t dataSize) {
+  SPIF_WaitIfBusy();
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_WRITE_ENABLE);
+  SPIF_CS_DISABLE();
+  WAIT1_Waitus(1);
+  SPIF_CS_ENABLE();
+  SPI_WRITE(SPIF_SPI_CMD_PROGRAM_PAGE);
+  SPI_WRITE(address>>24);
+  SPI_WRITE(address>>16);
+  SPI_WRITE(address>>8);
+  SPI_WRITE(address);
+  SPI_WRITE_READ_BLOCK((uint8_t *)data,SPIdummyBuf,dataSize);
+  SPIF_CS_DISABLE();
+  return ERR_OK;
 }
 
 
-uint8_t SPIF_GetCapacity(const uint8_t *id, uint32_t *capacity)
-{
-	  uint32_t n = 0x100000; // unknown chips, default to 1 MByte
+uint8_t SPIF_GetCapacity(const uint8_t *id, uint32_t *capacity) {
+  uint32_t n = 0x100000; // unknown chips, default to 1 MByte
 
-	  if (id[2] >= 16 && id[2] <= 31) {
-	    n = 1ul << id[2];
-	  } else if (id[2] >= 32 && id[2] <= 37) {
-	    n = 1ul << (id[2] - 6);
-	  } else if ((id[0]==0 && id[1]==0 && id[2]==0) || (id[0]==255 && id[1]==255 && id[2]==255)) {
-	    *capacity = 0;
-	    return ERR_FAILED;
-	  }
-	  *capacity = n;
-	  return ERR_OK;
+  if (id[2] >= 16 && id[2] <= 31) {
+    n = 1ul << id[2];
+  } else if (id[2] >= 32 && id[2] <= 37) {
+    n = 1ul << (id[2] - 6);
+  } else if ((id[0]==0 && id[1]==0 && id[2]==0) || (id[0]==255 && id[1]==255 && id[2]==255)) {
+    *capacity = 0;
+    return ERR_FAILED;
+  }
+  *capacity = n;
+  return ERR_OK;
 }
 
 //Serial number not supported by the MX25L51245G Chip

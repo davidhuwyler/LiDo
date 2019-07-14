@@ -25,9 +25,11 @@
   #include "BAT_ALARM.h"
 #endif
 
-#define POWER_MANAGEMENT_LIPO_WARNING     34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
-#define POWER_MANAGEMENT_LIPO_CUTOFF      29789 // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
-#define POWER_MANAGEMENT_LIPO_WARNING_HYS 36739 // = 3.7V --> ADCval = U / 2 * ( 65535 / 3.3V )
+#if PL_CONFIG_HAS_BATT_ADC
+  #define POWER_MANAGEMENT_LIPO_WARNING     34753 // = 3.5V --> ADCval = U / 2 * ( 65535 / 3.3V ) --> approx 10% Capacity
+  #define POWER_MANAGEMENT_LIPO_CUTOFF      29789 // = 3.0V --> ADCval = U / 2 * ( 65535 / 3.3V )
+  #define POWER_MANAGEMENT_LIPO_WARNING_HYS 36739 // = 3.7V --> ADCval = U / 2 * ( 65535 / 3.3V )
+#endif
 
 #define POWER_MANAGEMENT_LIPO_OFFSET 650
 
@@ -84,6 +86,14 @@ void PowerManagement_ResumeTaskIfNeeded(void) {
   }
 }
 
+void PowerManagement_PowerOff(void) {
+  PIN_POWER_ON_ClrVal();  /* cut power (only effective if there no Vcc from USB) */
+}
+
+void PowerManagement_PowerOn(void) {
+  PIN_POWER_ON_SetVal();  /* turn on power FET pin */
+}
+
 /* Return the Battery Voltage in mV */
 uint16_t PowerManagement_getBatteryVoltage(void) {
 #if PL_CONFIG_HAS_BATT_ADC
@@ -111,8 +121,9 @@ uint16_t PowerManagement_getBatteryVoltage(void) {
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"power", (const unsigned char*)"\r\n", io->stdOut);
   CLS1_SendStatusStr((unsigned char*)"  charging", PowerManagement_IsCharging()?(unsigned char*)"yes\r\n":(unsigned char*)"no\r\n", io->stdOut);
+  CLS1_SendStatusStr((unsigned char*)"  power on", PIN_POWER_ON_GetVal()?(unsigned char*)"yes\r\n":(unsigned char*)"no\r\n", io->stdOut);
 #if PL_CONFIG_HAS_BAT_ALARM_PIN
-  CLS1_SendStatusStr((unsigned char*)"  alarm", BAT_ALARM_GetVal()?(unsigned char*)"no (HIGH)\r\n":(unsigned char*)"yes (LOW)\r\n", io->stdOut);
+  CLS1_SendStatusStr((unsigned char*)"  bat alarm", BAT_ALARM_GetVal()?(unsigned char*)"no (HIGH)\r\n":(unsigned char*)"yes (LOW)\r\n", io->stdOut);
 #endif
   return ERR_OK;
 }
@@ -124,12 +135,22 @@ uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, co
 
   if (UTIL1_strcmp((char*)cmd, CLS1_CMD_HELP)==0 || UTIL1_strcmp((char*)cmd, "power help")==0) {
     CLS1_SendHelpStr((unsigned char*)"power", (const unsigned char*)"Group of power management commands\r\n", io->stdOut);
-    CLS1_SendHelpStr((unsigned char*)"  status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  on", (const unsigned char*)"Power on (only useful if USB connected)\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  off", (const unsigned char*)"Power off (effective if no USB connected)\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
   } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "power status")==0)) {
     *handled = TRUE;
     return PrintStatus(io);
+  } else if (UTIL1_strcmp((char*)cmd, "power on")==0) {
+    *handled = TRUE;
+    PowerManagement_PowerOn();
+    return ERR_OK;
+  } else if (UTIL1_strcmp((char*)cmd, "power off")==0) {
+    *handled = TRUE;
+    APP_requestForPowerOff();
+    return ERR_OK;
   }
   return res;
 }

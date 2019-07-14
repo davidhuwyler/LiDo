@@ -40,6 +40,7 @@ uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp,bool forc
 void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);
+void APP_requestForPowerOff(void);
 void APP_suspendSampleTask(void);
 void APP_resumeSampleTaskFromISR(void);
 uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);

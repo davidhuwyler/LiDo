@@ -59,6 +59,7 @@ static volatile bool fileIsOpen = FALSE;
 static volatile bool setOneMarkerInLog = FALSE;
 static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
+static volatile bool requestForPowerOff = FALSE;
 
 void APP_FatalError(void) {
   for(;;) {
@@ -79,6 +80,10 @@ void APP_requestForSoftwareReset(void) {
   requestForSoftwareReset = TRUE;
 }
 
+void APP_requestForPowerOff(void) {
+  requestForPowerOff = TRUE;
+}
+
 static void APP_toggleEnableSamplingIfRequested(void) {
   if(toggleEnablingSampling) {
     WatchDog_StartComputationTime(WatchDog_ToggleEnableSampling);
@@ -95,10 +100,20 @@ static void APP_toggleEnableSamplingIfRequested(void) {
 static void APP_softwareResetIfRequested(void) {
   if(requestForSoftwareReset) {
     requestForSoftwareReset = FALSE;
-    if(fileIsOpen) {
+    if (fileIsOpen) {
       FS_closeFile(&sampleFile);
     }
     KIN1_SoftwareReset();
+  }
+}
+
+static void APP_PowerOffIfRequested(void) {
+  if(requestForPowerOff) {
+    requestForPowerOff = FALSE;
+    if (fileIsOpen) {
+      FS_closeFile(&sampleFile);
+    }
+    PowerManagement_PowerOff(); /* only effective if USB is not powering the board */
   }
 }
 
@@ -220,7 +235,7 @@ void APP_resumeSampleTaskFromISR(void) {
   BaseType_t xYieldRequired;
 
   if(sampletaskHandle!=NULL) {
-    xYieldRequired = xTaskResumeFromISR(sampletaskHandle);//Enable Sample Task for Execution
+    xYieldRequired = xTaskResumeFromISR(sampletaskHandle); // Enable Sample Task for Execution
     if( xYieldRequired == pdTRUE ) {
       portYIELD_FROM_ISR(pdTRUE);
     }
@@ -244,19 +259,17 @@ void APP_suspendWriteFileTask(void) {
 }
 
 static void APP_sample_task(void *param) {
-  (void)param;
   uint8_t sampleError = ERR_OK;
   liDoSample_t sample;
-  TickType_t xLastWakeTime;
-  static int32_t unixTSlastSample;
   int32_t unixTScurrentSample;
+
+  (void)param; /* not used */
   sampleMutex = xSemaphoreCreateRecursiveMutex();
   if (sampleMutex == NULL) {
     APP_FatalError();
   }
   xSemaphoreGiveRecursive(sampleMutex);
   for(;;) {
-    xLastWakeTime = xTaskGetTickCount();
     WatchDog_StartComputationTime(WatchDog_MeasureTaskRuns);
     if(AppDataFile_GetSamplingEnabled()) {
       RTC_getTimeUnixFormat(&unixTScurrentSample);
@@ -276,7 +289,7 @@ static void APP_sample_task(void *param) {
       vTaskResume(writeFileTaskHandle);
     }
     PowerManagement_ResumeTaskIfNeeded();
-    APP_suspendSampleTask();
+    APP_suspendSampleTask(); /* will be woken up either by RTC alarm or LightSensor_Done_ISR() signal */
   } /* for */
 }
 
@@ -340,9 +353,9 @@ static void APP_writeQueuedSamplesToFile(void) {
 }
 
 static void APP_writeLidoFile_task(void *param) {
-  (void)param;
-  TickType_t xLastWakeTime;
   uint8_t samplingIntervall;
+
+  (void)param; /* not used */
   fileAccessMutex = xSemaphoreCreateRecursiveMutex();
   if( fileAccessMutex == NULL ) {
     APP_FatalError();
@@ -353,6 +366,7 @@ static void APP_writeLidoFile_task(void *param) {
       SPIF_ReleaseFromDeepPowerDown();
     }
     APP_softwareResetIfRequested();
+    APP_PowerOffIfRequested();
     APP_toggleEnableSamplingIfRequested();
     AppDataFile_GetSampleIntervall(&samplingIntervall);
     APP_makeNewFileIfNeeded();
@@ -703,7 +717,7 @@ void RTC_ALARM_ISR(void) {
   } else { /* Alarm interrupt */
     uint8_t sampleIntervall;
     AppDataFile_GetSampleIntervall(&sampleIntervall);
-    RTC_TAR = RTC_TSR + sampleIntervall - 1;    //SetNext RTC Alarm
+    RTC_TAR = RTC_TSR + sampleIntervall - 1;    // Set Next RTC Alarm
     APP_resumeSampleTaskFromISR();
   }
   /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
@@ -712,7 +726,7 @@ void RTC_ALARM_ISR(void) {
 }
 
 void APP_Run(void) {
-  PIN_POWER_ON_SetVal(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
+  PowerManagement_PowerOn(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
 #if 0
   //EmercencyBreak: If LowPower went wrong...
   while(USER_BUTTON_PRESSED()) {

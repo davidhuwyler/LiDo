@@ -47,13 +47,14 @@ User Interface:
 - device is in sleep mode:
   - 3sec press: wake up => active mode
 
-- turn on device:
-
-- 1x short press: set marker (1x green blink)
-- 2x short press: toggle sampling (2x green blink)
-- 4x short press: disable communication (if device is active), go into low power mode
-- 
-- 9sec press after power-on: format device (red on after power-on, goes out after 3 secs, on at 6s and off at 9s)
+- active device:
+  - 1x short press: set marker (1x green blink) if sampling
+  - 2x short press: toggle sampling (2x green blink)
+  - 3x short press: no functionality
+  - 4x short press: disable communication/shell, go into low power mode
+  - 5x short press: software reset
+  - 6x short press: power off
+  - 9sec press after power-on: format device (red on after power-on, goes out after 3 secs, on at 6s and off at 9s)
 
 - short press while logging: setting marker (confirmed with green LED blink)
 - logging: indication with short purple LED
