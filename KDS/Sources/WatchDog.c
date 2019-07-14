@@ -148,13 +148,10 @@ void WatchDog_ResumeTask(void) {
 	}
 }
 
-void WatchDog_Init(void)
-{
+void WatchDog_Init(void) {
 #if PL_CONFIG_HAS_WATCHDOG
 	WDog1_Enable();
 	WDog1_Clear();
-#else
-  #warning "watchdog is disabled!"
 #endif
 	//initial Dog feed...
 	watchDogKickSources[WatchDog_LiDoInit].isSingleCheckWatchdogSouce	= TRUE;

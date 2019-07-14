@@ -10,6 +10,7 @@
 #include "FRTOS1.h"
 #include "LED_R.h"
 #include "LED_G.h"
+#include "LED_B.h"
 #include "WAIT1.h"
 #include "KIN1.h"
 #include "LightSensor.h"
@@ -469,12 +470,11 @@ static void ResetI2CBus(void) {
 
 static void APP_init_task(void *param) {
   (void)param; /* not used */
+  //LED_G_On();
+  //vTaskDelay(pdMS_TO_TICKS(200));
+  //LED_G_Off();
 
-  LED_G_On();
-  vTaskDelay(pdMS_TO_TICKS(200));
-  LED_G_Off();
-
-  if(!APP_WaitIfButtonPressed3s()) { //Normal init if the UserButton is not pressed
+  if(!APP_WaitIfButtonPressed3s()) { /* Normal init if the UserButton is not pressed */
 #if PL_CONFIG_HAS_GAUGE_SENSOR
     McuLC_Wakeup(); /* needs to be done before (!!!) any other I2C communication! */
 #endif
@@ -541,35 +541,6 @@ void APP_CloseSampleFile(void) {
   xSemaphoreGiveRecursive(fileAccessMutex);
 }
 
-void APP_Run(void) {
-  PIN_POWER_ON_SetVal(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
-#if 0
-  //EmercencyBreak: If LowPower went wrong...
-  while(USER_BUTTON_PRESSED()) {
-    LED_R_Neg();
-    WAIT1_Waitms(50);
-  }
-#endif
-#if 1
-  for (int i=0; i<4; i++) {
-    LED_G_Neg();
-    WAIT1_Waitms(250);
-  }
-#endif
-#if 0
-  for (int i=0;i<20;i++) {
-    LED_R_Neg();
-    WAIT1_Waitms(500);
-  }
-  PIN_POWER_ON_ClrVal(); /* power off */
-#endif
-  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
-    APP_FatalError(); /* error! probably out of memory */
-  }
-  vTaskStartScheduler();
-  for(;;) {} /* should not get here */
-}
-
 #if 0
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
@@ -578,8 +549,7 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
 }
 #endif
 
-static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
-{
+static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io) {
   lfs_file_t sampleFile;
   uint8_t nofReadChars;
   bool samplingWasEnabled = FALSE;
@@ -600,8 +570,7 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
   }
   WatchDog_DisableSource(WatchDog_MeasureTaskRuns);
   //Read + Print Header:
-  if(FS_readLine(&sampleFile,samplePrintLine,120,&nofReadChars) != ERR_OK)
-  {
+  if(FS_readLine(&sampleFile,samplePrintLine,120,&nofReadChars) != ERR_OK) {
     SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"PrintLiDoFile read Header failed");
     return ERR_FAILED;
   }
@@ -611,8 +580,8 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
   CLS1_SendStr("\r\n",io->stdOut);
 
   //Read + Print Samples
-  while(FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK &&
-      nofReadChars == LIDO_SAMPLE_SIZE)
+  while(   FS_getLiDoSampleOutOfFile(&sampleFile,sampleBuf,LIDO_SAMPLE_SIZE,&nofReadChars) == ERR_OK
+        && nofReadChars == LIDO_SAMPLE_SIZE)
   {
     sampleNr++;
 
@@ -661,29 +630,23 @@ static uint8_t PrintLiDoFile(uint8_t* fileNameSrc, CLS1_ConstStdIOType *io)
     UTIL1_strcat(samplePrintLine,120," z");
     UTIL1_strcatNum8s(samplePrintLine, 120,sampleBuf[20]);
 
-    if(sampleBuf[21] & 0x80 )  //MarkerPresent!
-    {
+    if(sampleBuf[21] & 0x80) { //MarkerPresent!
       UTIL1_strcat(samplePrintLine,120," T: ");
       UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[21] & ~0x80);
       UTIL1_strcat(samplePrintLine,120," M: true");
-    }
-    else
-    {
+    } else {
       UTIL1_strcat(samplePrintLine,120," T: ");
       UTIL1_strcatNum8u(samplePrintLine, 120,sampleBuf[21]);
       UTIL1_strcat(samplePrintLine,120," M: false");
     }
-
     UTIL1_strcat(samplePrintLine,120,"\r\n");
     CLS1_SendStr(samplePrintLine,io->stdErr);
   }
 
-  if(FS_closeFile(&sampleFile) != ERR_OK)
-  {
+  if(FS_closeFile(&sampleFile) != ERR_OK) {
     SDEP_InitiateNewAlertWithMessage(SDEP_ALERT_STORAGE_ERROR,"FS_closeLiDoSampleFile failed");
     return ERR_FAILED;
   }
-
   WatchDog_EnableSource(WatchDog_MeasureTaskRuns);
   return ERR_OK;
 }
@@ -746,4 +709,35 @@ void RTC_ALARM_ISR(void) {
   /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
      exception return operation might vector to incorrect interrupt */
   __DSB();
+}
+
+void APP_Run(void) {
+  PIN_POWER_ON_SetVal(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
+#if 0
+  //EmercencyBreak: If LowPower went wrong...
+  while(USER_BUTTON_PRESSED()) {
+    LED_R_Neg();
+    WAIT1_Waitms(50);
+  }
+#endif
+#if 1
+  for (int i=0; i<4; i++) {
+    LED_G_Neg();
+    LED_B_Neg();
+    LED_R_Neg();
+    WAIT1_Waitms(100);
+  }
+#endif
+#if 0
+  for (int i=0;i<20;i++) {
+    LED_R_Neg();
+    WAIT1_Waitms(500);
+  }
+  PIN_POWER_ON_ClrVal(); /* power off */
+#endif
+  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
+    APP_FatalError(); /* error! probably out of memory */
+  }
+  vTaskStartScheduler();
+  for(;;) {} /* should not get here */
 }
