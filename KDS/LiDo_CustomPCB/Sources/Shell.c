@@ -52,7 +52,7 @@ static const CLS1_ParseCommandCallback CmdParserTable[] =
 #if PL_CONFIG_HAS_ACCEL_SENSOR
   AccelSensor_ParseCommand,
 #endif
-#if PL_CONFIG_HAS_GAUGE_SENSOR
+#if PL_CONFIG_HAS_GAUGE_SENSOR && MCULC709203F_CONFIG_PARSE_COMMAND_ENABLED
   McuLC_ParseCommand,
 #endif
   PowerManagement_ParseCommand,

@@ -45,6 +45,13 @@
 #include "BitIoLdd3.h"
 #include "PIN_POWER_ON.h"
 #include "BitIoLdd4.h"
+#include "GI2C1.h"
+#include "CI2C1.h"
+#include "I2C_SDA.h"
+#include "BitIoLdd11.h"
+#include "I2C_SCL.h"
+#include "BitIoLdd12.h"
+#include "UTIL1.h"
 #include "PIN_SPIF_PWR.h"
 #include "BitIoLdd5.h"
 #include "PIN_PS_MODE.h"
@@ -86,7 +93,11 @@ int main(void)
     LED_B_Off();
     WAIT1_Waitms(1000);
    }
-  TI1_Enable();
+  TI1_Enable(); /* enable LPTMR0 */
+
+  //PIN_PS_MODE_SetVal(); /* low power DC-DC */
+  //PIN_PS_MODE_ClrVal(); /* low power DC-DC */
+
   for(;;) {
     Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
   }

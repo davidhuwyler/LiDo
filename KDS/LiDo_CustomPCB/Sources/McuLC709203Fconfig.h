@@ -13,6 +13,11 @@
 extern "C" {
 #endif
 
+#ifndef MCULC709203F_CONFIG_PARSE_COMMAND_ENABLED
+  #define MCULC709203F_CONFIG_PARSE_COMMAND_ENABLED  (1)
+    /*!< 1: implementes command line shell. 0: no command line shell */
+#endif
+
 #ifndef MCULC709203F_CONFIG_USE_THERMISTOR
   #define MCULC709203F_CONFIG_USE_THERMISTOR  (0)
     /*!< 1: using Thermistor in battery. 0: using I2C mode */
