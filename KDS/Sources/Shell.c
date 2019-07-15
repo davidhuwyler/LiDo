@@ -211,27 +211,38 @@ static void SHELL_Disable(void) {
 }
 
 static void SHELL_task(void *param) {
-  TickType_t shellEnabledTimestamp;
-  TickType_t xLastWakeTime;
+  TickType_t shellStartedTimestamp;
+  TickType_t currTimestamp;
   int cntr = 0;
   bool shellDisablingIsInitiated = FALSE;
 
-  (void)param;
-  shellEnabledTimestamp = xTaskGetTickCount();
+  (void)param; /* not used */
+  shellStartedTimestamp = xTaskGetTickCount();
   /* initialize buffers */
   for(int i=0;i<sizeof(ios)/sizeof(ios[0]);i++) {
     ios[i].buf[0] = '\0';
   }
   for(;;) {
-	  xLastWakeTime = xTaskGetTickCount();
-	  /* Disable Shell if Requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected */
+    currTimestamp = xTaskGetTickCount();
+#if 0
+	  /* Disable shell if requested (button or SDEP) or if Shell runs already longer than 10s and USB_CDC is disconnected */
 	  if (	 shellDisablingRequest
-	      || ((xTaskGetTickCount()-shellEnabledTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS) && !CDC1_ApplicationStarted())
-	      || shellDisablingIsInitiated)
+        || shellDisablingIsInitiated
+	      || ((currTimestamp-shellStartedTimestamp > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS) && !CDC1_ApplicationStarted())
+	     )
 	  {
 	    shellDisablingIsInitiated = TRUE;
 		  SHELL_Disable();
 	  }
+#else
+	  if ((currTimestamp-shellStartedTimestamp) > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS) {
+	    CDC1_Deinit();
+	    USB1_Deinit();
+	    McuLC_SetPowerMode(TRUE); /* put into sleep mode */
+	    LowPower_EnableStopMode(); /* enable stop mode */
+	    vTaskSuspend(NULL); /* stop shell */
+	  }
+#endif
 	  SHELL_SwitchIOifNeeded();
 	  SDEP_Parse();
     /* process all I/Os */
@@ -240,14 +251,11 @@ static void SHELL_task(void *param) {
     }
 	  SDEPio_HandleShellCMDs();
 	  SDEP_SendPendingAlert();
-	  while(SDEPio_HandleFileCMDs(0) != ERR_RXEMPTY){}
-
-//	  if(SDEPio_HandleFileCMDs(0) == ERR_RXEMPTY) //Only Wait if there is no file to transfer
-//	  {
-//		  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
-//	  }
+	  while(SDEPio_HandleFileCMDs(0)!=ERR_RXEMPTY) {
+	    vTaskDelay(pdMS_TO_TICKS(5));
+	  }
 	  cntr++;
-	  if (cntr>200) { /* indicate shell tasks (and charging state) with a blinky */
+	  if (cntr>100) { /* indicate shell tasks (and charging state) with a blinky */
 	    cntr = 0;
 	    if (PowerManagement_IsCharging()) {
         UI_LEDpulse(LED_G);
@@ -255,7 +263,7 @@ static void SHELL_task(void *param) {
 	      UI_LEDpulse(LED_B);
 	    }
 	  }
-	  vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+	  vTaskDelay(pdMS_TO_TICKS(20));
   } /* for */
 }
 

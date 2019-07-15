@@ -9,15 +9,16 @@
 #include "Platform.h"
 #include "Application.h"
 #include "PORT_PDD.h"
+#include "LightSensor.h"
+#include "INT_LI_DONE.h"
 #if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
-  #include "PTB.h"  /* AMS sensor IRQ line is on PTB0 */
+ // #include "PTB.h"  /* AMS sensor IRQ line is on PTB0 */
 #elif (PL_BOARD_REV==22)
   #include "PTA.h" /* AMS sensor IRQ line is on PTA4 */
 #else
   #error "unknown board"
 #endif
 #if PL_CONFIG_HAS_LIGHT_SENSOR
-#include "LightSensor.h"
 #if PL_CONFIG_HAS_SENSOR_PWR_PIN
   #include "PIN_SENSOR_PWR.h" /* have FET to cut of power for sensors */
 #endif
@@ -391,19 +392,21 @@ void LightSensor_Done_ISR(void) {
 	}
 }
 #else /* dummy implementation */
+#include "PORT_PDD.h"
+#include "Cpu.h"
+
 void LightSensor_init(void) {
 #if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
-  PORT_PDD_SetPinInterruptConfiguration(PTB_PORT_DEVICE, 0, PORT_PDD_INTERRUPT_DMA_DISABLED); /* PTB0 */
+  INT_LI_DONE_Disable();
+  //PORT_PDD_SetPinInterruptConfiguration(PTB_PORT_DEVICE, 0, PORT_PDD_INTERRUPT_DMA_DISABLED); /* PTB0 */
 #elif (PL_BOARD_REV==22)
   PORT_PDD_SetPinInterruptConfiguration(PTA_PORT_DEVICE, 4, PORT_PDD_INTERRUPT_DMA_DISABLED); /* PTA4 */
 #else
   #error "unknown board"
 #endif
-
 }
 
-void LightSensor_Done_ISR(void)
-{
+void LightSensor_Done_ISR(void) {
   for(;;) { /* should not happen */
     APP_FatalError(__FILE__, __LINE__);
   }

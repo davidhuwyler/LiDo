@@ -225,6 +225,26 @@ uint8_t McuLC_GetCurrentDirection(McuLC_CurrentDirection *pDir) {
   return ERR_OK;
 }
 
+uint8_t McuLC_GetTemperatureMeasurementMode(bool *isI2Cmode) {
+  uint16_t val=0;
+  uint8_t res;
+
+  res = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, &val);
+  if (res!=ERR_OK) {
+    return res;
+  }
+  *isI2Cmode = val==0; /* 0: i2c, 1: thermistor mode */
+  return ERR_OK;
+}
+
+uint8_t McuLC_SetTemperatureMeasurementMode(bool i2cMode) {
+  return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, i2cMode?0x00:0x01, 0x0);
+}
+
+uint8_t McuLC_SetPowerMode(bool sleepMode) {
+  return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, sleepMode?0x02:0x01, 0x00);
+}
+
 uint8_t McuLC_SetCurrentDirection(McuLC_CurrentDirection direction) {
   uint8_t low, high;
 
@@ -344,6 +364,8 @@ uint8_t McuLC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_S
     CLS1_SendHelpStr((unsigned char*)"LC", (const unsigned char*)"Group of LC709203F commands\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  help|status", (const unsigned char*)"Print help or status information\r\n", io->stdOut);
     CLS1_SendHelpStr((unsigned char*)"  settemp <temp>", (const unsigned char*)"In I2C temperature mode, set the temperature in deci-Celsius\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  sleep", (const unsigned char*)"Put device into sleep mode\r\n", io->stdOut);
+    CLS1_SendHelpStr((unsigned char*)"  wakeup", (const unsigned char*)"Wakeup device from sleep mode\r\n", io->stdOut);
     *handled = TRUE;
     return ERR_OK;
   } else if ((UTIL1_strcmp((char*)cmd, CLS1_CMD_STATUS)==0) || (UTIL1_strcmp((char*)cmd, "LC status")==0)) {
@@ -358,28 +380,14 @@ uint8_t McuLC_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_S
       return ERR_FAILED;
     }
     return McuLC_SetTemperature(val);
+  } else if (UTIL1_strcmp((char*)cmd, "LC sleep")==0) {
+    *handled = TRUE;
+    return McuLC_SetPowerMode(TRUE);
+  } else if (UTIL1_strcmp((char*)cmd, "LC wakeup")==0) {
+    *handled = TRUE;
+    return McuLC_SetPowerMode(FALSE);
   }
   return res;
-}
-
-uint8_t McuLC_GetTemperatureMeasurementMode(bool *isI2Cmode) {
-  uint16_t val=0;
-  uint8_t res;
-
-  res = ReadCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, &val);
-  if (res!=ERR_OK) {
-    return res;
-  }
-  *isI2Cmode = val==0; /* 0: i2c, 1: thermistor mode */
-  return ERR_OK;
-}
-
-uint8_t McuLC_SetTemperatureMeasurementMode(bool i2cMode) {
-  return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, LC709203F_REG_EN_NTC, i2cMode?0x00:0x01, 0x0);
-}
-
-uint8_t McuLC_SetPowerMode(bool sleepMode) {
-  return WriteCmdWordChecked(LC709203F_I2C_SLAVE_ADDR, lC709203F_REG_PW_MODE, sleepMode?0x02:0x01, 0x00);
 }
 
 uint8_t McuLC_Init(void) {

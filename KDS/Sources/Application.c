@@ -33,10 +33,6 @@
 #include "SYS1.h"
 #include "WAIT1.h"
 #include "CI2C1.h"
-#include "I2C_SCL.h"
-#include "I2C_SDA.h"
-#include "PORT_PDD.h"
-#include "GPIO_PDD.h"
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
@@ -411,71 +407,6 @@ static bool APP_WaitIfButtonPressed3s(void) {
   }
 }
 
-
-static void MuxAsGPIO(void) {
-  /* PTB3: SDA, PTB2: SCL */
-  //CI2C1_Deinit(NULL);
-  I2C_SDA_ConnectPin(); /* mux as GPIO */
-  I2C_SCL_ConnectPin(); /* mux as GPOO */
-  I2C_SDA_SetOutput();
-  I2C_SCL_SetOutput();
-}
-
-static void MuxAsI2C(void) {
-  /* PTB3: SDA, PTB2: SCL */
-  //CI2C1_Init(NULL);
-  /* mux back to normal I2C mode with interrupts enabled */
-  /* PCR3: SDA */
-  PORTB_PCR3 = (uint32_t)((PORTB_PCR3 & (uint32_t)~(uint32_t)(
-                PORT_PCR_ISF_MASK |
-                PORT_PCR_MUX(0x05)
-               )) | (uint32_t)(
-                PORT_PCR_MUX(0x02)
-               ));
-  PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 0x03u, PORT_PDD_OPEN_DRAIN_ENABLE); /* Set SDA pin as open drain */
-  /* PORTB_PCR2: ISF=0,MUX=2 */
-  PORTB_PCR2 = (uint32_t)((PORTB_PCR2 & (uint32_t)~(uint32_t)(
-                PORT_PCR_ISF_MASK |
-                PORT_PCR_MUX(0x05)
-               )) | (uint32_t)(
-                PORT_PCR_MUX(0x02)
-               ));
-  PORT_PDD_SetPinOpenDrain(PORTB_BASE_PTR, 0x02u, PORT_PDD_OPEN_DRAIN_ENABLE); /* Set SCL pin as open drain */
-}
-
-static void ResetI2CBus(void) {
-  int i;
-  MuxAsGPIO();
-
-  /* Drive SDA low first to simulate a start */
-  I2C_SDA_ClrVal();//McuGPIO_Low(sdaPin);
-  WAIT1_Waitus(10);
-  /* Send 9 pulses on SCL and keep SDA high */
-  for (i = 0; i < 9; i++) {
-    I2C_SCL_ClrVal();//McuGPIO_Low(sclPin);
-    WAIT1_Waitus(10);
-
-    I2C_SDA_SetVal();//McuGPIO_High(sdaPin);
-    WAIT1_Waitus(10);
-
-    I2C_SCL_SetVal();//McuGPIO_High(sclPin);
-    WAIT1_Waitus(20);
-  }
-  /* Send stop */
-  I2C_SCL_ClrVal();//McuGPIO_Low(sclPin);
-  WAIT1_Waitus(10);
-  I2C_SDA_ClrVal();//McuGPIO_Low(sdaPin);
-  WAIT1_Waitus(10);
-
-  I2C_SCL_ClrVal();//McuGPIO_Low(sclPin);
-  WAIT1_Waitus(10);
-
-  I2C_SDA_SetVal();//McuGPIO_High(sdaPin);
-  WAIT1_Waitus(10);
-  /* go back to I2C mode */
-  MuxAsI2C();
-}
-
 static void APP_init_task(void *param) {
   (void)param; /* not used */
   //LED_G_On();
@@ -484,11 +415,6 @@ static void APP_init_task(void *param) {
 
   if(!APP_WaitIfButtonPressed3s()) { /* Normal init if the UserButton is not pressed */
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-    McuLC_Wakeup(); /* needs to be done before (!!!) any other I2C communication! */
-#endif
-    ResetI2CBus();
-#if PL_CONFIG_HAS_GAUGE_SENSOR
-    McuLC_Wakeup(); /* need to do the wakeup again after the reset bus? otherwise will be stuck in McuLC_Init() */
     McuLC_Init();
 #endif
     WatchDog_Init();
@@ -498,7 +424,6 @@ static void APP_init_task(void *param) {
     AppDataFile_Init();
     SHELL_Init();
     LowPower_init();
-    LightSensor_init();
 #if PL_CONFIG_HAS_ACCEL_SENSOR
     AccelSensor_init();
 #endif
@@ -697,8 +622,41 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   return res;
 }
 
+
+
+#if 1
+static void BlinkyTask(void *pv) {
+  TickType_t taskStartedTimestamp;
+  TickType_t currTimestamp;
+  bool gotoLowPower = TRUE;
+
+  taskStartedTimestamp = xTaskGetTickCount();
+  /* the following has to be done from a task as it needs interrupts enabled */
+#if PL_CONFIG_HAS_GAUGE_SENSOR
+  McuLC_Init();
+#endif
+  CDC1_Deinit();
+  USB1_Deinit();
+
+  for(;;) {
+    currTimestamp = xTaskGetTickCount();
+    if (gotoLowPower && (currTimestamp-taskStartedTimestamp) > 3000) {
+      gotoLowPower = FALSE;
+      McuLC_SetPowerMode(TRUE); /* put into sleep mode */
+      LowPower_EnableStopMode();
+    }
+    LED_R_On();
+    vTaskDelay(pdMS_TO_TICKS(5));
+    LED_R_Off();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+}
+#endif
+
+
+
 void APP_Run(void) {
-  PowerManagement_PowerOn(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
+  PL_Init(); /* init hardware */
 #if 0
   //EmercencyBreak: If LowPower went wrong...
   while(USER_BUTTON_PRESSED()) {
@@ -714,12 +672,11 @@ void APP_Run(void) {
     WAIT1_Waitms(100);
   }
 #endif
-#if 0
-  for (int i=0;i<20;i++) {
-    LED_R_Neg();
-    WAIT1_Waitms(500);
+#if 1
+  if (xTaskCreate(BlinkyTask, "Blinky", 300/sizeof(StackType_t), NULL, 2, NULL) != pdPASS) {
+    APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
   }
-  PIN_POWER_ON_ClrVal(); /* power off */
+  vTaskStartScheduler();
 #endif
   if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
     APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */

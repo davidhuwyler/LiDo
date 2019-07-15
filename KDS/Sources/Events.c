@@ -38,6 +38,7 @@ extern "C" {
 #include "Platform.h"
 #include "LowPower.h"
 #include "SPIF.h"
+#include "LightSensor.h"
 /*
 ** ===================================================================
 **     Event       :  Cpu_OnNMIINT (module Events)
@@ -263,6 +264,23 @@ void FRTOS1_vOnPostSleepProcessing(TickType_t expectedIdleTicks)
 void Cpu_OnReset(uint16_t Reason)
 {
   /* Write your code here ... */
+}
+
+/*
+** ===================================================================
+**     Event       :  INT_LI_DONE_OnInterrupt (module Events)
+**
+**     Component   :  INT_LI_DONE [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void INT_LI_DONE_OnInterrupt(void)
+{
+  LightSensor_Done_ISR();
 }
 
 /* END Events */

@@ -17,6 +17,7 @@
 #include "Events.h"
 #include "UI.h"
 #include "LPTMR_PDD.h"
+#include "LightSensor.h"
 
 static volatile bool stopModeAllowed = FALSE;
 static unsigned char ucMCG_C1; /* backup to restore register value */
@@ -32,7 +33,7 @@ BaseType_t xEnterTicklessIdle(void) {
 void LowPower_EnterLowpowerMode(void) {
 #if PL_CONFIG_HAS_LOW_POWER
 	if(stopModeAllowed) {
-    ucMCG_C1 = MCG_C1;
+    ucMCG_C1 = MCG_C1; /* remember current MCG value for the wakeup */
     Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
 	}	else {
     __asm volatile("dsb");
@@ -60,18 +61,22 @@ bool LowPower_StopModeIsEnabled(void) {
 }
 
 void LowPower_init(void) {
-	LLWU_PE2 |= LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource
+  /* configure LLWU (Low Leakage Wake-Up) pins */
+	LLWU_PE2 |= LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource with rising edge
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
-	LLWU_PE2 |= LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce
+	LLWU_PE2 |= LLWU_PE2_WUPE6(0x1); //Enable PTC1 (UserButton) as WakeUpSouce with rising edge
 #else
-  LLWU_PE4 |= LLWU_PE4_WUPE12(0x1); //Enable PTD0 (UserButton) as WakeUpSouce
+  LLWU_PE4 |= LLWU_PE4_WUPE12(0x1); //Enable PTD0 (UserButton) as WakeUpSouce with rising edge
 #endif
 }
 
+/* interrupt called in case of LLWU wake-up */
 void LLWU_ISR(void) {
   #define CLOCK_DIV 2
   #define CLOCK_MUL 24
   #define MCG_C6_VDIV0_LOWEST 24
+  uint32_t wakeUpFlags;
+  wakeUpFlags = Cpu_GetLLSWakeUpFlags();
 
   //Switch to PLL and wait for it to fully start up
   //https://community.nxp.com/thread/458972
@@ -82,13 +87,28 @@ void LLWU_ISR(void) {
   MCG_C1 = ucMCG_C1;                      // finally move from PBE to PEE mode - switch to PLL clock (the original settings are returned)
   while ((MCG_S & MCG_S_CLKST_MASK) != MCG_S_CLKST(11)) {} // loop until the PLL clock is selected
 
-	uint32_t wakeUpFlags;
-	wakeUpFlags = Cpu_GetLLSWakeUpFlags();
-
+#if 0 /* indicate wakeup with a short blink */
+	LED_R_Neg();
+#elif 1
+  LED_B_On();
+  WAIT1_Waitus(50);
+  LED_B_Off();
+  //WAIT1_Waitus(50);
+#endif
 	if (wakeUpFlags&LLWU_INT_MODULE0) { /* LPTMR */
 	  LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
+	  LLWU_F3 |= LLWU_F3_MWUF0_MASK; /* clear WakeUpInt flag for Module0 (LPTMR) */
+	  LED_R_On();
+	  for(;;) {}
+	  WAIT1_Waitus(50);
+	  LED_R_Off();
 	}
 	if (wakeUpFlags&LLWU_INT_MODULE5) { /* RTC Alarm */
+    LLWU_F3 |= LLWU_F3_MWUF5_MASK; /* clear WakeUpInt flag for Module5 (RTC) */
+    LED_R_On();
+    WAIT1_Waitus(50);
+    LED_R_Off();
+
 		RTC_ALARM_ISR();
 	}
 	if (wakeUpFlags&LLWU_EXT_PIN5) {   /* PTB0 = LightSensor */

@@ -37,8 +37,10 @@ void RTC_EnableRTCInterrupt(void) {
   RTC_TAR = RTC_TSR;            /* RTC Alarm at RTC Time */
 }
 
-void RTC_DisableRTCInterrupt(void) {
+void RTC_DisableRTCInterrupts(void) {
   /*! \todo */
+  /* stop RTC alarm */
+  RTC_IER &= ~RTC_IER_TAIE_MASK; /* Disable RTC Alarm Interrupt */
 }
 
 void RTC_ALARM_ISR(void) {
@@ -54,9 +56,13 @@ void RTC_ALARM_ISR(void) {
   } else { /* Alarm interrupt */
     uint8_t sampleIntervall;
 
-    AppDataFile_GetSampleIntervall(&sampleIntervall);
-    RTC_TAR = RTC_TSR + sampleIntervall - 1;    // Set Next RTC Alarm
-    APP_resumeSampleTaskFromISR();
+    if (1 || AppDataFile_GetSamplingEnabled()) {
+      AppDataFile_GetSampleIntervall(&sampleIntervall);
+      RTC_TAR = RTC_TSR + sampleIntervall - 1;    // Set Next RTC Alarm
+      APP_resumeSampleTaskFromISR();
+    } else {
+      RTC_DisableRTCInterrupts();
+    }
   }
   /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
      exception return operation might vector to incorrect interrupt */

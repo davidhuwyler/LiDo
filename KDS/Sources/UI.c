@@ -35,8 +35,8 @@
 #define UI_BUTTON_DEBOUNCE_INTERVALL_MS          (20)
 
 /* button press counter confirmation LED blinking */
-#define UI_LED_MODE_INDICATOR_DURATION_ON_MS     (25) /* time the LED is on */
-#define UI_LED_MODE_INDICATOR_DURATION_OFF_MS    (975) /* time the LED is off */
+#define UI_LED_MODE_INDICATOR_DURATION_ON_MS     (10) /* time the LED is on */
+#define UI_LED_MODE_INDICATOR_DURATION_OFF_MS    (990) /* time the LED is off */
 static uint8_t localNofBtnConfirmBlinks = 0; /* nof confirmation button blink cylces. Is twice the number of blinks because of on and off phases */
 
 #define UI_LED_PULSE_INDICATOR_DURATION_MS       (1)

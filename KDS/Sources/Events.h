@@ -38,7 +38,6 @@
 #include "UTIL1.h"
 #include "CLS1.h"
 #include "MCUC1.h"
-#include "PTD.h"
 #include "LED_R.h"
 #include "LEDpin1.h"
 #include "BitIoLdd1.h"
@@ -48,13 +47,19 @@
 #include "KIN1.h"
 #include "RTC1.h"
 #include "HF1.h"
+#include "AS1.h"
+#include "ASerialLdd1.h"
 #include "SYS1.h"
 #include "RTT1.h"
 #include "WDog1.h"
 #include "WatchDogLdd1.h"
 #include "INT_RTC.h"
+#include "PIN_SENSOR_PWR.h"
+#include "BitIoLdd6.h"
 #include "GI2C1.h"
 #include "CI2C1.h"
+#include "PIN_SPIF_PWR.h"
+#include "BitIoLdd2.h"
 #include "PIN_SPIF_RESET.h"
 #include "BitIoLdd3.h"
 #include "PIN_SPIF_CS.h"
@@ -71,25 +76,25 @@
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
 #include "SDEPpendingAlertsBuffer.h"
+#include "INT_LI_DONE.h"
+#include "ExtIntLdd1.h"
 #include "LED_G.h"
-#include "LEDpin5.h"
-#include "BitIoLdd14.h"
+#include "LEDpin2.h"
+#include "BitIoLdd7.h"
 #include "LED_B.h"
-#include "LEDpin4.h"
-#include "BitIoLdd13.h"
+#include "LEDpin3.h"
+#include "BitIoLdd8.h"
+#include "PTC.h"
 #include "PIN_POWER_ON.h"
-#include "BitIoLdd15.h"
+#include "BitIoLdd9.h"
 #include "PIN_PS_MODE.h"
-#include "BitIoLdd16.h"
-#include "PTA.h"
+#include "BitIoLdd12.h"
 #include "I2C_SDA.h"
 #include "BitIoLdd17.h"
 #include "I2C_SCL.h"
 #include "BitIoLdd18.h"
 #include "BAT_ALARM.h"
 #include "BitIoLdd19.h"
-#include "ACC_INT1.h"
-#include "BitIoLdd20.h"
 #include "RESET_AS7264.h"
 #include "BitIoLdd21.h"
 #include "PIN_PWR_CHARGE_STATE.h"
@@ -296,6 +301,20 @@ void FRTOS1_vOnPostSleepProcessing(TickType_t expectedIdleTicks);
 */
 /* ===================================================================*/
 void Cpu_OnReset(uint16_t Reason);
+
+void INT_LI_DONE_OnInterrupt(void);
+/*
+** ===================================================================
+**     Event       :  INT_LI_DONE_OnInterrupt (module Events)
+**
+**     Component   :  INT_LI_DONE [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
 
 /* END Events */
 
