@@ -289,6 +289,7 @@ static uint8_t PrintBank1(CLS1_ConstStdIOType *io) {
 	return res;
 }
 
+#if PL_CONFIG_HAS_SHELL
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[64], res;
   LightChannels_t bank0, bank1;
@@ -353,9 +354,10 @@ static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"  wait time", buf, io->stdOut);
   return ERR_OK;
 }
+#endif /* PL_CONFIG_HAS_SHELL */
 
-uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io)
-{
+#if PL_CONFIG_HAS_SHELL
+uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io) {
   uint8_t res = ERR_OK;
   const uint8_t *p;
 
@@ -378,6 +380,7 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
   }
   return res;
 }
+#endif /* PL_CONFIG_HAS_SHELL */
 
 void LightSensor_Done_ISR(void) {
 #if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)

@@ -9,9 +9,11 @@
 #define SOURCES_POWERMANAGEMENT_H_
 
 #include "Platform.h"
-#include "CLS1.h"
 
-uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+#if PL_CONFIG_HAS_SHELL
+  #include "CLS1.h"
+  uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+#endif
 
 bool PowerManagement_IsCharging(void);
 void PowerManagement_PowerOn(void);

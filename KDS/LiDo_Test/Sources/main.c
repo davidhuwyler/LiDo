@@ -63,6 +63,8 @@
 #include "PE_Const.h"
 #include "IO_Map.h"
 /* User includes (#include below this line is not maintained by Processor Expert) */
+#include "Platform.h"
+#include "McuLC709203F.h"
 
 /*lint -save  -e970 Disable MISRA rule (6.3) checking. */
 int main(void)
@@ -92,11 +94,15 @@ int main(void)
     LED_G_Off();
     LED_B_Off();
     WAIT1_Waitms(1000);
-   }
+  }
+  PL_Init();
   TI1_Enable(); /* enable LPTMR0 */
 
   //PIN_PS_MODE_SetVal(); /* low power DC-DC */
   //PIN_PS_MODE_ClrVal(); /* low power DC-DC */
+
+  /* needs interrupts turned on at this time */
+  McuLC_SetPowerMode(TRUE); /* put into sleep */
 
   for(;;) {
     Cpu_SetOperationMode(DOM_STOP, NULL, NULL);

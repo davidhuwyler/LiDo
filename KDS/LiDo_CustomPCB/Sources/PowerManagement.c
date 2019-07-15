@@ -118,6 +118,7 @@ uint16_t PowerManagement_getBatteryVoltage(void) {
 #endif
 }
 
+#if PL_CONFIG_HAS_SHELL
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   CLS1_SendStatusStr((unsigned char*)"power", (const unsigned char*)"\r\n", io->stdOut);
   CLS1_SendStatusStr((unsigned char*)"  charging", PowerManagement_IsCharging()?(unsigned char*)"yes\r\n":(unsigned char*)"no\r\n", io->stdOut);
@@ -159,6 +160,7 @@ uint8_t PowerManagement_ParseCommand(const unsigned char *cmd, bool *handled, co
   }
   return res;
 }
+#endif
 
 void PowerManagement_init(void) {
   if (xTaskCreate(PowerManagement_task, "PowerManagement", 700/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+1, &powerManagementTaskHandle) != pdPASS) {

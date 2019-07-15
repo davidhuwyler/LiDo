@@ -5,7 +5,6 @@
  *      Author: Erich Styger Local
  */
 
-
 #include "Platform.h"
 #include "PowerManagement.h"
 #include "LightSensor.h"
@@ -14,6 +13,7 @@
 #include "I2C_SDA.h"
 #include "PORT_PDD.h"
 #include "GPIO_PDD.h"
+#include "WAIT1.h"
 
 static void MuxAsGPIO(void) {
   /* PTB3: SDA, PTB2: SCL */
@@ -79,7 +79,6 @@ static void ResetI2CBus(void) {
   MuxAsI2C();
 }
 
-
 void PL_Init(void) {
   PowerManagement_PowerOn(); /* turn on FET to keep Vcc supplied. should already be done by default during PE_low_level_init() */
   LightSensor_init();
@@ -89,6 +88,7 @@ void PL_Init(void) {
 #endif
     ResetI2CBus();
 #if PL_CONFIG_HAS_GAUGE_SENSOR
+    WAIT1_Waitus(20);
     McuLC_Wakeup(); /* need to do the wake-up again after the reset bus? otherwise will be stuck in McuLC_Init() */
 #endif
 }

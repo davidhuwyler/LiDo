@@ -11,7 +11,10 @@
 #define SOURCES_LIGHTSENSOR_H_
 
 #include "Platform.h"
-#include "CLS1.h"
+#if PL_CONFIG_HAS_SHELL
+  #include "CLS1.h"
+  uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
+#endif
 
 typedef struct {
 	uint16_t xChannelValue;
@@ -28,7 +31,6 @@ typedef enum {
 void LightSensor_init(void);
 uint8_t LightSensor_autoZeroBlocking(void);
 uint8_t LightSensor_getChannelValues(LightChannels_t* bank0,LightChannels_t* bank1);
-uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_StdIOType *io);
 void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint8_t paramWaitTime);
 void LightSensor_getParams(uint8_t* paramGain, uint8_t* paramIntegrationTime, uint8_t* paramWaitTime);
 

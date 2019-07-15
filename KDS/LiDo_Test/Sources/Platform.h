@@ -29,6 +29,7 @@
 #define PL_CONFIG_HAS_SENSOR_PWR_PIN (1 && (PL_BOARD_REV==20 || PL_BOARD_REV==21)) /* V2.2 does not have ability to power off the sensors (accel + light) */
 #define PL_CONFIG_HAS_ACCEL_ISR1_PIN (1 && PL_BOARD_REV==22)
 #define PL_CONFIG_HAS_BAT_ALARM_PIN  (1 && PL_BOARD_REV==22)
+#define PL_CONFIG_HAS_SHELL          (0)
 
 /* debug ONLY options */
 #define PL_CONFIG_HAS_WATCHDOG       (0) /* disable for better debugging only! */
