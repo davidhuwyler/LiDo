@@ -13,7 +13,8 @@
 #include "CLS1.h"
 
 
-//#define SPIF_USE_SOFTWARE_SPI
+void SPIF_PowerOn(void);
+void SPIF_PowerOff(void);
 
 uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
 

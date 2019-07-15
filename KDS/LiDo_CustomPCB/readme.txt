@@ -15,7 +15,7 @@ Open points
 - provide complete interface to gauge IC
 - check extra (alarm) pins
 - check waiting for SPI in FS driver
-- supply voltage oszillates with no battery and only USB attached?
+- verify with supply voltage oszillates with no battery and only USB attached?
 - RTC clock settings after Reset not set?
 - reset button does not work if in low power mode?
 - need glas/enclosure for light sensor?
@@ -49,10 +49,10 @@ User Interface:
   - 6x short press: power down
   - (9sec press after power-on: format device (red on after power-on, goes out after 3 secs, on at 6s and off at 9s))
 
-- short press while logging: setting marker (confirmed with green LED blink)
-- logging: indication with short purple LED
+Status:
+- logging: indication with short purple LED blink
 - red blinky LED: failure (e.g. I2C)
-- blue LED blinking: connection with host
+- blue/green LED blinking: connection with host. green: charging
 
 Re-enable communication:
 - turn on device (5x button) when connected to USB

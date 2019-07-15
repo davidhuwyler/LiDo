@@ -36,6 +36,8 @@
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
+#include "CDC1.h"
+#include "USB1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 
@@ -622,8 +624,6 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   return res;
 }
 
-
-
 #if 1
 static void BlinkyTask(void *pv) {
   TickType_t taskStartedTimestamp;
@@ -635,20 +635,21 @@ static void BlinkyTask(void *pv) {
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   McuLC_Init();
 #endif
-  CDC1_Deinit();
-  USB1_Deinit();
+  //CDC1_Deinit();
+  //USB1_Deinit();
 
   for(;;) {
     currTimestamp = xTaskGetTickCount();
     if (gotoLowPower && (currTimestamp-taskStartedTimestamp) > 3000) {
       gotoLowPower = FALSE;
       McuLC_SetPowerMode(TRUE); /* put into sleep mode */
+      SPIF_PowerOff();
       LowPower_EnableStopMode();
     }
-    LED_R_On();
-    vTaskDelay(pdMS_TO_TICKS(5));
-    LED_R_Off();
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    //LED_R_On();
+    //vTaskDelay(pdMS_TO_TICKS(5));
+    //LED_R_Off();
+    vTaskDelay(pdMS_TO_TICKS(2000));
   }
 }
 #endif

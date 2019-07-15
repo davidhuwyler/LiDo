@@ -541,12 +541,22 @@ uint8_t SPIF_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_St
 	return ERR_OK;
 }
 
-uint8_t SPIF_Init(void)
-{
-	  uint8_t buf[SPIF_ID_BUF_SIZE];
+void SPIF_PowerOn(void) {
 #if PL_CONFIG_HAS_SPIF_PWR_PIN
-	  PIN_SPIF_PWR_ClrVal();   //LowActive... --> Power the Chip
+  PIN_SPIF_PWR_ClrVal();   //LowActive... --> Power the Chip
 #endif
+}
+
+void SPIF_PowerOff(void) {
+#if PL_CONFIG_HAS_SPIF_PWR_PIN
+  PIN_SPIF_PWR_SetVal();   //LowActive... --> Power off the Chip
+#endif
+}
+
+uint8_t SPIF_Init(void) {
+	  uint8_t buf[SPIF_ID_BUF_SIZE];
+
+	  SPIF_PowerOn();
 	  PIN_SPIF_RESET_SetVal(); //LowActive... --> Enable Chip!
 	  PIN_SPIF_WP_SetVal();	   //LowActive... --> Enable Write!
 
