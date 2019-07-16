@@ -108,6 +108,23 @@ void Cpu_OnLLSWakeUpINT(void)
   }
 }
 
+/*
+** ===================================================================
+**     Event       :  INT_LI_DONE_OnInterrupt (module Events)
+**
+**     Component   :  INT_LI_DONE [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+void INT_LI_DONE_OnInterrupt(void)
+{
+  /* Write your code here ... */
+}
+
 /* END Events */
 
 #ifdef __cplusplus

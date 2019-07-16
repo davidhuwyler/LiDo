@@ -14,7 +14,7 @@
 #if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
  // #include "PTB.h"  /* AMS sensor IRQ line is on PTB0 */
 #elif (PL_BOARD_REV==22)
-  #include "PTA.h" /* AMS sensor IRQ line is on PTA4 */
+  //#include "PTA.h" /* AMS sensor IRQ line is on PTA4 */
 #else
   #error "unknown board"
 #endif
@@ -384,9 +384,9 @@ uint8_t LightSensor_ParseCommand(const unsigned char *cmd, bool *handled, const 
 
 void LightSensor_Done_ISR(void) {
 #if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
-	PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,(1U<<0)); /* PTB0 */
+	//PORT_PDD_ClearInterruptFlags(PTB_PORT_DEVICE,(1U<<0)); /* PTB0 */
 #elif (PL_BOARD_REV==22)
-  PORT_PDD_ClearInterruptFlags(PTA_PORT_DEVICE,(1U<<4)); /* PTA4 */
+  //PORT_PDD_ClearInterruptFlags(PTA_PORT_DEVICE,(1U<<4)); /* PTA4 */
 #else
   #error "unknown board"
 #endif
@@ -394,23 +394,14 @@ void LightSensor_Done_ISR(void) {
 		APP_resumeSampleTaskFromISR();
 	}
 }
-#else /* dummy implementation */
-#include "PORT_PDD.h"
-#include "Cpu.h"
+#else /* dummy implementation: no sensor attached or present! */
 
 void LightSensor_init(void) {
-#if (PL_BOARD_REV==20)||(PL_BOARD_REV==21)
-  INT_LI_DONE_Disable();
-  //PORT_PDD_SetPinInterruptConfiguration(PTB_PORT_DEVICE, 0, PORT_PDD_INTERRUPT_DMA_DISABLED); /* PTB0 */
-#elif (PL_BOARD_REV==22)
-  PORT_PDD_SetPinInterruptConfiguration(PTA_PORT_DEVICE, 4, PORT_PDD_INTERRUPT_DMA_DISABLED); /* PTA4 */
-#else
-  #error "unknown board"
-#endif
+  INT_LI_DONE_Disable(); /* disable interrupt pin, otherwise it might trigger */
 }
 
 void LightSensor_Done_ISR(void) {
-  for(;;) { /* should not happen */
+  for(;;) { /* should not happen as interrupts are disabled! */
     APP_FatalError(__FILE__, __LINE__);
   }
 }

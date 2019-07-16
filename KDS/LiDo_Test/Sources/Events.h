@@ -41,13 +41,13 @@
 #include "TI1.h"
 #include "TimerIntLdd1.h"
 #include "LED_G.h"
-#include "LEDpin2.h"
-#include "BitIoLdd2.h"
+#include "LEDpin5.h"
+#include "BitIoLdd8.h"
 #include "LED_B.h"
-#include "LEDpin3.h"
-#include "BitIoLdd3.h"
+#include "LEDpin4.h"
+#include "BitIoLdd7.h"
 #include "PIN_POWER_ON.h"
-#include "BitIoLdd4.h"
+#include "BitIoLdd9.h"
 #include "GI2C1.h"
 #include "CI2C1.h"
 #include "I2C_SDA.h"
@@ -55,10 +55,12 @@
 #include "I2C_SCL.h"
 #include "BitIoLdd12.h"
 #include "UTIL1.h"
-#include "PIN_SPIF_PWR.h"
-#include "BitIoLdd5.h"
+#include "INT_LI_DONE.h"
+#include "ExtIntLdd2.h"
+#include "RES_OPT.h"
+#include "BitIoLdd13.h"
 #include "PIN_PS_MODE.h"
-#include "BitIoLdd6.h"
+#include "BitIoLdd10.h"
 #include "TU1.h"
 
 #ifdef __cplusplus
@@ -120,6 +122,20 @@ void TI1_OnInterrupt(void);
 */
 /* ===================================================================*/
 void Cpu_OnLLSWakeUpINT(void);
+
+void INT_LI_DONE_OnInterrupt(void);
+/*
+** ===================================================================
+**     Event       :  INT_LI_DONE_OnInterrupt (module Events)
+**
+**     Component   :  INT_LI_DONE [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
 
 /* END Events */
 

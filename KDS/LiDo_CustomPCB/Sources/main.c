@@ -73,8 +73,6 @@
 #include "ShelltoSDEPBuf.h"
 #include "FileToSDEPBuf.h"
 #include "SDEPpendingAlertsBuffer.h"
-#include "INT_LI_DONE.h"
-#include "ExtIntLdd1.h"
 #include "LED_G.h"
 #include "LEDpin2.h"
 #include "BitIoLdd7.h"
@@ -94,6 +92,8 @@
 #include "BitIoLdd19.h"
 #include "RESET_AS7264.h"
 #include "BitIoLdd21.h"
+#include "INT_LI_DONE.h"
+#include "ExtIntLdd1.h"
 #include "PIN_PWR_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 /* Including shared modules, which are used for whole project */

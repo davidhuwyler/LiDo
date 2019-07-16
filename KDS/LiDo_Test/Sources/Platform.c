@@ -88,7 +88,6 @@ void PL_Init(void) {
 #endif
     ResetI2CBus();
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-    WAIT1_Waitus(20);
     McuLC_Wakeup(); /* need to do the wake-up again after the reset bus? otherwise will be stuck in McuLC_Init() */
 #endif
 }
