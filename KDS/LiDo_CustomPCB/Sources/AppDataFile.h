@@ -9,7 +9,11 @@
 #define SOURCES_APPDATAFILE_H_
 
 #include "Platform.h"
-#include "CLS1.h"
+#include <stddef.h>
+#if PL_CONFIG_HAS_SHELL
+  #include "CLS1.h"
+  uint8_t AppData_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io);
+#endif
 
 #define APPDATA_NOF_KEYS 10
 extern const char *APPDATA_KEYS_AND_DEV_VALUES[APPDATA_NOF_KEYS][2];
@@ -24,6 +28,5 @@ bool AppDataFile_GetSampleAutoOff(void);
 
 uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf ,size_t bufSize);
 uint8_t AppDataFile_SetStringValue(const uint8_t* key, const uint8_t* value);
-uint8_t AppData_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io);
 
 #endif /* SOURCES_APPDATAFILE_H_ */

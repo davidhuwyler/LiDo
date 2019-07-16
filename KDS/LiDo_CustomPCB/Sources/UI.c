@@ -17,9 +17,9 @@
 #include "Application.h"
 #include "AppDataFile.h"
 #if (PL_BOARD_REV==20 || PL_BOARD_REV==21)
-  #include "PTC.h" /* uses PTC1 for user button */
+  //#include "PTC.h" /* uses PTC1 for user button */
 #elif (PL_BOARD_REV==22)
-  #include "PTD.h" /* uses PTD0 for user button */
+  //#include "PTD.h" /* uses PTD0 for user button */
 #else
   #error "unknown board"
 #endif
@@ -31,6 +31,7 @@
 #include "LED_B.h"
 #include "Shell.h"
 
+#define UI_BUTTON_LED_CONFIRMATION   (0)  /* if button press shall be confirmed by blue LED */
 #define UI_BUTTON_TIMEOUT_BETWEEN_TWO_PRESSES_MS (1000)  /* used to count duration of button press */
 #define UI_BUTTON_DEBOUNCE_INTERVALL_MS          (20)
 
@@ -109,8 +110,10 @@ static void UI_Button_3pressDetected(void) {
 }
 
 static void UI_Button_4pressDetected(void) {
+#if PL_CONFIG_HAS_SHELL
 	UI_StartBtnConfirmBlinker(4);
 	SHELL_requestDisabling();
+#endif
 }
 
 static void UI_Button_5pressDetected(void) {
@@ -125,14 +128,17 @@ static void UI_Button_6pressDetected(void) {
 
 static void UI_ButtonCounter(void) {
 	if(!ongoingButtonPress) {
-		 ongoingButtonPress = TRUE;
-		 buttonCnt++;
-		 if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS) {
-		   APP_FatalError(__FILE__, __LINE__);
-		 }
-		 if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS) {
-		   APP_FatalError(__FILE__, __LINE__);
-		 }
+    ongoingButtonPress = TRUE;
+    buttonCnt++;
+#if UI_BUTTON_LED_CONFIRMATION
+    LED_B_On(); /* will be turned off uiButtonDebounceTimer */
+#endif
+    if (xTimerStartFromISR(uiButtonDebounceTimer, 0)!=pdPASS) {
+     APP_FatalError(__FILE__, __LINE__);
+    }
+    if (xTimerResetFromISR(uiButtonMultiPressTimer, 0)!=pdPASS) {
+     APP_FatalError(__FILE__, __LINE__);
+    }
 	}
 }
 
@@ -165,11 +171,14 @@ static void vTimerCallback_ButtonMultiPressTimer(TimerHandle_t pxTimer) {
 }
 
 static void vTimerCallback_ButtonDebounceTimer(TimerHandle_t pxTimer) {
-	if(USER_BUTTON_PRESSED())	{
+	if (APP_UserButtonPressed()) { /* button still pressed */
 		if (xTimerReset(uiButtonDebounceTimer,0)!=pdPASS) {
 		  APP_FatalError(__FILE__, __LINE__);
 		}
-	} else {
+	} else { /* button released */
+#if UI_BUTTON_LED_CONFIRMATION
+	  LED_B_Off(); /* turn LED off which has been turned on at button press time */
+#endif
 		if (xTimerReset(uiButtonMultiPressTimer, 0)!=pdPASS) {
 		  APP_FatalError(__FILE__, __LINE__);
 		}
@@ -249,7 +258,6 @@ void UI_Init(void) {
 	if (uiLEDmodeIndicatorTimer==NULL) {
 	  APP_FatalError(__FILE__, __LINE__);
 	}
-
 	uiLEDpulseIndicatorTimer = xTimerCreate( "tmrUiLEDpulse", /* name */
 										 pdMS_TO_TICKS(UI_LED_PULSE_INDICATOR_DURATION_MS), /* period/time */
 										 pdFALSE, /* auto reload */
@@ -263,9 +271,9 @@ void UI_Init(void) {
 
 void UI_ButtonPressed_ISR(void) { /* wakeup and interrupt by user button press */
 #if (PL_BOARD_REV==20 || PL_BOARD_REV==21) /* uses PTC1 for user button */
-  PORT_PDD_ClearInterruptFlags(PTC_PORT_DEVICE,1U<<1);
+  //PORT_PDD_ClearInterruptFlags(PTC_PORT_DEVICE,1U<<1);
 #elif (PL_BOARD_REV==22) /* uses PTD0 for user button */
-  PORT_PDD_ClearInterruptFlags(PTD_PORT_DEVICE,1U<<0);
+  //PORT_PDD_ClearInterruptFlags(PTD_PORT_DEVICE,1U<<0);
 #else
   #error "unknown board"
 #endif

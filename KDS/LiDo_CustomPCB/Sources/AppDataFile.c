@@ -5,6 +5,7 @@
  *      Author: dave
  */
 
+#include "Platform.h"
 #include "AppDataFile.h"
 #include "minIni/minIni.h"
 #include "UTIL1.h"
@@ -59,10 +60,6 @@ static void AppDataFile_UpdateRAMvariables(void) {
 	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], buf, sizeof(buf));
   p = buf;
 	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&localSampleAutoOff);
-}
-
-uint8_t AppDataFile_Init(void) {
-	AppDataFile_UpdateRAMvariables();
 }
 
 uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf, size_t bufSize) {
@@ -121,6 +118,7 @@ uint8_t AppDataFile_CreateFile(void) {
 	return ERR_OK;
 }
 
+#if PL_CONFIG_HAS_SHELL
 static uint8_t AppDataFile_PrintList(CLS1_ConstStdIOType *io) {
 	uint8_t lineBuffer[50];
 	uint8_t valueBuffer[25];
@@ -135,13 +133,17 @@ static uint8_t AppDataFile_PrintList(CLS1_ConstStdIOType *io) {
 	}
 	return ERR_OK;
 }
+#endif
 
+#if PL_CONFIG_HAS_SHELL
 static uint8_t PrintStatus(CLS1_ConstStdIOType *io) {
   uint8_t buf[32];
   CLS1_SendStatusStr((unsigned char*)"AppData", (const unsigned char*)"\r\n", io->stdOut);
   return ERR_OK;
 }
+#endif
 
+#if PL_CONFIG_HAS_SHELL
 uint8_t AppData_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIOType *io) {
   uint8_t res = ERR_OK;
   const uint8_t *p;
@@ -178,3 +180,9 @@ uint8_t AppData_ParseCommand(const uint8_t *cmd, bool *handled, const CLS1_StdIO
   }
   return res;
 }
+#endif
+
+uint8_t AppDataFile_Init(void) {
+  AppDataFile_UpdateRAMvariables();
+}
+

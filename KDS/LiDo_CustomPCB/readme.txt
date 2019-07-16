@@ -76,4 +76,7 @@ Energy:
 - device turned off: 3.08 uA current (mostly gauge IC)
 - 1 Hz, no code optimization, adaptive (no watchdog): 3.75V, 1 Minute: 137 uWh (avg 2.72mA), 1h 8.22 mWh, 1 day 197 mWh
 
+- New:
+ 1 minute with blue LWU blinky: avr. 119 uA, E 7.45 uWh ==> 10'728 uWh => 10.728 mWh ==> 0.4 Wh Batt => 36 Tage Idle mode
+ 
 

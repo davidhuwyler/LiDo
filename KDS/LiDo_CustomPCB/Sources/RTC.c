@@ -38,13 +38,11 @@ void RTC_EnableRTCInterrupt(void) {
 }
 
 void RTC_DisableRTCInterrupts(void) {
-  /*! \todo */
-  /* stop RTC alarm */
+  /* stop RTC alarm interrupt */
   RTC_IER &= ~RTC_IER_TAIE_MASK; /* Disable RTC Alarm Interrupt */
 }
 
 void RTC_ALARM_ISR(void) {
-  //LED_R_Neg(); /* debugging only */
   if (RTC_SR & RTC_SR_TIF_MASK) { /* Timer invalid (Vbat POR or RTC SW reset)? */
     RTC_SR &= ~RTC_SR_TCE_MASK;  /* Disable counter */
     RTC_TPR = 0x00U;       /* Reset prescaler */
@@ -56,7 +54,7 @@ void RTC_ALARM_ISR(void) {
   } else { /* Alarm interrupt */
     uint8_t sampleIntervall;
 
-    if (1 || AppDataFile_GetSamplingEnabled()) {
+    if (AppDataFile_GetSamplingEnabled()) {
       AppDataFile_GetSampleIntervall(&sampleIntervall);
       RTC_TAR = RTC_TSR + sampleIntervall - 1;    // Set Next RTC Alarm
       APP_resumeSampleTaskFromISR();
@@ -69,6 +67,7 @@ void RTC_ALARM_ISR(void) {
   __DSB();
 }
 
-void RTC_init(bool softInit) {
+void RTC_Init(bool softInit) {
 	(void)RTC1_Init(NULL, softInit);
+  RTC_EnableRTCInterrupt(); /* RTC alarm is used to wakeup sample task */
 }

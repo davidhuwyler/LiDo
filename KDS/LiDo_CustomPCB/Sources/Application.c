@@ -33,15 +33,12 @@
 #include "SYS1.h"
 #include "WAIT1.h"
 #include "CI2C1.h"
+#include "UserButton.h"
 #if PL_CONFIG_HAS_GAUGE_SENSOR
   #include "McuLC709203F.h"
 #endif
 #include "CDC1.h"
 #include "USB1.h"
-#include "PORT_PDD.h"
-#include "RES_OPT.h"
-#include "INT_LI_DONE.h"
-#include "PIN_PS_MODE.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 
@@ -62,10 +59,16 @@ static volatile bool toggleEnablingSampling = FALSE;
 static volatile bool requestForSoftwareReset = FALSE;
 static volatile bool requestForPowerOff = FALSE;
 
+bool APP_UserButtonPressed(void) {
+  return UserButton_GetVal()!=0; /* high active user button */
+}
+
 void APP_FatalError(const char *fileName, unsigned int lineNo) {
   for(;;) {
     LED_R_Neg();
     WAIT1_Waitms(100);
+    LowPower_DisableStopMode(); /* make it easier to attach with the debugger */
+    taskDISABLE_INTERRUPTS();
   }
 }
 
@@ -86,13 +89,14 @@ void APP_requestForPowerOff(void) {
 }
 
 static void APP_toggleEnableSamplingIfRequested(void) {
-  if(toggleEnablingSampling) {
+  if (toggleEnablingSampling) {
     WatchDog_StartComputationTime(WatchDog_ToggleEnableSampling);
     toggleEnablingSampling = FALSE;
     if(AppDataFile_GetSamplingEnabled()) {
-      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0");
+      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], "0");
     } else {
-      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"1");
+      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], "1");
+      RTC_EnableRTCInterrupt(); /* start interrupt again */
     }
     WatchDog_StopComputationTime(WatchDog_ToggleEnableSampling);
   }
@@ -105,6 +109,7 @@ static void APP_softwareResetIfRequested(void) {
     if (fileIsOpen) {
       FS_closeFile(&sampleFile);
     }
+    vTaskDelay(pdMS_TO_TICKS(5000)); /* user has pressed button 5 times. Wait 5 seconds to allow him to see the acknowledge blinky */
     KIN1_SoftwareReset();
   }
 }
@@ -116,6 +121,7 @@ static void APP_PowerOffIfRequested(void) {
     if (fileIsOpen) {
       FS_closeFile(&sampleFile);
     }
+    vTaskDelay(pdMS_TO_TICKS(6000)); /* user has pressed button 5 times. Wait 6 seconds to allow him to see the acknowledge blinky */
     PowerManagement_PowerOff(); /* only effective if USB is not powering the board */
   }
 }
@@ -236,24 +242,16 @@ static bool APP_newHour(void) {
 void APP_resumeSampleTaskFromISR(void) {
   BaseType_t xYieldRequired;
 
-  if(sampletaskHandle!=NULL) {
+  if (sampletaskHandle!=NULL) {
     xYieldRequired = xTaskResumeFromISR(sampletaskHandle); // Enable Sample Task for Execution
-    if( xYieldRequired == pdTRUE ) {
+    if (xYieldRequired == pdTRUE ) {
       portYIELD_FROM_ISR(pdTRUE);
     }
   }
 }
 
-void APP_suspendSampleTask(void) {
-  if(sampletaskHandle!=NULL) {
-    vTaskSuspend(sampletaskHandle);
-  } else {
-    APP_FatalError(__FILE__, __LINE__);
-  }
-}
-
 void APP_suspendWriteFileTask(void) {
-  if(writeFileTaskHandle!=NULL) {
+  if (writeFileTaskHandle!=NULL) {
     vTaskSuspend(writeFileTaskHandle);
   } else {
     APP_FatalError(__FILE__, __LINE__);
@@ -291,7 +289,7 @@ static void APP_sample_task(void *param) {
       vTaskResume(writeFileTaskHandle);
     }
     PowerManagement_ResumeTaskIfNeeded();
-    APP_suspendSampleTask(); /* will be woken up either by RTC alarm or LightSensor_Done_ISR() signal */
+    vTaskSuspend(NULL); /* will be woken up either by RTC alarm or LightSensor_Done_ISR() signal */
   } /* for */
 }
 
@@ -364,12 +362,12 @@ static void APP_writeLidoFile_task(void *param) {
   }
   xSemaphoreGiveRecursive(fileAccessMutex);
   for(;;) {
-    if(LowPower_StopModeIsEnabled()) {
+    if (LowPower_StopModeIsEnabled()) {
       SPIF_ReleaseFromDeepPowerDown();
     }
-    APP_softwareResetIfRequested();
-    APP_PowerOffIfRequested();
-    APP_toggleEnableSamplingIfRequested();
+    //APP_softwareResetIfRequested();
+    //APP_PowerOffIfRequested();
+    //APP_toggleEnableSamplingIfRequested();
     AppDataFile_GetSampleIntervall(&samplingIntervall);
     APP_makeNewFileIfNeeded();
     APP_openFileIfNeeded();
@@ -381,7 +379,7 @@ static void APP_writeLidoFile_task(void *param) {
   } /* for */
 }
 
-static void APP_init(void) {
+void APP_Init(void) {
   //Init the SampleQueue, SampleTask and the WriteLidoFile Task
   //The SampleQueue is used to transfer Samples SampleTask-->WriteLidoFile
   lidoSamplesToWrite = xQueueCreate(15, sizeof(liDoSample_t));
@@ -391,19 +389,18 @@ static void APP_init(void) {
   if (xTaskCreate(APP_sample_task, "sampleTask", 1500/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+3, &sampletaskHandle) != pdPASS) {
     APP_FatalError(__FILE__, __LINE__);
   }
-  RTC_EnableRTCInterrupt();
   if (xTaskCreate(APP_writeLidoFile_task, "lidoFileWriter", 2000/sizeof(StackType_t), NULL, tskIDLE_PRIORITY+2, &writeFileTaskHandle) != pdPASS) {
     APP_FatalError(__FILE__, __LINE__);
   }
 }
 
 static bool APP_WaitIfButtonPressed3s(void) {
-  if(USER_BUTTON_PRESSED()) {
+  if (APP_UserButtonPressed()) {
     for(int i = 0 ; i < 30 ; i++) {
       WDog1_Clear();
       vTaskDelay(pdMS_TO_TICKS(100));
       LED_R_Neg();
-      if(!USER_BUTTON_PRESSED()) {
+      if (!APP_UserButtonPressed()) {
         return FALSE;
       }
     }
@@ -415,37 +412,11 @@ static bool APP_WaitIfButtonPressed3s(void) {
 
 static void APP_init_task(void *param) {
   (void)param; /* not used */
-  //LED_G_On();
-  //vTaskDelay(pdMS_TO_TICKS(200));
-  //LED_G_Off();
 
   if(!APP_WaitIfButtonPressed3s()) { /* Normal init if the UserButton is not pressed */
-#if PL_CONFIG_HAS_GAUGE_SENSOR
-    McuLC_Init();
-#endif
-    WatchDog_Init();
-    WatchDog_StartComputationTime(WatchDog_LiDoInit);
-    SDEP_Init();
-    FS_Init();
-    AppDataFile_Init();
-    SHELL_Init();
-    LowPower_init();
-#if PL_CONFIG_HAS_ACCEL_SENSOR
-    AccelSensor_init();
-#endif
-    if(RCM_SRS0 & RCM_SRS0_POR_MASK) { // Init from PowerOn Reset
-      AppDataFile_SetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0],"0"); //Disable Sampling
-      RTC_init(FALSE);   /* HardReset RTC */
-    } else {
-      RTC_init(TRUE); /* softreset RTC */
-    }
-    UI_Init();
-    PowerManagement_init();
-    APP_init();
-    WatchDog_StopComputationTime(WatchDog_LiDoInit);
   } else { //Format SPIF after 9s ButtonPress after startup
 #if 0 /*! \todo Disabled as not safe! */
-    if(USER_BUTTON_PRESSED()) {
+    if (APP_UserButtonPressed()) {
       LED_R_Off();
       vTaskDelay(pdMS_TO_TICKS(3000));
       if(APP_WaitIfButtonPressed3s()) //Format SPIF
@@ -628,64 +599,62 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
   return res;
 }
 
-#if 1
-static void BlinkyTask(void *pv) {
+static void AppTask(void *pv) {
   TickType_t taskStartedTimestamp;
   TickType_t currTimestamp;
-  bool gotoLowPower = FALSE;
+#if PL_CONFIG_HAS_LOW_POWER
+  bool gotoLowPower = TRUE;
+#endif
 
   taskStartedTimestamp = xTaskGetTickCount();
-
-#if PL_CONFIG_HAS_ACCEL_SENSOR
-  bool isEnabled;
-  uint8_t res;
-
-  AccelSensor_init();
-  res = AccelSensor_DisableTemperatureSensor();
-  res = AccelSensor_SetPowerMode(LIS2DH_CTRL_REG1_POWERMODE_POWERDOWN);
-#endif
-  /* ---------------------------------------------------------------*/
-  res = SPIF_Init(); /* SPI Flash chip needs to be initialized, otherwise it drains around 800uA! */
-
-  /* ---------------------------------------------------------------*/
-
-  /* the following has to be done from a task as it needs interrupts enabled */
-#if PL_CONFIG_HAS_GAUGE_SENSOR
-  //McuLC_Init();
-#endif
+  PL_InitWithInterrupts(); /* initialize things which require interrupts enabled */
   //CDC1_Deinit();
   //USB1_Deinit();
-
   for(;;) {
     currTimestamp = xTaskGetTickCount();
-#if 0
-    if (gotoLowPower && (currTimestamp-taskStartedTimestamp) > 3000) {
+#if PL_CONFIG_HAS_LOW_POWER
+    if (gotoLowPower && (currTimestamp-taskStartedTimestamp) > 5000) { /* delay entering low power for easier debugging */
       gotoLowPower = FALSE;
-      McuLC_SetPowerMode(TRUE); /* put into sleep mode */
-      SPIF_PowerOff();
+      McuLC_SetPowerMode(TRUE); /* put charge IC into sleep mode */
+      SPIF_PowerOff(); /* cut off SPI Flash */
       LowPower_EnableStopMode();
     }
 #endif
-    LED_R_On();
-    vTaskDelay(pdMS_TO_TICKS(1));
-    LED_R_Off();
-    vTaskDelay(pdMS_TO_TICKS(999));
+
+    APP_toggleEnableSamplingIfRequested(); /* check if there is a request to toggle sampling */
+    APP_softwareResetIfRequested(); /* check if there is a request to do a reset */
+    APP_PowerOffIfRequested(); /* check if there is a request to power off */
+
+    if (AppDataFile_GetSamplingEnabled()) {
+      /* with sampling enabled, there is already a blinky with the RTC alarm going on. No need to have another one */
+      vTaskDelay(pdMS_TO_TICKS(1000));
+    } else if (LowPower_StopModeIsEnabled()) { /* no need for a blinky? */
+      /* blue blinky in the LPWU interrupt */
+      LED_B_On();
+      LED_G_On();
+      vTaskDelay(pdMS_TO_TICKS(1));
+      LED_B_Off();
+      LED_G_Off();
+      vTaskDelay(pdMS_TO_TICKS(999));
+    } else { /* brighter blink with blue LED if not in low power mode */
+      LED_B_On();
+      vTaskDelay(pdMS_TO_TICKS(1));
+      LED_B_Off();
+      vTaskDelay(pdMS_TO_TICKS(999));
+    }
   }
 }
-#endif
-
-
 
 void APP_Run(void) {
-  PL_Init(); /* init hardware */
+  PL_Init(); /* initialize hardware */
 #if 0
   //EmercencyBreak: If LowPower went wrong...
-  while(USER_BUTTON_PRESSED()) {
+  while(APP_UserButtonPressed()) {
     LED_R_Neg();
     WAIT1_Waitms(50);
   }
 #endif
-  for(int i=0;i<10;i++) {
+  for(int i=0;i<5;i++) { /* blink and wait to give a chance to regain access to the hardware */
     LED_R_On();
     LED_G_On();
     LED_B_On();
@@ -695,43 +664,11 @@ void APP_Run(void) {
     LED_B_Off();
     WAIT1_Waitms(1000);
   }
-  /* ---------------------------------------------------------------*/
-  PIN_PS_MODE_SetVal(); /* disable low power DC-DC (low active) */
-  PIN_PS_MODE_ClrVal(); /* enable low power DC-DC */
-
-  /* ---------------------------------------------------------------*/
-  /* Light Sensor */
-  /* pull-down for INT_LI_DONE */
-  INT_LI_DONE_Disable(); /* disable interrupt */
-#if PL_BOARD_REV==20 || PL_BOARD_REV==21 /* PTB0 */
-  PORT_PDD_SetPinPullSelect(PORTB_BASE_PTR, 0, PORT_PDD_PULL_DOWN);
-  PORT_PDD_SetPinPullEnable(PORTB_BASE_PTR, 0, PORT_PDD_PULL_ENABLE);
-#elif PL_BOARD_REV==22 /* PTA4 */
-  PORT_PDD_SetPinPullSelect(PORTA_BASE_PTR, 4, PORT_PDD_PULL_DOWN);
-  PORT_PDD_SetPinPullEnable(PORTA_BASE_PTR, 4, PORT_PDD_PULL_ENABLE);
-#endif
-#if PL_BOARD_REV==22
-  RES_OPT_SetVal(); /* disable reset on AS 7264 */
-  RES_OPT_ClrVal(); /* reset AS7264 */
-#endif
-
-#if 0
-  for (int i=0; i<4; i++) {
-    LED_G_Neg();
-    LED_B_Neg();
-    LED_R_Neg();
-    WAIT1_Waitms(100);
-  }
-#endif
-#if 1
-  if (xTaskCreate(BlinkyTask, "Blinky", 300/sizeof(StackType_t), NULL, 2, NULL) != pdPASS) {
+  if (xTaskCreate(AppTask, "App", 3000/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
     APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
   }
   vTaskStartScheduler();
-#endif
-  if (xTaskCreate(APP_init_task, "Init", 1500/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
-    APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
-  }
-  vTaskStartScheduler();
-  for(;;) {} /* should not get here */
+  for(;;) {
+    APP_FatalError(__FILE__, __LINE__);
+  } /* should not get here */
 }

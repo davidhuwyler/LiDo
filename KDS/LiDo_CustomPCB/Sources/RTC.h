@@ -10,10 +10,11 @@
 
 #include "Platform.h"
 
+void RTC_ALARM_ISR(void);
 void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix);
 void RTC_setTimeUnixFormat(int32_t rtcTimeUnix);
 void RTC_EnableRTCInterrupt(void);
 void RTC_DisableRTCInterrupt(void);
-void RTC_init(bool softInit);
+void RTC_Init(bool softInit);
 
 #endif /* SOURCES_RTC_H_ */

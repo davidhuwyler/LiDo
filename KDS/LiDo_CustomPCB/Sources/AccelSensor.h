@@ -34,7 +34,6 @@ uint8_t AccelSensor_SetPowerMode(LIS2DH_CTRL_REG1_PowerMode mode);
 
 uint8_t AccelSensor_SetCtrlReg1(uint8_t reg1);
 
-
 typedef struct {
 	uint8_t xValue;  // 1digit = 16mG (8Bit signed)
 	uint8_t yValue;
@@ -52,6 +51,6 @@ uint8_t AccelSensor_getValues(AccelAxis_t* values);
 
 uint8_t AccelSensor_WhoAmI(uint8_t *id);
 
-void AccelSensor_init(void);
+void AccelSensor_Init(void);
 
 #endif /* SOURCES_ACCELSENS_H_ */

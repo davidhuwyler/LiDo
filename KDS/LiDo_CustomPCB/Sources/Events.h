@@ -38,7 +38,6 @@
 #include "UTIL1.h"
 #include "CLS1.h"
 #include "MCUC1.h"
-#include "PTD.h"
 #include "LED_R.h"
 #include "LEDpin1.h"
 #include "BitIoLdd1.h"
@@ -52,7 +51,6 @@
 #include "RTT1.h"
 #include "WDog1.h"
 #include "WatchDogLdd1.h"
-#include "INT_RTC.h"
 #include "GI2C1.h"
 #include "CI2C1.h"
 #include "PIN_SPIF_RESET.h"
@@ -95,6 +93,8 @@
 #include "BitIoLdd21.h"
 #include "INT_LI_DONE.h"
 #include "ExtIntLdd2.h"
+#include "UserButton.h"
+#include "ExtIntLdd3.h"
 #include "PIN_PWR_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 
@@ -313,6 +313,81 @@ void INT_LI_DONE_OnInterrupt(void);
 **     Returns     : Nothing
 ** ===================================================================
 */
+
+void UserButton_OnInterrupt(void);
+/*
+** ===================================================================
+**     Event       :  UserButton_OnInterrupt (module Events)
+**
+**     Component   :  UserButton [ExtInt]
+**     Description :
+**         This event is called when an active signal edge/level has
+**         occurred.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+/*
+** ===================================================================
+**     Event       :  RTC1_OnAlarm (module Events)
+**
+**     Component   :  RTC1 [RTC_LDD]
+*/
+/*!
+**     @brief
+**         Called if alarm date and time match the actual date and time,
+**         OnAlarm event is enabled (see [SetEventMask] and
+**         [GetEventMask] methods) and RTC device is enabled. This
+**         event is available only if [Interrupt service/event] is
+**         enabled.
+**     @param
+**         UserDataPtr     - Pointer to the user or
+**                           RTOS specific data. This pointer is passed
+**                           as the parameter of Init method. 
+*/
+/* ===================================================================*/
+void RTC1_OnAlarm(LDD_TUserData *UserDataPtr);
+
+/*
+** ===================================================================
+**     Event       :  RTC1_OnTimeOverflow (module Events)
+**
+**     Component   :  RTC1 [RTC_LDD]
+*/
+/*!
+**     @brief
+**         Called if time overflow is detected, OnTimeOverflow event is
+**         enabled (see [SetEventMask] and [GetEventMask] methods) and
+**         RTC device is enabled. This event is available only if
+**         [Interrupt service/event] is enabled.
+**     @param
+**         UserDataPtr     - Pointer to the user or
+**                           RTOS specific data. This pointer is passed
+**                           as the parameter of Init method. 
+*/
+/* ===================================================================*/
+void RTC1_OnTimeOverflow(LDD_TUserData *UserDataPtr);
+
+/*
+** ===================================================================
+**     Event       :  RTC1_OnTimeInvalid (module Events)
+**
+**     Component   :  RTC1 [RTC_LDD]
+*/
+/*!
+**     @brief
+**         Called as soon as time becomes invalid, OnTimeInvalid event
+**         is enabled (see [SetEventMask] and [GetEventMask] methods)
+**         and RTC device is enabled. This event is available only if
+**         [Interrupt service/event] is enabled.
+**     @param
+**         UserDataPtr     - Pointer to the user or
+**                           RTOS specific data. This pointer is passed
+**                           as the parameter of Init method. 
+*/
+/* ===================================================================*/
+void RTC1_OnTimeInvalid(LDD_TUserData *UserDataPtr);
 
 /* END Events */
 

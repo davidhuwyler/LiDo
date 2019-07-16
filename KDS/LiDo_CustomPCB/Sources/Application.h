@@ -36,6 +36,8 @@ typedef struct
 	uint8_t	 crc;
 } liDoSample_t;
 
+bool APP_UserButtonPressed(void);
+
 void APP_Run(void);
 void APP_CloseSampleFile(void);
 uint8_t APP_getCurrentSample(liDoSample_t* sample, int32 unixTimestamp,bool forceSample);
@@ -43,9 +45,10 @@ void APP_setMarkerInLog(void);
 void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);
 void APP_requestForPowerOff(void);
-void APP_suspendSampleTask(void);
 void APP_resumeSampleTaskFromISR(void);
 
 void APP_FatalError(const char *fileName, unsigned int lineNo);
+
+void APP_Init(void);
 
 #endif /* SOURCES_APPLICATION_H_ */

@@ -75,7 +75,7 @@ uint8_t AccelSensor_SetPowerMode(LIS2DH_CTRL_REG1_PowerMode mode) {
   return GI2C1_WriteByteAddress8(ACCEL_SENS_I2C_ADDRESS, ACCEL_SENS_I2C_REGISTER_CTRL_REG1, val);
 }
 
-void AccelSensor_init(void) {
+void AccelSensor_Init(void) {
 	uint8_t i2cData;
 	uint8_t res;
 

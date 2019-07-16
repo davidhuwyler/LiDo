@@ -18,9 +18,14 @@
 #include "UI.h"
 #include "LPTMR_PDD.h"
 #include "LightSensor.h"
+#include "RTC.h"
+
+#define LP_USE_PLL    (0)  /* if using PLL clock configuration */
 
 static volatile bool stopModeAllowed = FALSE;
+#if LP_USE_PLL
 static unsigned char ucMCG_C1; /* backup to restore register value */
+#endif
 
 BaseType_t xEnterTicklessIdle(void) {
 #if PL_CONFIG_HAS_LOW_POWER
@@ -33,7 +38,9 @@ BaseType_t xEnterTicklessIdle(void) {
 void LowPower_EnterLowpowerMode(void) {
 #if PL_CONFIG_HAS_LOW_POWER
 	if(stopModeAllowed) {
-    ucMCG_C1 = MCG_C1; /* remember current MCG value for the wakeup */
+#if LP_USE_PLL
+	  ucMCG_C1 = MCG_C1; /* remember current MCG value for the wakeup */
+#endif
     Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
 	}	else {
     __asm volatile("dsb");
@@ -60,7 +67,7 @@ bool LowPower_StopModeIsEnabled(void) {
 	return stopModeAllowed;
 }
 
-void LowPower_init(void) {
+void LowPower_Init(void) {
   /* configure LLWU (Low Leakage Wake-Up) pins */
 	LLWU_PE2 |= LLWU_PE2_WUPE5(0x1); //Enable PTB0 (LightSensor) as WakeUpSource with rising edge
 #if PL_BOARD_REV==20 || PL_BOARD_REV==21
@@ -72,14 +79,16 @@ void LowPower_init(void) {
 
 /* interrupt called in case of LLWU wake-up */
 void LLWU_ISR(void) {
+#if LP_USE_PLL
   #define CLOCK_DIV 2
   #define CLOCK_MUL 24
   #define MCG_C6_VDIV0_LOWEST 24
+#endif
   uint32_t wakeUpFlags;
-  wakeUpFlags = Cpu_GetLLSWakeUpFlags();
-#if 0
-  //Switch to PLL and wait for it to fully start up
-  //https://community.nxp.com/thread/458972
+
+#if LP_USE_PLL
+  // Switch to PLL and wait for it to fully start up
+  // https://community.nxp.com/thread/458972
   MCG_C5 = ((CLOCK_DIV - 1) | MCG_C5_PLLSTEN0_MASK); // move from state FEE to state PBE (or FBE) PLL remains enabled in normal stop modes
   MCG_C6 = ((CLOCK_MUL - MCG_C6_VDIV0_LOWEST) | MCG_C6_PLLS_MASK);
   while ((MCG_S & MCG_S_PLLST_MASK) == 0) {}   // loop until the PLLS clock source becomes valid
@@ -87,28 +96,17 @@ void LLWU_ISR(void) {
   MCG_C1 = ucMCG_C1;                      // finally move from PBE to PEE mode - switch to PLL clock (the original settings are returned)
   while ((MCG_S & MCG_S_CLKST_MASK) != MCG_S_CLKST(11)) {} // loop until the PLL clock is selected
 #endif
-#if 0 /* indicate wakeup with a short blink */
-	LED_R_Neg();
-#elif 1
-  LED_B_On();
-  WAIT1_Waitus(50);
-  LED_B_Off();
-  //WAIT1_Waitus(50);
-#endif
+  //LED_B_On(); /* short blink to indicate wakeup activity */
+
+  wakeUpFlags = Cpu_GetLLSWakeUpFlags();
 	if (wakeUpFlags&LLWU_INT_MODULE0) { /* LPTMR */
 	  LPTMR_PDD_ClearInterruptFlag(LPTMR0_BASE_PTR); /* Clear interrupt flag */
-	  LLWU_F3 |= LLWU_F3_MWUF0_MASK; /* clear WakeUpInt flag for Module0 (LPTMR) */
+	  LLWU_F3 |= LLWU_F3_MWUF0_MASK; /* clear WakeUpInt flag fo-r Module0 (LPTMR) */
 	  LED_R_On();
-	  for(;;) {}
-	  WAIT1_Waitus(50);
-	  LED_R_Off();
+	  for(;;) {}  /*! \todo somehow do not get here? */
 	}
 	if (wakeUpFlags&LLWU_INT_MODULE5) { /* RTC Alarm */
     LLWU_F3 |= LLWU_F3_MWUF5_MASK; /* clear WakeUpInt flag for Module5 (RTC) */
-    LED_R_On();
-    WAIT1_Waitus(50);
-    LED_R_Off();
-
 		RTC_ALARM_ISR();
 	}
 	if (wakeUpFlags&LLWU_EXT_PIN5) {   /* PTB0 = LightSensor */
@@ -123,9 +121,14 @@ void LLWU_ISR(void) {
 #else
   if (wakeUpFlags&LLWU_EXT_PIN12) { /* PTD0 = UserButton */
     LLWU_F2 |= LLWU_F2_WUF12_MASK; //Clear WakeUpInt Flag
+    //LED_R_On();
+    //WAIT1_Waitus(1000);
+    //LED_R_Off();
     UI_ButtonPressed_ISR();
   }
 #endif
+  WAIT1_Waitus(20);
+  //LED_B_Off();
 	/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
 	     exception return operation might vector to incorrect interrupt */
 	__DSB();

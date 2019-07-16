@@ -6,6 +6,7 @@
  */
 
 #include "Platform.h"
+#if PL_CONFIG_HAS_SHELL
 #include "Application.h"
 #include "Shell.h"
 #include "CLS1.h"
@@ -284,3 +285,5 @@ void SHELL_Init(void) {
 void SHELL_requestDisabling(void) {
 	shellDisablingRequest = TRUE;
 }
+
+#endif /* PL_CONFIG_HAS_SHELL */

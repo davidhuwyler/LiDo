@@ -82,8 +82,7 @@ void LightSensor_setParams(uint8_t paramGain, uint8_t paramIntegrationTime, uint
 	taskEXIT_CRITICAL();
 }
 
-void LightSensor_getParams(uint8_t* paramGain, uint8_t* paramIntegrationTime, uint8_t* paramWaitTime)
-{
+void LightSensor_getParams(uint8_t* paramGain, uint8_t* paramIntegrationTime, uint8_t* paramWaitTime) {
 	taskENTER_CRITICAL();
 	*paramGain = gain;
 	*paramIntegrationTime = intTime;
@@ -95,7 +94,7 @@ void LightSensor_init(void) {
   //Workaround Resuming not working:
 	waitForLightSensMutex = xSemaphoreCreateRecursiveMutex();
   if( waitForLightSensMutex == NULL ) {
-      for(;;); //Error...
+    APP_FatalError();
   }
 #if PL_CONFIG_HAS_SENSOR_PWR_PIN
 	//PowerSensors
