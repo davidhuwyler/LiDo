@@ -52,19 +52,19 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
 	*(command->payload + command->payloadSize)='\0'; //Add string termination (Overwrites CRC Byte)
 	switch(command->cmdId) {
     case SDEP_CMDID_GET_ID:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[1][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[1][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       answer.payloadSize = UTIL1_strlen(answer.payload);
       SDEP_SendMessage(&answer);
       return ERR_OK;
 
     case SDEP_CMDID_GET_NAME:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[0][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[0][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       answer.payloadSize = UTIL1_strlen(answer.payload);
       SDEP_SendMessage(&answer);
       return ERR_OK;
 
     case SDEP_CMDID_GET_VERSION:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[2][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[2][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       answer.payloadSize = UTIL1_strlen(answer.payload);
       SDEP_SendMessage(&answer);
       return ERR_OK;
@@ -126,7 +126,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
     }
 
     case SDEP_CMDID_GET_SAMPLE_INT:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -147,7 +147,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
       return ERR_OK;
 
     case SDEP_CMDID_GET_EN_SAMPLE:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[4][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -158,7 +158,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
       return ERR_OK;
 
     case SDEP_CMDID_GET_LIGHTGAIN:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -169,7 +169,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
       return ERR_OK;
 
     case SDEP_CMDID_GET_LIGHTINTTIME:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -180,7 +180,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
       return ERR_OK;
 
     case SDEP_CMDID_GET_LIGHTWAITTIME:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -191,7 +191,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
       return ERR_OK;
 
     case SDEP_CMDID_GET_EN_AUTOGAIN:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[8][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[8][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -211,7 +211,7 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
       return ERR_OK;
 
     case SDEP_CMDID_GET_EN_SAMPLE_AUTO_OFF:
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], answer.payload ,SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[9][0], answer.payload, SDEP_MESSAGE_MAX_PAYLOAD_BYTES);
       if(UTIL1_xatoi((const unsigned char **)&answer.payload,&sint32Param) != ERR_OK)
       {
         break;
@@ -335,13 +335,15 @@ uint8_t SDEP_ExecureCommand(SDEPmessage_t* command)
     case SDEP_CMDID_SELFTEST:
       //Check Sensors & IIC
       sint32Param = 0;
-      p = outputBuf;
-      err = APP_getCurrentSample(&sample,sint32Param,TRUE);
+      err = APP_getCurrentSample(&sample, sint32Param, TRUE);
       sample.temp &= ~0x80;  //Delete UserButton marker if there
-      if(!(sample.temp > 0 && sample.temp < 80 )) {err = ERR_FAILED;}
+      if(!(sample.temp > 0 && sample.temp < 80 )) {
+        err = ERR_FAILED;
+      }
 
       //Check FileSystem, MiniINI & SPIF
-      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], (uint8_t*)p ,25); //Read Sampleintervall from SPIF
+      AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[3][0], outputBuf, sizeof(outputBuf)); //Read Sampleintervall from SPIF
+      p = outputBuf;
       UTIL1_ScanDecimal8uNumber(&p, &uint8param);
       if(!(uint8param >= 1 && uint8param <= 100 )) {
         err = ERR_FAILED;
