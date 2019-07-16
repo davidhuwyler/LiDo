@@ -38,6 +38,10 @@
 #endif
 #include "CDC1.h"
 #include "USB1.h"
+#include "PORT_PDD.h"
+#include "RES_OPT.h"
+#include "INT_LI_DONE.h"
+#include "PIN_PS_MODE.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 
@@ -628,28 +632,44 @@ uint8_t APP_ParseCommand(const unsigned char *cmd, bool *handled, const CLS1_Std
 static void BlinkyTask(void *pv) {
   TickType_t taskStartedTimestamp;
   TickType_t currTimestamp;
-  bool gotoLowPower = TRUE;
+  bool gotoLowPower = FALSE;
 
   taskStartedTimestamp = xTaskGetTickCount();
+
+#if PL_CONFIG_HAS_ACCEL_SENSOR
+  bool isEnabled;
+  uint8_t res;
+
+  AccelSensor_init();
+  res = AccelSensor_DisableTemperatureSensor();
+  res = AccelSensor_SetPowerMode(LIS2DH_CTRL_REG1_POWERMODE_POWERDOWN);
+#endif
+  /* ---------------------------------------------------------------*/
+  res = SPIF_Init(); /* SPI Flash chip needs to be initialized, otherwise it drains around 800uA! */
+
+  /* ---------------------------------------------------------------*/
+
   /* the following has to be done from a task as it needs interrupts enabled */
 #if PL_CONFIG_HAS_GAUGE_SENSOR
-  McuLC_Init();
+  //McuLC_Init();
 #endif
   //CDC1_Deinit();
   //USB1_Deinit();
 
   for(;;) {
     currTimestamp = xTaskGetTickCount();
+#if 0
     if (gotoLowPower && (currTimestamp-taskStartedTimestamp) > 3000) {
       gotoLowPower = FALSE;
       McuLC_SetPowerMode(TRUE); /* put into sleep mode */
       SPIF_PowerOff();
       LowPower_EnableStopMode();
     }
-    //LED_R_On();
-    //vTaskDelay(pdMS_TO_TICKS(5));
-    //LED_R_Off();
-    vTaskDelay(pdMS_TO_TICKS(2000));
+#endif
+    LED_R_On();
+    vTaskDelay(pdMS_TO_TICKS(1));
+    LED_R_Off();
+    vTaskDelay(pdMS_TO_TICKS(999));
   }
 }
 #endif
@@ -665,7 +685,37 @@ void APP_Run(void) {
     WAIT1_Waitms(50);
   }
 #endif
-#if 1
+  for(int i=0;i<10;i++) {
+    LED_R_On();
+    LED_G_On();
+    LED_B_On();
+    WAIT1_Waitms(10);
+    LED_R_Off();
+    LED_G_Off();
+    LED_B_Off();
+    WAIT1_Waitms(1000);
+  }
+  /* ---------------------------------------------------------------*/
+  PIN_PS_MODE_SetVal(); /* disable low power DC-DC (low active) */
+  PIN_PS_MODE_ClrVal(); /* enable low power DC-DC */
+
+  /* ---------------------------------------------------------------*/
+  /* Light Sensor */
+  /* pull-down for INT_LI_DONE */
+  INT_LI_DONE_Disable(); /* disable interrupt */
+#if PL_BOARD_REV==20 || PL_BOARD_REV==21 /* PTB0 */
+  PORT_PDD_SetPinPullSelect(PORTB_BASE_PTR, 0, PORT_PDD_PULL_DOWN);
+  PORT_PDD_SetPinPullEnable(PORTB_BASE_PTR, 0, PORT_PDD_PULL_ENABLE);
+#elif PL_BOARD_REV==22 /* PTA4 */
+  PORT_PDD_SetPinPullSelect(PORTA_BASE_PTR, 4, PORT_PDD_PULL_DOWN);
+  PORT_PDD_SetPinPullEnable(PORTA_BASE_PTR, 4, PORT_PDD_PULL_ENABLE);
+#endif
+#if PL_BOARD_REV==22
+  RES_OPT_SetVal(); /* disable reset on AS 7264 */
+  RES_OPT_ClrVal(); /* reset AS7264 */
+#endif
+
+#if 0
   for (int i=0; i<4; i++) {
     LED_G_Neg();
     LED_B_Neg();

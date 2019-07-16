@@ -177,7 +177,18 @@ void FRTOS1_vApplicationMallocFailedHook(void)
 void FRTOS1_vOnPreSleepProcessing(TickType_t expectedIdleTicks)
 {
 	(void)expectedIdleTicks; /* not used */
+#if 0
+  /* example for Kinetis (enable SetOperationMode() in CPU component): */
+  // Cpu_SetOperationMode(DOM_WAIT, NULL, NULL); /* Processor Expert way to get into WAIT mode */
+  /* or to wait for interrupt: */
+    __asm volatile("dsb");
+    __asm volatile("wfi");
+    __asm volatile("isb");
+#elif 1
+    Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
+#else
 	LowPower_EnterLowpowerMode();
+#endif
 }
 
 /*

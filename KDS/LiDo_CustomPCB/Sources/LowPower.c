@@ -77,7 +77,7 @@ void LLWU_ISR(void) {
   #define MCG_C6_VDIV0_LOWEST 24
   uint32_t wakeUpFlags;
   wakeUpFlags = Cpu_GetLLSWakeUpFlags();
-
+#if 0
   //Switch to PLL and wait for it to fully start up
   //https://community.nxp.com/thread/458972
   MCG_C5 = ((CLOCK_DIV - 1) | MCG_C5_PLLSTEN0_MASK); // move from state FEE to state PBE (or FBE) PLL remains enabled in normal stop modes
@@ -86,7 +86,7 @@ void LLWU_ISR(void) {
   while ((MCG_S & MCG_S_LOCK0_MASK) == 0) {}    // loop until PLL locks
   MCG_C1 = ucMCG_C1;                      // finally move from PBE to PEE mode - switch to PLL clock (the original settings are returned)
   while ((MCG_S & MCG_S_CLKST_MASK) != MCG_S_CLKST(11)) {} // loop until the PLL clock is selected
-
+#endif
 #if 0 /* indicate wakeup with a short blink */
 	LED_R_Neg();
 #elif 1
