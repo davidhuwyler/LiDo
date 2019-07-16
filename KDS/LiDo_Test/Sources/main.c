@@ -35,8 +35,6 @@
 #include "LED_R.h"
 #include "LEDpin1.h"
 #include "BitIoLdd1.h"
-#include "TI1.h"
-#include "TimerIntLdd1.h"
 #include "LED_G.h"
 #include "LEDpin5.h"
 #include "BitIoLdd8.h"
@@ -68,9 +66,12 @@
 #include "CLS1.h"
 #include "CS1.h"
 #include "XF1.h"
+#include "TmDt1.h"
+#include "RTC1.h"
+#include "FRTOS1.h"
+#include "KIN1.h"
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd10.h"
-#include "TU1.h"
 /* Including shared modules, which are used for whole project */
 #include "PE_Types.h"
 #include "PE_Error.h"
@@ -85,6 +86,16 @@
 void APP_FatalError(const char *fileName, unsigned int lineNo) {
   for(;;) {
     __asm("nop");
+  }
+}
+BaseType_t xEnterTicklessIdle(void) {
+  return pdTRUE; /* enter tickless idle mode */
+}
+
+static void BlinkyTask(void *pv) {
+  for(;;) {
+    LED_G_Neg();
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 
@@ -119,10 +130,11 @@ int main(void)
     LED_B_Off();
     WAIT1_Waitms(1000);
   }
-  PL_Init();
 
+  PL_Init();
+  __asm volatile("cpsie i"); /* enable interrupts */
   /* needs interrupts turned on at this time */
-  McuLC_SetPowerMode(TRUE); /* put into sleep */
+//  McuLC_SetPowerMode(TRUE); /* put into sleep */ /* NOTE: does not always work? */
   /* ---------------------------------------------------------------*/
   PIN_PS_MODE_SetVal(); /* disable low power DC-DC (low active) */
   PIN_PS_MODE_ClrVal(); /* enable low power DC-DC */
@@ -155,12 +167,19 @@ int main(void)
   res = SPIF_Init(); /* SPI Flash chip needs to be initialized, otherwise it drains around 800uA! */
 
   /* ---------------------------------------------------------------*/
+#if 1
+  if (xTaskCreate(BlinkyTask, "Blinky", 300/sizeof(StackType_t), NULL, 2, NULL) != pdPASS) {
+    APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
+  }
+  vTaskStartScheduler();
+#else
   if (enterLowPower) {
     TI1_Enable(); /* enable LPTMR0 */
     for(;;) {
       Cpu_SetOperationMode(DOM_STOP, NULL, NULL);
     }
   }
+#endif
   for(;;) {
     __asm("nop");
   }

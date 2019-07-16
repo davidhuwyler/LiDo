@@ -38,8 +38,6 @@
 #include "LED_R.h"
 #include "LEDpin1.h"
 #include "BitIoLdd1.h"
-#include "TI1.h"
-#include "TimerIntLdd1.h"
 #include "LED_G.h"
 #include "LEDpin5.h"
 #include "BitIoLdd8.h"
@@ -71,9 +69,12 @@
 #include "CLS1.h"
 #include "CS1.h"
 #include "XF1.h"
+#include "TmDt1.h"
+#include "RTC1.h"
+#include "FRTOS1.h"
+#include "KIN1.h"
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd10.h"
-#include "TU1.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,6 +168,88 @@ void INT_LI_DONE_OnInterrupt(void);
 */
 /* ===================================================================*/
 void SM1_OnBlockReceived(LDD_TUserData *UserDataPtr);
+
+
+#ifndef __BWUserType_Tsize_t
+#define __BWUserType_Tsize_t
+  typedef size_t Tsize_t;              /* Alias to size_t standard type */
+#endif
+
+
+void FRTOS1_vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName);
+/*
+** ===================================================================
+**     Description :
+**         if enabled, this hook will be called in case of a stack
+**         overflow.
+**     Parameters  :
+**         NAME            - DESCRIPTION
+**         pxTask          - Task handle
+**       * pcTaskName      - Pointer to task name
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void FRTOS1_vApplicationTickHook(void);
+/*
+** ===================================================================
+**     Description :
+**         If enabled, this hook will be called by the RTOS for every
+**         tick increment.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void FRTOS1_vApplicationIdleHook(void);
+/*
+** ===================================================================
+**     Description :
+**         If enabled, this hook will be called when the RTOS is idle.
+**         This might be a good place to go into low power mode.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void FRTOS1_vApplicationMallocFailedHook(void);
+/*
+** ===================================================================
+**     Description :
+**         If enabled, the RTOS will call this hook in case memory
+**         allocation failed.
+**     Parameters  : None
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void FRTOS1_vOnPreSleepProcessing(TickType_t expectedIdleTicks);
+/*
+** ===================================================================
+**     Description :
+**         Used in tickless idle mode only, but required in this mode.
+**         Hook for the application to enter low power mode.
+**     Parameters  :
+**         NAME            - DESCRIPTION
+**         expectedIdleTicks - expected idle
+**                           time, in ticks
+**     Returns     : Nothing
+** ===================================================================
+*/
+
+void FRTOS1_vOnPostSleepProcessing(TickType_t expectedIdleTicks);
+/*
+** ===================================================================
+**     Description :
+**         Event called after the CPU woke up after low power mode.
+**         This event is optional.
+**     Parameters  :
+**         NAME            - DESCRIPTION
+**         expectedIdleTicks - expected idle
+**                           time, in ticks
+**     Returns     : Nothing
+** ===================================================================
+*/
 
 /* END Events */
 
