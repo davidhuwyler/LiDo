@@ -56,6 +56,13 @@
 #include "ExtIntLdd2.h"
 #include "RES_OPT.h"
 #include "BitIoLdd13.h"
+#include "PIN_SPIF_RESET.h"
+#include "BitIoLdd14.h"
+#include "PIN_SPIF_CS.h"
+#include "BitIoLdd15.h"
+#include "PIN_SPIF_WP.h"
+#include "BitIoLdd16.h"
+#include "SM1.h"
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd10.h"
 #include "TU1.h"
@@ -68,6 +75,7 @@
 #include "Platform.h"
 #include "McuLC709203F.h"
 #include "AccelSensor.h"
+#include "SPIF.h"
 
 void APP_FatalError(const char *fileName, unsigned int lineNo) {
   for(;;) {
@@ -138,7 +146,10 @@ int main(void)
   res = AccelSensor_DisableTemperatureSensor();
   res = AccelSensor_SetPowerMode(LIS2DH_CTRL_REG1_POWERMODE_POWERDOWN);
   #endif
+  /* ---------------------------------------------------------------*/
+  res = SPIF_Init(); /* SPI Flash chip needs to be initialized, otherwise it drains around 800uA! */
 
+  /* ---------------------------------------------------------------*/
   if (enterLowPower) {
     TI1_Enable(); /* enable LPTMR0 */
     for(;;) {

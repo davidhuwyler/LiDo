@@ -59,6 +59,13 @@
 #include "ExtIntLdd2.h"
 #include "RES_OPT.h"
 #include "BitIoLdd13.h"
+#include "PIN_SPIF_RESET.h"
+#include "BitIoLdd14.h"
+#include "PIN_SPIF_CS.h"
+#include "BitIoLdd15.h"
+#include "PIN_SPIF_WP.h"
+#include "BitIoLdd16.h"
+#include "SM1.h"
 #include "PIN_PS_MODE.h"
 #include "BitIoLdd10.h"
 #include "TU1.h"
@@ -136,6 +143,25 @@ void INT_LI_DONE_OnInterrupt(void);
 **     Returns     : Nothing
 ** ===================================================================
 */
+
+/*
+** ===================================================================
+**     Event       :  SM1_OnBlockReceived (module Events)
+**
+**     Component   :  SM1 [SPIMaster_LDD]
+*/
+/*!
+**     @brief
+**         This event is called when the requested number of data is
+**         moved to the input buffer. This method is available only if
+**         the ReceiveBlock method is enabled.
+**     @param
+**         UserDataPtr     - Pointer to the user or
+**                           RTOS specific data. The pointer is passed
+**                           as the parameter of Init method. 
+*/
+/* ===================================================================*/
+void SM1_OnBlockReceived(LDD_TUserData *UserDataPtr);
 
 /* END Events */
 
