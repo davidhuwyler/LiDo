@@ -3,7 +3,7 @@
   <Header>
     <Name>LiDo_CustomPCB</Name>
     <SavedBy>dave</SavedBy>
-    <ModificationStamp>159</ModificationStamp>
+    <ModificationStamp>160</ModificationStamp>
     <Date>2019-04-24</Date>
     <IDE>Eclipse IDE</IDE>
     <PEversion>1.12.2.RT7_b1550-0615</PEversion>
@@ -6991,7 +6991,7 @@
   <Configuration>
     <CompNumb>129</CompNumb>
     <NodeName>V2_1</NodeName>
-    <CnfgEnabled>true</CnfgEnabled>
+    <CnfgEnabled>false</CnfgEnabled>
     <TargetCPU>5</TargetCPU>
     <ConfigurationComment lines_count="0" />
     <BoolList_FpgaConfig>
@@ -7176,7 +7176,7 @@
   <Configuration>
     <CompNumb>134</CompNumb>
     <NodeName>V2_2</NodeName>
-    <CnfgEnabled>false</CnfgEnabled>
+    <CnfgEnabled>true</CnfgEnabled>
     <TargetCPU>5</TargetCPU>
     <ConfigurationComment lines_count="0" />
     <BoolList_FpgaConfig>
@@ -14193,7 +14193,7 @@
     <BeanType>LED</BeanType>
     <Name>LED_G</Name>
     <CompNumb>76</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>Led</IconName>
     <UserFolderName>UI_V20_V21</UserFolderName>
@@ -14986,7 +14986,7 @@
     <BeanType>LED</BeanType>
     <Name>LED_B</Name>
     <CompNumb>79</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>Led</IconName>
     <UserFolderName>UI_V20_V21</UserFolderName>
@@ -15780,7 +15780,7 @@
     <BeanType>Init_GPIO_VAR0</BeanType>
     <Name>PTC</Name>
     <CompNumb>72</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>PERIPHINSP</IconName>
     <UserFolderName>UI_V20_V21</UserFolderName>
@@ -22661,7 +22661,7 @@
     <BeanType>Init_GPIO_VAR0</BeanType>
     <Name>PTD</Name>
     <CompNumb>135</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>PERIPHINSP</IconName>
     <UserFolderName>UI_V22</UserFolderName>
@@ -29323,7 +29323,7 @@
     <BeanType>LED</BeanType>
     <Name>LED_B</Name>
     <CompNumb>136</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>Led</IconName>
     <UserFolderName>UI_V22</UserFolderName>
@@ -32939,7 +32939,7 @@
     <BeanType>AsynchroSerial</BeanType>
     <Name>AS1</Name>
     <CompNumb>23</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>PHONE</IconName>
     <UserFolderName>Shell_V20_V21</UserFolderName>
@@ -34014,7 +34014,7 @@
               <ItemSymbol>BdRate</ItemSymbol>
               <ReadOnly>false</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
-              <Value>init:115200 baud;prec:1.5%;RTS:none;clksrc_presc[SpeedMode0]Auto select;clksrc_presc[SpeedMode1]Auto select;clksrc_presc[SpeedMode2]Auto select;clksrc_presc[SpeedMode3]Auto select;clksrc_presc[SpeedMode4]Auto select;clksrc_presc[SpeedMode5]Auto select;clksrc_presc[SpeedMode6]Auto select;clksrc_presc[SpeedMode7]Auto select</Value>
+              <Value>115200 baud</Value>
               <RuntimeSetting>0</RuntimeSetting>
               <ReqDevPrescHigh>-1</ReqDevPrescHigh>
               <ReqDevPrescLow>-1</ReqDevPrescLow>
@@ -37666,7 +37666,7 @@
     <BeanType>BitIO</BeanType>
     <Name>PIN_SENSOR_PWR</Name>
     <CompNumb>74</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>Sensor_V20_V21</UserFolderName>
@@ -40024,7 +40024,7 @@
     <BeanType>BitIO</BeanType>
     <Name>PIN_SPIF_PWR</Name>
     <CompNumb>47</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>SPIF_V20_V21</UserFolderName>
@@ -43667,7 +43667,7 @@
     <BeanType>ExtInt</BeanType>
     <Name>INT_LI_DONE</Name>
     <CompNumb>175</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>EXTINT</IconName>
     <UserFolderName>Sensor_V20_V21</UserFolderName>
@@ -51172,7 +51172,7 @@
     <BeanType>BitIO</BeanType>
     <Name>PIN_POWER_ON</Name>
     <CompNumb>85</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>PM_V20_V21</UserFolderName>
@@ -51761,7 +51761,7 @@
     <BeanType>BitIO</BeanType>
     <Name>PIN_PS_MODE</Name>
     <CompNumb>123</CompNumb>
-    <CompEnabled>true</CompEnabled>
+    <CompEnabled>false</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>PM_V20_V21</UserFolderName>
@@ -61209,7 +61209,7 @@
     <BeanType>LED</BeanType>
     <Name>LED_G</Name>
     <CompNumb>141</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>Led</IconName>
     <UserFolderName>UI_V22</UserFolderName>
@@ -62004,7 +62004,7 @@
     <BeanType>BitIO</BeanType>
     <Name>PIN_POWER_ON</Name>
     <CompNumb>147</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>PM_V22</UserFolderName>
@@ -62593,7 +62593,7 @@
     <BeanType>BitIO</BeanType>
     <Name>PIN_PS_MODE</Name>
     <CompNumb>150</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>PM_V22</UserFolderName>
@@ -63183,7 +63183,7 @@
     <BeanType>BitIO</BeanType>
     <Name>RES_OPT</Name>
     <CompNumb>177</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>Sensor_V22</UserFolderName>
@@ -72231,7 +72231,7 @@
     <BeanType>BitIO</BeanType>
     <Name>ACC_INT1</Name>
     <CompNumb>171</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>BITIO</IconName>
     <UserFolderName>Sensor_V22</UserFolderName>
@@ -73411,7 +73411,7 @@
     <BeanType>ExtInt</BeanType>
     <Name>INT_LI_DONE</Name>
     <CompNumb>179</CompNumb>
-    <CompEnabled>false</CompEnabled>
+    <CompEnabled>true</CompEnabled>
     <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
     <IconName>EXTINT</IconName>
     <UserFolderName>Sensor_V22</UserFolderName>
