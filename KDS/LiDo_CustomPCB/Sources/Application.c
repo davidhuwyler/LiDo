@@ -250,6 +250,14 @@ void APP_resumeSampleTaskFromISR(void) {
   }
 }
 
+void APP_suspendSampleTask(void) {
+  if(sampletaskHandle!=NULL) {
+    vTaskSuspend(sampletaskHandle);
+  } else {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+}
+
 void APP_suspendWriteFileTask(void) {
   if (writeFileTaskHandle!=NULL) {
     vTaskSuspend(writeFileTaskHandle);

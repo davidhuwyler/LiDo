@@ -91,10 +91,13 @@ void LightSensor_getParams(uint8_t* paramGain, uint8_t* paramIntegrationTime, ui
 }
 
 void LightSensor_init(void) {
-  //Workaround Resuming not working:
-	waitForLightSensMutex = xSemaphoreCreateRecursiveMutex();
+  //Workaround Resuming not working: \todo ??????
+  uint8_t i2cData;
+  uint8_t res;
+
+  waitForLightSensMutex = xSemaphoreCreateRecursiveMutex();
   if( waitForLightSensMutex == NULL ) {
-    APP_FatalError();
+    APP_FatalError(__FILE__, __LINE__);
   }
 #if PL_CONFIG_HAS_SENSOR_PWR_PIN
 	//PowerSensors
@@ -103,41 +106,68 @@ void LightSensor_init(void) {
 
 	WAIT1_WaitOSms(1);
 
-	uint8_t i2cData;
-	uint8_t res;
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_1, 0x8A);		//Register must be initialized with 0x8A (Datasheet p. 20)
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_2, 0x02);		//Register must be initialized with 0x02 (Datasheet p. 20)
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_3, 0x02);		//Register must be initialized with 0x02 (Datasheet p. 20)
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_4, 0x00);		//Register must be initialized with 0x00 (Datasheet p. 20)
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_5, 0x02);		//Register must be initialized with 0x00 (Datasheet p. 20)
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
 
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_1 , 0x8A);		//Register must be initialized with 0x8A (Datasheet p. 20)
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_2 , 0x02);		//Register must be initialized with 0x02 (Datasheet p. 20)
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_3 , 0x02);		//Register must be initialized with 0x02 (Datasheet p. 20)
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_4 , 0x00);		//Register must be initialized with 0x00 (Datasheet p. 20)
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_DEV_CONFIG_5 , 0x02);		//Register must be initialized with 0x00 (Datasheet p. 20)
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG, 0xCA);		//Enable Interrupt after Conversion finished
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK);		//Clear Interrupt
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_EN, 0x04);		//Enable ChannelData for Interrupts
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
 
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_PIN_CONFIG , 0xCA);		//Enable Interrupt after Conversion finished
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR , LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK);		//Clear Interrupt
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_EN , 0x04);		//Enable ChannelData for Interrupts
-
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV , 0x03);	//Gain = b00=1x; b01=3.7x; b10=16x; b11=64x;
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T , 0xF0);		//IntegrationTime: (256 - value) * 2.8ms
-	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME , 0xF0);		//Time between Conversions: (256 - value) * 2.8ms
-
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_GAIN_IDRV, 0x03);	//Gain = b00=1x; b01=3.7x; b10=16x; b11=64x;
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_INT_T, 0xF0);		//IntegrationTime: (256 - value) * 2.8ms
+  if(res != ERR_OK) {
+    APP_FatalError(__FILE__, __LINE__);
+  }
+	res = GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_WTIME, 0xF0);		//Time between Conversions: (256 - value) * 2.8ms
 	if(res != ERR_OK) {
-		for(;;) {//IIC Error
-		  APP_FatalError(__FILE__, __LINE__);
-		}
+	  APP_FatalError(__FILE__, __LINE__);
 	}
 
-	//Init LightSensor Params from AppDataFileS
-	uint8_t headerBuf[5];
+	/* Init LightSensor Params from AppDataFile */
+	uint8_t headerBuf[25];
 	const unsigned char *p;
-	p = headerBuf;
 	uint8_t gain = 0, intTime = 0, waitTime = 0;
-	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], (uint8_t*)p ,25); //Read LightSens Gain
+
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[5][0], headerBuf, sizeof(headerBuf)); //Read LightSens Gain
+  p = headerBuf;
 	UTIL1_ScanDecimal8uNumber(&p, &gain);
-	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], (uint8_t*)p ,25); //Read LightSens IntegrationTime
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[6][0], headerBuf, sizeof(headerBuf)); //Read LightSens IntegrationTime
+  p = headerBuf;
 	UTIL1_ScanDecimal8uNumber(&p, &intTime);
-	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], (uint8_t*)p ,25); //Read LightSens WaitTime
+	AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[7][0], headerBuf, sizeof(headerBuf)); //Read LightSens WaitTime
+  p = headerBuf;
 	UTIL1_ScanDecimal8uNumber(&p, &waitTime);
-	LightSensor_setParams(gain,intTime,waitTime);
+	LightSensor_setParams(gain, intTime, waitTime);
 }
 
 uint8_t LightSensor_autoZeroBlocking(void) {

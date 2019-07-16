@@ -46,7 +46,7 @@ void APP_toggleEnableSampling(void);
 void APP_requestForSoftwareReset(void);
 void APP_requestForPowerOff(void);
 void APP_resumeSampleTaskFromISR(void);
-
+void APP_suspendSampleTask(void);
 void APP_FatalError(const char *fileName, unsigned int lineNo);
 
 void APP_Init(void);

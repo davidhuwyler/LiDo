@@ -20,7 +20,7 @@
 #endif
 
 /* Sensor configurations */
-#define PL_CONFIG_HAS_LIGHT_SENSOR   (0 && PL_BOARD_REV==22)
+#define PL_CONFIG_HAS_LIGHT_SENSOR   (1 && PL_BOARD_REV==22)
 #define PL_CONFIG_HAS_ACCEL_SENSOR   (1 && PL_BOARD_REV==22)
 #define PL_CONFIG_HAS_GAUGE_SENSOR   (1 && (PL_BOARD_REV==21||PL_BOARD_REV==22)) /* LC709203F on V2.1. Earlier board had an ADC */
 #define PL_CONFIG_HAS_BATT_ADC       (1 && PL_BOARD_REV==20)
@@ -29,11 +29,11 @@
 #define PL_CONFIG_HAS_SENSOR_PWR_PIN (1 && (PL_BOARD_REV==20 || PL_BOARD_REV==21)) /* V2.2 does not have ability to power off the sensors (accel + light) */
 #define PL_CONFIG_HAS_ACCEL_ISR1_PIN (1 && PL_BOARD_REV==22)
 #define PL_CONFIG_HAS_BAT_ALARM_PIN  (1 && PL_BOARD_REV==22)
-#define PL_CONFIG_HAS_SHELL          (0)
+#define PL_CONFIG_HAS_SHELL          (1)
 
 /* debug ONLY options */
 #define PL_CONFIG_HAS_WATCHDOG       (0) /* disable for better debugging only! */
-#define PL_CONFIG_HAS_LOW_POWER      (1) /* disable for debugging only! */
+#define PL_CONFIG_HAS_LOW_POWER      (0) /* disable for debugging only! */
 #define PL_CONFIG_HAS_SHELL_SHUTOWN  (0) /* if USB cable disconnect shall disable the shell and shutdown the USB peripheral to save power. */
 
 // Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
