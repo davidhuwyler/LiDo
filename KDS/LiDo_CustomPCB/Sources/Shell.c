@@ -183,7 +183,7 @@ static void SHELL_SwitchIOifNeeded(void) {
 	}
 }
 
-/* \todo Fix the thing in the comment below */
+/*! \todo Fix the thing in the comment below */
 //Function needs to be called 3times to
 //Disable the shell. This makes sure, the
 //Answer message got out before disabling
@@ -235,7 +235,7 @@ static void SHELL_task(void *param) {
 	    shellDisablingIsInitiated = TRUE;
 		  SHELL_Disable();
 	  }
-#else
+#elif 0
 	  if ((currTimestamp-shellStartedTimestamp) > SHELL_MIN_ENABLE_TIME_AFTER_BOOT_MS) {
 	    CDC1_Deinit();
 	    USB1_Deinit();

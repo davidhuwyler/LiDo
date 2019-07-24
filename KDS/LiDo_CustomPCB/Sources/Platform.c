@@ -14,6 +14,7 @@
 #include "AccelSensor.h"
 #include "LowPower.h"
 #include "McuLC709203F.h"
+#include "Shell.h"
 #include "SPIF.h"
 #include "SDEP.h"
 #include "FileSystem.h"

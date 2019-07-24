@@ -120,8 +120,8 @@ uint8_t AppDataFile_CreateFile(void) {
 
 #if PL_CONFIG_HAS_SHELL
 static uint8_t AppDataFile_PrintList(CLS1_ConstStdIOType *io) {
-	uint8_t lineBuffer[50];
-	uint8_t valueBuffer[25];
+	uint8_t lineBuffer[64];
+	uint8_t valueBuffer[40];
 
 	for(int i=0 ; i<APPDATA_NOF_KEYS; i++) {
 		AppDataFile_GetStringValue(APPDATA_KEYS_AND_DEV_VALUES[i][0], valueBuffer, sizeof(valueBuffer));

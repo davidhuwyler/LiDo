@@ -20,7 +20,7 @@
 #include "LightSensor.h"
 #include "RTC.h"
 
-#define LP_USE_PLL    (0)  /* if using PLL clock configuration */
+#define LP_USE_PLL    (1)  /* if using PLL clock configuration */
 
 static volatile bool stopModeAllowed = FALSE;
 #if LP_USE_PLL

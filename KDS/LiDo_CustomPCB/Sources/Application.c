@@ -662,6 +662,7 @@ void APP_Run(void) {
     WAIT1_Waitms(50);
   }
 #endif
+#if 0
   for(int i=0;i<5;i++) { /* blink and wait to give a chance to regain access to the hardware */
     LED_R_On();
     LED_G_On();
@@ -672,6 +673,7 @@ void APP_Run(void) {
     LED_B_Off();
     WAIT1_Waitms(1000);
   }
+#endif
   if (xTaskCreate(AppTask, "App", 3000/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
     APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
   }
