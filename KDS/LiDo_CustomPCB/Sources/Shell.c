@@ -132,7 +132,6 @@ static void SHELL_ReadChar(uint8_t *p) {
 #endif
 }
 
-
 static void SHELL_SendChar(uint8_t ch) {
 #if SHELL_CONFIG_HAS_SHELL_EXTRA_UART
   UART_SendChar(ch);

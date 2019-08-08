@@ -108,7 +108,7 @@ void FRTOS1_vApplicationTickHook(void)
 	TmDt1_AddTick();
 #endif
 #if !configUSE_TICKLESS_IDLE
-	TMOUT1_AddTick();  /* only USB CDC currently uses the timeout (disabled for now) */
+	TMOUT1_AddTick();  /* only USB CDC currently uses the timeout */
 #endif
 }
 

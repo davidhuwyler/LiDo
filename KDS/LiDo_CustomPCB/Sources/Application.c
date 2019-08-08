@@ -39,6 +39,7 @@
 #endif
 #include "CDC1.h"
 #include "USB1.h"
+#include "TMOUT1.h"
 
 #define MUTEX_WAIT_TIME_MS 2000
 
@@ -66,7 +67,11 @@ bool APP_UserButtonPressed(void) {
 void APP_FatalError(const char *fileName, unsigned int lineNo) {
   for(;;) {
     LED_R_Neg();
-    WAIT1_Waitms(100);
+    if (xTaskGetSchedulerState()==taskSCHEDULER_RUNNING) {
+      vTaskDelay(pdMS_TO_TICKS(100));
+    } else {
+      WAIT1_Waitms(100);
+    }
     LowPower_DisableStopMode(); /* make it easier to attach with the debugger */
     taskDISABLE_INTERRUPTS();
   }
@@ -613,9 +618,11 @@ static void AppTask(void *pv) {
 #if PL_CONFIG_HAS_LOW_POWER
   bool gotoLowPower = TRUE;
 #endif
+  uint8_t platformInit;
+  uint32_t cntr = 0;
 
   taskStartedTimestamp = xTaskGetTickCount();
-  PL_InitWithInterrupts(); /* initialize things which require interrupts enabled */
+  platformInit = PL_InitWithInterrupts(); /* initialize things which require interrupts enabled */
   //CDC1_Deinit();
   //USB1_Deinit();
   for(;;) {
@@ -632,7 +639,13 @@ static void AppTask(void *pv) {
     APP_toggleEnableSamplingIfRequested(); /* check if there is a request to toggle sampling */
     APP_softwareResetIfRequested(); /* check if there is a request to do a reset */
     APP_PowerOffIfRequested(); /* check if there is a request to power off */
-
+    if (platformInit!=ERR_OK || !FS_IsMounted()) { /* something failed: indicate with blinking red LED */
+      cntr++;
+      if ((cntr%5)==0) { /* slow down messages */
+        CLS1_SendStr("Check the file system!\r\n", SHELL_GetStdio()->stdErr);
+      }
+      LED_R_Neg();
+    }
     if (AppDataFile_GetSamplingEnabled()) {
       /* with sampling enabled, there is already a blinky with the RTC alarm going on. No need to have another one */
       vTaskDelay(pdMS_TO_TICKS(1000));
@@ -651,6 +664,15 @@ static void AppTask(void *pv) {
       vTaskDelay(pdMS_TO_TICKS(999));
     }
   }
+}
+
+static TimerHandle_t timerHndl;
+#define APP_PERIODIC_TIMER_PERIOD_MS  TMOUT1_TICK_PERIOD_MS
+
+static void vTimerCallbackExpired(TimerHandle_t pxTimer) {
+  //TRG1_AddTick();
+  TMOUT1_AddTick(); /* timout for USB CDC */
+  //TmDt1_AddTick();
 }
 
 void APP_Run(void) {
@@ -676,6 +698,18 @@ void APP_Run(void) {
 #endif
   if (xTaskCreate(AppTask, "App", 3000/sizeof(StackType_t), NULL, configMAX_PRIORITIES-1, NULL) != pdPASS) {
     APP_FatalError(__FILE__, __LINE__); /* error! probably out of memory */
+  }
+  timerHndl = xTimerCreate(
+        "timer", /* name */
+        pdMS_TO_TICKS(APP_PERIODIC_TIMER_PERIOD_MS), /* period/time */
+        pdTRUE, /* auto reload */
+        (void*)0, /* timer ID */
+        vTimerCallbackExpired); /* callback */
+  if (timerHndl==NULL) {
+    for(;;); /* failure! */
+  }
+  if (xTimerStart(timerHndl, 0)!=pdPASS) { /* start the timer */
+    for(;;); /* failure!?! */
   }
   vTaskStartScheduler();
   for(;;) {

@@ -3,7 +3,7 @@
   <Header>
     <Name>LiDo_CustomPCB</Name>
     <SavedBy>dave</SavedBy>
-    <ModificationStamp>172</ModificationStamp>
+    <ModificationStamp>176</ModificationStamp>
     <Date>2019-04-24</Date>
     <IDE>Eclipse IDE</IDE>
     <PEversion>1.12.2.RT7_b1550-0615</PEversion>
@@ -29,7 +29,7 @@
     <UseExistingModules>true</UseExistingModules>
     <RenamePeripheries>false</RenamePeripheries>
     <Autodependency>true</Autodependency>
-    <ProjectCompNumb>185</ProjectCompNumb>
+    <ProjectCompNumb>190</ProjectCompNumb>
     <DelUnusedPreviouslyGenFiles>true</DelUnusedPreviouslyGenFiles>
     <GeneratedCodeFrozen>false</GeneratedCodeFrozen>
     <AssignInitComponentNameToPrph>true</AssignInitComponentNameToPrph>
@@ -7033,83 +7033,83 @@
       <Value15>true</Value15>
       <ItemId16>32</ItemId16>
       <Value16>true</Value16>
-      <ItemId17>31</ItemId17>
+      <ItemId17>74</ItemId17>
       <Value17>true</Value17>
-      <ItemId18>74</ItemId18>
+      <ItemId18>34</ItemId18>
       <Value18>true</Value18>
-      <ItemId19>34</ItemId19>
+      <ItemId19>35</ItemId19>
       <Value19>true</Value19>
-      <ItemId20>35</ItemId20>
+      <ItemId20>47</ItemId20>
       <Value20>true</Value20>
-      <ItemId21>47</ItemId21>
+      <ItemId21>49</ItemId21>
       <Value21>true</Value21>
-      <ItemId22>49</ItemId22>
+      <ItemId22>51</ItemId22>
       <Value22>true</Value22>
-      <ItemId23>51</ItemId23>
+      <ItemId23>53</ItemId23>
       <Value23>true</Value23>
-      <ItemId24>53</ItemId24>
+      <ItemId24>63</ItemId24>
       <Value24>true</Value24>
-      <ItemId25>63</ItemId25>
+      <ItemId25>64</ItemId25>
       <Value25>true</Value25>
-      <ItemId26>64</ItemId26>
+      <ItemId26>65</ItemId26>
       <Value26>true</Value26>
-      <ItemId27>65</ItemId27>
+      <ItemId27>66</ItemId27>
       <Value27>true</Value27>
-      <ItemId28>66</ItemId28>
-      <Value28>true</Value28>
-      <ItemId29>71</ItemId29>
-      <Value29>false</Value29>
-      <ItemId30>72</ItemId30>
+      <ItemId28>71</ItemId28>
+      <Value28>false</Value28>
+      <ItemId29>72</ItemId29>
+      <Value29>true</Value29>
+      <ItemId30>76</ItemId30>
       <Value30>true</Value30>
-      <ItemId31>76</ItemId31>
+      <ItemId31>79</ItemId31>
       <Value31>true</Value31>
-      <ItemId32>79</ItemId32>
+      <ItemId32>85</ItemId32>
       <Value32>true</Value32>
-      <ItemId33>85</ItemId33>
-      <Value33>true</Value33>
-      <ItemId34>87</ItemId34>
+      <ItemId33>87</ItemId33>
+      <Value33>false</Value33>
+      <ItemId34>89</ItemId34>
       <Value34>false</Value34>
-      <ItemId35>89</ItemId35>
-      <Value35>false</Value35>
-      <ItemId36>91</ItemId36>
+      <ItemId35>91</ItemId35>
+      <Value35>true</Value35>
+      <ItemId36>105</ItemId36>
       <Value36>true</Value36>
-      <ItemId37>105</ItemId37>
+      <ItemId37>120</ItemId37>
       <Value37>true</Value37>
-      <ItemId38>120</ItemId38>
+      <ItemId38>123</ItemId38>
       <Value38>true</Value38>
-      <ItemId39>123</ItemId39>
-      <Value39>true</Value39>
-      <ItemId40>135</ItemId40>
+      <ItemId39>135</ItemId39>
+      <Value39>false</Value39>
+      <ItemId40>136</ItemId40>
       <Value40>false</Value40>
-      <ItemId41>136</ItemId41>
+      <ItemId41>141</ItemId41>
       <Value41>false</Value41>
-      <ItemId42>141</ItemId42>
+      <ItemId42>147</ItemId42>
       <Value42>false</Value42>
-      <ItemId43>147</ItemId43>
+      <ItemId43>150</ItemId43>
       <Value43>false</Value43>
-      <ItemId44>150</ItemId44>
+      <ItemId44>159</ItemId44>
       <Value44>false</Value44>
-      <ItemId45>159</ItemId45>
-      <Value45>false</Value45>
-      <ItemId46>162</ItemId46>
+      <ItemId45>162</ItemId45>
+      <Value45>true</Value45>
+      <ItemId46>164</ItemId46>
       <Value46>true</Value46>
-      <ItemId47>164</ItemId47>
+      <ItemId47>168</ItemId47>
       <Value47>true</Value47>
-      <ItemId48>168</ItemId48>
-      <Value48>true</Value48>
-      <ItemId49>171</ItemId49>
-      <Value49>false</Value49>
-      <ItemId50>173</ItemId50>
+      <ItemId48>171</ItemId48>
+      <Value48>false</Value48>
+      <ItemId49>173</ItemId49>
+      <Value49>true</Value49>
+      <ItemId50>175</ItemId50>
       <Value50>true</Value50>
-      <ItemId51>175</ItemId51>
-      <Value51>true</Value51>
-      <ItemId52>177</ItemId52>
+      <ItemId51>177</ItemId51>
+      <Value51>false</Value51>
+      <ItemId52>179</ItemId52>
       <Value52>false</Value52>
-      <ItemId53>179</ItemId53>
-      <Value53>false</Value53>
-      <ItemId54>181</ItemId54>
+      <ItemId53>181</ItemId53>
+      <Value53>true</Value53>
+      <ItemId54>183</ItemId54>
       <Value54>true</Value54>
-      <ItemId55>183</ItemId55>
+      <ItemId55>187</ItemId55>
       <Value55>true</Value55>
     </BoolList_BeanConfig>
     <BoolList_TaskConfig>
@@ -7220,84 +7220,84 @@
       <Value15>true</Value15>
       <ItemId16>32</ItemId16>
       <Value16>true</Value16>
-      <ItemId17>31</ItemId17>
+      <ItemId17>74</ItemId17>
       <Value17>false</Value17>
-      <ItemId18>74</ItemId18>
-      <Value18>false</Value18>
-      <ItemId19>34</ItemId19>
+      <ItemId18>34</ItemId18>
+      <Value18>true</Value18>
+      <ItemId19>35</ItemId19>
       <Value19>true</Value19>
-      <ItemId20>35</ItemId20>
-      <Value20>true</Value20>
-      <ItemId21>47</ItemId21>
-      <Value21>false</Value21>
-      <ItemId22>49</ItemId22>
+      <ItemId20>47</ItemId20>
+      <Value20>false</Value20>
+      <ItemId21>49</ItemId21>
+      <Value21>true</Value21>
+      <ItemId22>51</ItemId22>
       <Value22>true</Value22>
-      <ItemId23>51</ItemId23>
+      <ItemId23>53</ItemId23>
       <Value23>true</Value23>
-      <ItemId24>53</ItemId24>
+      <ItemId24>63</ItemId24>
       <Value24>true</Value24>
-      <ItemId25>63</ItemId25>
+      <ItemId25>64</ItemId25>
       <Value25>true</Value25>
-      <ItemId26>64</ItemId26>
+      <ItemId26>65</ItemId26>
       <Value26>true</Value26>
-      <ItemId27>65</ItemId27>
+      <ItemId27>66</ItemId27>
       <Value27>true</Value27>
-      <ItemId28>66</ItemId28>
-      <Value28>true</Value28>
-      <ItemId29>71</ItemId29>
+      <ItemId28>71</ItemId28>
+      <Value28>false</Value28>
+      <ItemId29>72</ItemId29>
       <Value29>false</Value29>
-      <ItemId30>72</ItemId30>
+      <ItemId30>76</ItemId30>
       <Value30>false</Value30>
-      <ItemId31>76</ItemId31>
+      <ItemId31>79</ItemId31>
       <Value31>false</Value31>
-      <ItemId32>79</ItemId32>
+      <ItemId32>85</ItemId32>
       <Value32>false</Value32>
-      <ItemId33>85</ItemId33>
+      <ItemId33>87</ItemId33>
       <Value33>false</Value33>
-      <ItemId34>87</ItemId34>
+      <ItemId34>89</ItemId34>
       <Value34>false</Value34>
-      <ItemId35>89</ItemId35>
-      <Value35>false</Value35>
-      <ItemId36>91</ItemId36>
+      <ItemId35>91</ItemId35>
+      <Value35>true</Value35>
+      <ItemId36>105</ItemId36>
       <Value36>true</Value36>
-      <ItemId37>105</ItemId37>
+      <ItemId37>120</ItemId37>
       <Value37>true</Value37>
-      <ItemId38>120</ItemId38>
-      <Value38>true</Value38>
-      <ItemId39>123</ItemId39>
+      <ItemId38>123</ItemId38>
+      <Value38>false</Value38>
+      <ItemId39>135</ItemId39>
       <Value39>false</Value39>
-      <ItemId40>135</ItemId40>
-      <Value40>false</Value40>
-      <ItemId41>136</ItemId41>
+      <ItemId40>136</ItemId40>
+      <Value40>true</Value40>
+      <ItemId41>141</ItemId41>
       <Value41>true</Value41>
-      <ItemId42>141</ItemId42>
+      <ItemId42>147</ItemId42>
       <Value42>true</Value42>
-      <ItemId43>147</ItemId43>
+      <ItemId43>150</ItemId43>
       <Value43>true</Value43>
-      <ItemId44>150</ItemId44>
-      <Value44>true</Value44>
-      <ItemId45>159</ItemId45>
-      <Value45>false</Value45>
-      <ItemId46>162</ItemId46>
+      <ItemId44>159</ItemId44>
+      <Value44>false</Value44>
+      <ItemId45>162</ItemId45>
+      <Value45>true</Value45>
+      <ItemId46>164</ItemId46>
       <Value46>true</Value46>
-      <ItemId47>164</ItemId47>
+      <ItemId47>168</ItemId47>
       <Value47>true</Value47>
-      <ItemId48>168</ItemId48>
+      <ItemId48>171</ItemId48>
       <Value48>true</Value48>
-      <ItemId49>171</ItemId49>
+      <ItemId49>173</ItemId49>
       <Value49>true</Value49>
-      <ItemId50>173</ItemId50>
-      <Value50>true</Value50>
-      <ItemId51>175</ItemId51>
-      <Value51>false</Value51>
-      <ItemId52>177</ItemId52>
+      <ItemId50>175</ItemId50>
+      <Value50>false</Value50>
+      <ItemId51>177</ItemId51>
+      <Value51>true</Value51>
+      <ItemId52>179</ItemId52>
       <Value52>true</Value52>
-      <ItemId53>179</ItemId53>
+      <ItemId53>181</ItemId53>
       <Value53>true</Value53>
-      <ItemId54>181</ItemId54>
-      <Value54>true</Value54>
-      <ItemId55>183</ItemId55>
-      <Value55>false</Value55>
+      <ItemId54>183</ItemId54>
+      <Value54>false</Value54>
+      <ItemId55>187</ItemId55>
+      <Value55>true</Value55>
     </BoolList_BeanConfig>
     <BoolList_TaskConfig>
       <Count>0</Count>
@@ -7417,73 +7417,73 @@
       <Value20>true</Value20>
       <ItemId21>32</ItemId21>
       <Value21>true</Value21>
-      <ItemId22>31</ItemId22>
+      <ItemId22>74</ItemId22>
       <Value22>true</Value22>
-      <ItemId23>74</ItemId23>
+      <ItemId23>34</ItemId23>
       <Value23>true</Value23>
-      <ItemId24>34</ItemId24>
+      <ItemId24>35</ItemId24>
       <Value24>true</Value24>
-      <ItemId25>35</ItemId25>
+      <ItemId25>47</ItemId25>
       <Value25>true</Value25>
-      <ItemId26>47</ItemId26>
+      <ItemId26>49</ItemId26>
       <Value26>true</Value26>
-      <ItemId27>49</ItemId27>
+      <ItemId27>51</ItemId27>
       <Value27>true</Value27>
-      <ItemId28>51</ItemId28>
+      <ItemId28>53</ItemId28>
       <Value28>true</Value28>
-      <ItemId29>53</ItemId29>
+      <ItemId29>63</ItemId29>
       <Value29>true</Value29>
-      <ItemId30>63</ItemId30>
+      <ItemId30>64</ItemId30>
       <Value30>true</Value30>
-      <ItemId31>64</ItemId31>
+      <ItemId31>65</ItemId31>
       <Value31>true</Value31>
-      <ItemId32>65</ItemId32>
+      <ItemId32>66</ItemId32>
       <Value32>true</Value32>
-      <ItemId33>66</ItemId33>
+      <ItemId33>71</ItemId33>
       <Value33>true</Value33>
-      <ItemId34>71</ItemId34>
+      <ItemId34>85</ItemId34>
       <Value34>true</Value34>
-      <ItemId35>85</ItemId35>
+      <ItemId35>123</ItemId35>
       <Value35>true</Value35>
-      <ItemId36>123</ItemId36>
+      <ItemId36>91</ItemId36>
       <Value36>true</Value36>
-      <ItemId37>91</ItemId37>
+      <ItemId37>89</ItemId37>
       <Value37>true</Value37>
-      <ItemId38>89</ItemId38>
+      <ItemId38>105</ItemId38>
       <Value38>true</Value38>
-      <ItemId39>105</ItemId39>
+      <ItemId39>87</ItemId39>
       <Value39>true</Value39>
-      <ItemId40>87</ItemId40>
+      <ItemId40>120</ItemId40>
       <Value40>true</Value40>
-      <ItemId41>120</ItemId41>
-      <Value41>true</Value41>
-      <ItemId42>141</ItemId42>
+      <ItemId41>141</ItemId41>
+      <Value41>false</Value41>
+      <ItemId42>147</ItemId42>
       <Value42>false</Value42>
-      <ItemId43>147</ItemId43>
+      <ItemId43>150</ItemId43>
       <Value43>false</Value43>
-      <ItemId44>150</ItemId44>
+      <ItemId44>159</ItemId44>
       <Value44>false</Value44>
-      <ItemId45>159</ItemId45>
-      <Value45>false</Value45>
-      <ItemId46>162</ItemId46>
+      <ItemId45>162</ItemId45>
+      <Value45>true</Value45>
+      <ItemId46>164</ItemId46>
       <Value46>true</Value46>
-      <ItemId47>164</ItemId47>
+      <ItemId47>168</ItemId47>
       <Value47>true</Value47>
-      <ItemId48>168</ItemId48>
+      <ItemId48>171</ItemId48>
       <Value48>true</Value48>
-      <ItemId49>171</ItemId49>
+      <ItemId49>173</ItemId49>
       <Value49>true</Value49>
-      <ItemId50>173</ItemId50>
+      <ItemId50>175</ItemId50>
       <Value50>true</Value50>
-      <ItemId51>175</ItemId51>
+      <ItemId51>177</ItemId51>
       <Value51>true</Value51>
-      <ItemId52>177</ItemId52>
+      <ItemId52>179</ItemId52>
       <Value52>true</Value52>
-      <ItemId53>179</ItemId53>
+      <ItemId53>181</ItemId53>
       <Value53>true</Value53>
-      <ItemId54>181</ItemId54>
+      <ItemId54>183</ItemId54>
       <Value54>true</Value54>
-      <ItemId55>183</ItemId55>
+      <ItemId55>187</ItemId55>
       <Value55>true</Value55>
     </BoolList_BeanConfig>
     <BoolList_TaskConfig>
@@ -11983,7 +11983,7 @@
     <UserFolderName>Shell_Util_DtTm</UserFolderName>
     <Comment lines_count="0" />
     <Template />
-    <BeanVersion>01.062</BeanVersion>
+    <BeanVersion>01.063</BeanVersion>
     <LightErrorsIgnored>false</LightErrorsIgnored>
     <Properties>
       <ItemState>
@@ -32188,7 +32188,7 @@
         <ItemSymbol>_SpeedGrp</ItemSymbol>
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
-        <Expanded>false</Expanded>
+        <Expanded>true</Expanded>
       </ItemState>
       <ItemState>
         <ItemSymbol>SpeedMode0</ItemSymbol>
@@ -32281,10 +32281,10 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Index>1</Index>
-        <Value>false</Value>
+        <Index>0</Index>
+        <Value>true</Value>
         <LastSelection>true</LastSelection>
-        <LastUserSel>no</LastUserSel>
+        <LastUserSel>yes</LastUserSel>
         <UsrMethodName>Enable</UsrMethodName>
       </ItemState>
       <ItemState>
@@ -32292,10 +32292,10 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Index>1</Index>
-        <Value>false</Value>
+        <Index>0</Index>
+        <Value>true</Value>
         <LastSelection>true</LastSelection>
-        <LastUserSel>no</LastUserSel>
+        <LastUserSel>yes</LastUserSel>
         <UsrMethodName>Disable</UsrMethodName>
       </ItemState>
       <ItemState>
@@ -36247,7 +36247,7 @@
         <ReadOnly>false</ReadOnly>
         <UserReadOnly>false</UserReadOnly>
         <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Value>32</Value>
+        <Value>64</Value>
         <Base>DEC</Base>
       </ItemState>
       <ItemState>
@@ -37598,73 +37598,6 @@
         <ItemWasNeverEnabledInChgScript>true</ItemWasNeverEnabledInChgScript>
       </ItemState>
     </Events>
-  </Bean>
-  <Bean>
-    <Repository>file:/${ProcessorExpert_loc}/Repositories/Kinetis_Repository</Repository>
-    <ComponentUUID>com.freescale.processorexpert.interruptvector</ComponentUUID>
-    <BeanType>InterruptVector</BeanType>
-    <Name>INT_RTC</Name>
-    <CompNumb>31</CompNumb>
-    <CompEnabled>false</CompEnabled>
-    <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
-    <IconName>PERIPHINSP</IconName>
-    <UserFolderName />
-    <Comment lines_count="0" />
-    <Template />
-    <BeanVersion>02.023</BeanVersion>
-    <LightErrorsIgnored>false</LightErrorsIgnored>
-    <Properties>
-      <ItemState>
-        <ItemSymbol>DeviceName</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <Value>INT_RTC</Value>
-      </ItemState>
-      <ItemState>
-        <ItemSymbol>Vector</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <Value>INT_RTC</Value>
-      </ItemState>
-      <ItemState>
-        <ItemSymbol>InitPriority</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Value>medium priority</Value>
-      </ItemState>
-      <ItemState>
-        <ItemSymbol>ShrInt</ItemSymbol>
-        <ReadOnly>true</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Value>false</Value>
-        <Expanded>false</Expanded>
-      </ItemState>
-      <ItemState>
-        <ItemSymbol>IntSrc</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <Value />
-        <SharedPrphMode>false</SharedPrphMode>
-      </ItemState>
-      <ItemState>
-        <ItemSymbol>Handle</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <Value>RTC_ALARM_ISR</Value>
-      </ItemState>
-      <ItemState>
-        <ItemSymbol>AllowDuplicates</ItemSymbol>
-        <ReadOnly>false</ReadOnly>
-        <UserReadOnly>false</UserReadOnly>
-        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-        <Index>1</Index>
-        <Value>false</Value>
-      </ItemState>
-    </Properties>
-    <Methods />
-    <Events />
   </Bean>
   <Bean>
     <Repository>file:/${ProcessorExpert_loc}/Repositories/Kinetis_Repository</Repository>
@@ -57235,8 +57168,8 @@
               <ReadOnly>false</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
               <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-              <Value>false</Value>
-              <Expanded>false</Expanded>
+              <Value>true</Value>
+              <Expanded>true</Expanded>
             </ItemState>
             <ItemState>
               <ItemSymbol>Timeout</ItemSymbol>
@@ -57249,7 +57182,7 @@
               <ReadOnly>false</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
               <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-              <Value>20</Value>
+              <Value>100</Value>
               <Base>DEC</Base>
             </ItemState>
             <ItemState>
@@ -57257,7 +57190,7 @@
               <ReadOnly>false</ReadOnly>
               <UserReadOnly>false</UserReadOnly>
               <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
-              <Value>2</Value>
+              <Value>50</Value>
               <Base>DEC</Base>
             </ItemState>
             <ItemState>
@@ -74997,6 +74930,150 @@
         <Value>interrupts disabled</Value>
       </ItemState>
     </Events>
+  </Bean>
+  <Bean>
+    <Repository>file:/${ProcessorExpertPath:user}</Repository>
+    <BeanType>Timeout</BeanType>
+    <Name>TMOUT1</Name>
+    <CompNumb>187</CompNumb>
+    <CompEnabled>true</CompEnabled>
+    <GenCodeMode>ALWAYS_WRITE</GenCodeMode>
+    <IconName>Timeout</IconName>
+    <UserFolderName />
+    <Comment lines_count="0" />
+    <Template />
+    <BeanVersion>01.037</BeanVersion>
+    <LightErrorsIgnored>false</LightErrorsIgnored>
+    <Properties>
+      <ItemState>
+        <ItemSymbol>DeviceName</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <Value>TMOUT1</Value>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>sdk</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <Value>MCUC1</Value>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>CriticalSection</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <Value>CS1</Value>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>MaxTimeoutCounters</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Value>2</Value>
+        <Base>DEC</Base>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>CounterTickPeriod</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Value>50</Value>
+        <Base>DEC</Base>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>RTOSGroup</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Value>false</Value>
+        <Expanded>false</Expanded>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>RTOS</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <Value />
+      </ItemState>
+    </Properties>
+    <Methods>
+      <ItemState>
+        <ItemSymbol>GetCounter</ItemSymbol>
+        <ReadOnly>true</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>GetCounter</UsrMethodName>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>LeaveCounter</ItemSymbol>
+        <ReadOnly>true</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>LeaveCounter</UsrMethodName>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>Value</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>Value</UsrMethodName>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>SetCounter</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>SetCounter</UsrMethodName>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>CounterExpired</ItemSymbol>
+        <ReadOnly>true</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>CounterExpired</UsrMethodName>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>AddTick</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>AddTick</UsrMethodName>
+      </ItemState>
+      <ItemState>
+        <ItemSymbol>Init</ItemSymbol>
+        <ReadOnly>false</ReadOnly>
+        <UserReadOnly>false</UserReadOnly>
+        <PropertyModelIsAutomatic>false</PropertyModelIsAutomatic>
+        <Index>0</Index>
+        <Value>true</Value>
+        <LastSelection>true</LastSelection>
+        <LastUserSel>yes</LastUserSel>
+        <UsrMethodName>Init</UsrMethodName>
+      </ItemState>
+    </Methods>
+    <Events />
   </Bean>
   <ComponentInitializationSequence>
     <EmptySection_DummyValue />

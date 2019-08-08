@@ -19,6 +19,7 @@ Open points
 - RTC clock settings after Reset not set?
 - reset button does not work if in low power mode?
 - need glas/enclosure for light sensor?
+- need to stop periodic timer in application.c which is used for USB timeout only.
 - keep communication open if RTT/debugger is connected
 - todo: use bat emergency pin to cut off power in PowerMangement.c (update it for new gauge IC)
 - V2.2: disabled reset pin in CPU?

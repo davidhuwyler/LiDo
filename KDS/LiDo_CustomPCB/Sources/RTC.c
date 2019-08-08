@@ -12,6 +12,8 @@
 #include "TmDt1.h"
 #include "LED_R.h"
 
+static LDD_TDeviceData *rtcHandle;
+
 void RTC_getTimeUnixFormat(int32_t *rtcTimeUnix) {
 	TIMEREC time;
 	DATEREC date;
@@ -68,6 +70,7 @@ void RTC_ALARM_ISR(void) {
 }
 
 void RTC_Init(bool softInit) {
-	(void)RTC1_Init(NULL, softInit);
+  rtcHandle = RTC1_Init(NULL, softInit);
+	(void)RTC1_Enable(rtcHandle); /* make sure the hardware is enabled */
   RTC_EnableRTCInterrupt(); /* RTC alarm is used to wakeup sample task */
 }

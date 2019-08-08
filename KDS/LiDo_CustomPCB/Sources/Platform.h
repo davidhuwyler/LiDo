@@ -40,7 +40,7 @@
 //     exception return operation might vector to incorrect interrupt
 #define __DSB() {  __asm volatile ("dsb 0xF":::"memory"); }
 
-void PL_InitWithInterrupts(void);
+uint8_t PL_InitWithInterrupts(void);
 void PL_Init(void);
 
 #endif /* SOURCES_PLATFORM_H_ */

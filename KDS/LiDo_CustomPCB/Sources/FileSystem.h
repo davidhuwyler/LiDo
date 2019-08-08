@@ -14,6 +14,8 @@
 #include "Application.h"
 #include "FRTOS1.h"
 
+bool FS_IsMounted(void);
+
 lfs_t* FS_GetFileSystem(void);
 uint8_t FS_ParseCommand(const unsigned char* cmd, bool *handled, const CLS1_StdIOType *io);
 uint8_t FS_Init(void);

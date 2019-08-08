@@ -29,6 +29,7 @@
 #include "RES_OPT.h"
 #include "INT_LI_DONE.h"
 #include "PIN_PS_MODE.h"
+#include "Shell.h"
 
 static void MuxAsGPIO(void) {
   /* PTB3: SDA, PTB2: SCL */
@@ -94,18 +95,19 @@ static void ResetI2CBus(void) {
   MuxAsI2C();
 }
 
-void PL_InitWithInterrupts(void) {
+uint8_t PL_InitWithInterrupts(void) {
   /* function gets called from a task where interrupts are enabled */
-  uint8_t res;
+  uint8_t res = ERR_OK;
 
   WatchDog_Init();
   WatchDog_StartComputationTime(WatchDog_LiDoInit);
   res = FS_Init(); /* calls SPIF_Init() too!  SPI Flash chip needs to be initialized, otherwise it drains around 800uA! */
   if (res!=ERR_OK) {
-    APP_FatalError(__FILE__, __LINE__);
+    CLS1_SendStr("FAILED to initialize file system!\r\n", SHELL_GetStdio()->stdErr);
+    /* continue execution, but indicate error with red LED blinking in main application loop */
   }
   LightSensor_init(); /* uses I2C */
-#if PL_CONFIG_HAS_ACCEL_SENSOR /* accelerormeter uses I2C */
+#if PL_CONFIG_HAS_ACCEL_SENSOR /* Accelerometer uses I2C */
   AccelSensor_Init();
 #if 0
   bool isEnabled;
@@ -131,6 +133,7 @@ void PL_InitWithInterrupts(void) {
     RTC_Init(TRUE); /* soft-reset RTC */
   }
   WatchDog_StopComputationTime(WatchDog_LiDoInit);
+  return res; /* return error code (if any) */
 }
 
 void PL_Init(void) {

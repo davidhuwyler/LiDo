@@ -62,7 +62,11 @@ static void AppDataFile_UpdateRAMvariables(void) {
 	UTIL1_ScanDecimal8uNumber(&p,(uint8_t*)&localSampleAutoOff);
 }
 
-uint8_t AppDataFile_GetStringValue(const uint8_t* key, uint8_t* valueBuf, size_t bufSize) {
+uint8_t AppDataFile_GetStringValue(const uint8_t *key, uint8_t *valueBuf, size_t bufSize) {
+  if (!FS_IsMounted()) {
+    UTIL1_strcpy(valueBuf, bufSize, DEFAULT_STRING);
+    return ERR_FAILED;
+  }
   if(ini_gets(APPDATA_SECTION, key, DEFAULT_STRING, valueBuf, bufSize, APPDATA_FILENAME) == 0) {
     return ERR_FAILED;
   }

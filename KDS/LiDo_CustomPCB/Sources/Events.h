@@ -95,6 +95,7 @@
 #include "ExtIntLdd2.h"
 #include "UserButton.h"
 #include "ExtIntLdd3.h"
+#include "TMOUT1.h"
 #include "PIN_PWR_CHARGE_STATE.h"
 #include "BitIoLdd11.h"
 

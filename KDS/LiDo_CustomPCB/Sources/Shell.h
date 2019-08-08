@@ -14,6 +14,7 @@
 void SHELL_Parse(void);
 void SHELL_Init(void);
 
+CLS1_ConstStdIOType *SHELL_GetStdio(void);
 void SHELL_requestDisabling(void);
 
 #endif /* SOURCES_SHELL_H_ */
