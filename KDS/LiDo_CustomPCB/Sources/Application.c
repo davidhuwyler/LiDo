@@ -652,16 +652,18 @@ static void AppTask(void *pv) {
     } else if (LowPower_StopModeIsEnabled()) { /* no need for a blinky? */
       /* blue blinky in the LPWU interrupt */
       LED_B_On();
+      vTaskDelay(pdMS_TO_TICKS(1)); /* heartbeat */
+      LED_B_Off();
+      vTaskDelay(pdMS_TO_TICKS(999));
+    } else { /* longer white blink if not in low power mode */
+      LED_R_On();
       LED_G_On();
-      vTaskDelay(pdMS_TO_TICKS(1));
-      LED_B_Off();
-      LED_G_Off();
-      vTaskDelay(pdMS_TO_TICKS(999));
-    } else { /* brighter blink with blue LED if not in low power mode */
       LED_B_On();
-      vTaskDelay(pdMS_TO_TICKS(1));
+      vTaskDelay(pdMS_TO_TICKS(100)); /* heartbeat */
+      LED_R_Off();
+      LED_G_Off();
       LED_B_Off();
-      vTaskDelay(pdMS_TO_TICKS(999));
+      vTaskDelay(pdMS_TO_TICKS(4900));
     }
   }
 }

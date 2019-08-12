@@ -248,13 +248,13 @@ uint8_t LightSensor_getChannelValues(LightChannels_t *bank0, LightChannels_t *ba
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x01 ); 	//Enable Conversion
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK );		//Clear Interrupt
 	res |= GI2C1_WriteByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_CONFIG_DATA_EN , 0x03 ); 	//Start Conversion
+  GI2C1_ReleaseBus();
 
-	allowLightSensToWakeUp = TRUE; /* no critical section needed as access is atomic */
-
+	allowLightSensToWakeUp = TRUE; /* flag set for ISR to wake us up again */
 	APP_suspendSampleTask(); //Wait for LightSens Interrupt...
-
 	allowLightSensToWakeUp = FALSE;
 
+  GI2C1_RequestBus(); /* need to have exclusive access to device. Shell shall not interfere */
   do { /* wait until CLR bit is set */
     res |= GI2C1_ReadByteAddress8(LIGHTSENSOR_I2C_ADDRESS,LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR, &i2cData);
   } while ((i2cData&(LIGHTSENSOR_I2C_REGISTER_INTR_POLL_CLR_BIT_MASK))==0); /* Wait for CLR bit. Note that bit 0 might be set (is reserved!) if the sensor had a high light exposure! */

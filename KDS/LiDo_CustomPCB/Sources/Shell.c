@@ -29,6 +29,7 @@
 #include "RTT1.h"
 #include "McuLC709203F.h"
 #include "PowerManagement.h"
+#include "LED_R.h"
 #if PL_BOARD_REV==20
   #include "AS1.h"
 #endif
@@ -258,9 +259,11 @@ static void SHELL_task(void *param) {
 	  if (cntr>100) { /* indicate shell tasks (and charging state) with a blinky */
 	    cntr = 0;
 	    if (PowerManagement_IsCharging()) {
-        UI_LEDpulse(LED_G);
+        //UI_LEDpulse(LED_R);
+	      LED_R_On(); /* red on: charging */
 	    } else {
-	      UI_LEDpulse(LED_B);
+	      //UI_LEDpulse(LED_G);
+	      LED_R_Off();
 	    }
 	  }
 	  vTaskDelay(pdMS_TO_TICKS(20));

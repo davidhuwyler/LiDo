@@ -37,7 +37,21 @@ CMD>   < AppData print
 00> AUTOGAIN_ENABLE = -
 00> SAMPLE_AUTO_OFF = -
 
+HTerm commands:
+- load the htermCommands.hts into HTerm
+- connect to COM port with 38400
+
 User Interface:
+- Shell
+  - Shell interface implemented with RTT
+  
+- RGB LED
+  - AppTask: Heartbeat R+G+B(W) 100ms every 5s: not in low power mode
+  - ShellTask: red: charging, off: not charging
+  - Green Blinks: confirmation of button press (see below)
+  - red+blue blinks: sampling
+  - set marker while smapling: green blink acknowledge
+
 - device is powered down:
   - 1 sec press: wake up => active mode, blinks white LED
 
