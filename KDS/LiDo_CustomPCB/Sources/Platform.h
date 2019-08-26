@@ -33,8 +33,8 @@
 
 /* debug ONLY options */
 #define PL_CONFIG_HAS_WATCHDOG       (0) /* disable for better debugging only! */
-#define PL_CONFIG_HAS_LOW_POWER      (0) /* disable for debugging only! */
-#define PL_CONFIG_HAS_SHELL_SHUTOWN  (0) /* if USB cable disconnect shall disable the shell and shutdown the USB peripheral to save power. */
+#define PL_CONFIG_HAS_LOW_POWER      (1) /* disable for debugging only! */
+#define PL_CONFIG_HAS_SHELL_SHUTOWN  (1) /* if USB cable disconnect shall disable the shell and shutdown the USB peripheral to save power. */
 
 // Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
 //     exception return operation might vector to incorrect interrupt

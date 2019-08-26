@@ -51,6 +51,7 @@ User Interface:
   - Green Blinks: confirmation of button press (see below)
   - red+blue blinks: sampling
   - set marker while smapling: green blink acknowledge
+  - shell task sets RED led on if charging.
 
 - device is powered down:
   - 1 sec press: wake up => active mode, blinks white LED
